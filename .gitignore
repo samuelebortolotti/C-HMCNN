@@ -5,3 +5,5 @@ results/*.csv
 logs/*/measures*
 logs/*/.txt
 *.pyc
+.python-version
+venv

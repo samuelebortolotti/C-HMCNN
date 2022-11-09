@@ -13,7 +13,6 @@ from sklearn.impute import SimpleImputer
 from sklearn import preprocessing
 import numpy
 from sklearn.metrics import (
-    f1_score,
     average_precision_score,
 )
 

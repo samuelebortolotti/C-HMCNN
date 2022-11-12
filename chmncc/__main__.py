@@ -27,10 +27,12 @@ from chmncc.utils.utils import (
     get_lr,
 )
 from chmncc.networks.ConstrainedFFNN import initializeConstrainedFFNNModel
+from chmncc.networks import LeNet5
 from chmncc.train import training_step
 from chmncc.optimizers import get_adam_optimizer
 from chmncc.test import test_step
-from chmncc.dataset import load_old_dataloaders, load_dataloaders
+from chmncc.dataset import load_old_dataloaders, load_cifar_dataloaders
+import chmncc.dataset as data
 from chmncc.config.old_config import lrs, epochss, hidden_dims
 from chmncc.explanations import compute_integrated_gradient, output_gradients
 from torch.utils.tensorboard import SummaryWriter
@@ -51,6 +53,8 @@ def get_args() -> Namespace:
     # subparsers
     subparsers = parser.add_subparsers(help="sub-commands help")
     configure_subparsers(subparsers)
+    # configure the dataset subparser
+    data.configure_subparsers(subparsers)
 
     # parse the command line arguments
     parsed_args = parser.parse_args()
@@ -78,7 +82,6 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--dataset",
         type=str,
         default=None,
-        required=True,
         help='dataset name, must end with: "_GO", "_FUN", or "_others"',
     )
 
@@ -88,6 +91,10 @@ def configure_subparsers(subparsers: Subparser) -> None:
     # Other parameters
     parser.add_argument("--seed", type=int, default=0, help="random seed (default: 0)")
     parser.add_argument("--device", type=str, default="gpu:0", help="GPU (default:0)")
+
+    parser.add_argument(
+        "--giunchiglia", type=bool, default=False, help="apply Giunchiglia et al. approach"
+    )
 
     parser.add_argument("--batch-size", type=int, default=128, help="batch size")
     parser.add_argument(
@@ -115,7 +122,6 @@ def configure_subparsers(subparsers: Subparser) -> None:
 
 
 def c_hmcnn(
-    net: nn.Module,
     exp_name: str,
     resume: bool = False,
     device: str = "cuda",
@@ -144,7 +150,6 @@ def c_hmcnn(
 
     Args:
 
-    - net [nn.Module]: network architecture
     - exp_name [str]: name of the experiment, basically where to save the logs of the SummaryWriter
     - resume [bool] = False: whether to resume a checkpoint
     - device [str] = "cuda": where to load the tensors
@@ -161,7 +166,7 @@ def c_hmcnn(
     log_directory = "runs/exp_{}".format(exp_name)
 
     # old method
-    old_method = True
+    old_method = kwargs.pop('giunchiglia')
 
     # create a logger for the experiment
     writer = SummaryWriter(log_dir=log_directory)
@@ -180,7 +185,16 @@ def c_hmcnn(
         # Load the datasets
         dataloaders = load_old_dataloaders(dataset, batch_size, device=device)
     else:
-        dataloaders = {}
+        dataloaders = load_cifar_dataloaders(
+            img_size=(32, 32),
+            img_depth=3,
+            csv_path="./dataset/train.csv",
+            test_csv_path="./dataset/train.csv",
+            cifar_metadata="./dataset/pickle_files/meta",
+            batch_size=10,
+            test_batch_size=10,
+            normalize=True,
+        )
 
     # network initialization
     if old_method:
@@ -204,13 +218,21 @@ def c_hmcnn(
         net = initializeConstrainedFFNNModel(
             dataset, data, ontology, dataloaders["train_R"], hyperparams
         )
-        net = net.to(device)
+    else:
+        # CNN
+        net = LeNet5(dataloaders["train_R"], 100)
+
+    net = net.to(device)
 
     # dataloaders
     train_loader = dataloaders["train_loader"]
     test_loader = dataloaders["test_loader"]
 
-    print("Techinque: {}".format("Giunchiglia" if old_method else "New"))
+    print(
+        "#> Techinque: {}".format(
+            "Giunchiglia" if old_method else "Our approach"
+        )
+    )
 
     # instantiate the optimizer
     optimizer = get_adam_optimizer(net, learning_rate, weight_decay=weight_decay)
@@ -285,8 +307,6 @@ def c_hmcnn(
                 {
                     "train/train_loss": train_loss,
                     "train/train_accuracy": train_accuracy,
-                    #  "test/test_loss": test_loss,
-                    #  "test/test_accuracy": test_accuracy,
                     "learning_rate": get_lr(optimizer),
                 }
             )
@@ -361,6 +381,9 @@ def experiment(args: Namespace) -> None:
         print("\t{}: {}".format(p, v))
     print("\n")
 
+    if args.giunchiglia:
+        assert args.dataset is not None
+
     # set wandb if needed
     if args.wandb:
         # import wandb
@@ -373,9 +396,6 @@ def experiment(args: Namespace) -> None:
         # start the log
         wandb.init(project=args.project, entity=args.entity)
 
-    # network initialization
-    net = None
-
     # set the seeds
     seed = args.seed
     torch.manual_seed(seed)
@@ -386,7 +406,7 @@ def experiment(args: Namespace) -> None:
     torch.backends.cudnn.benchmark = False
 
     # run the experiment
-    c_hmcnn(net=net, **vars(args))
+    c_hmcnn(**vars(args))
 
     # close wandb
     if args.wandb:
@@ -402,6 +422,7 @@ def main(args: Namespace) -> None:
     Args:
       args (Namespace): command line arguments
     """
+
     # execute the function `func` with args as arguments
     args.func(
         args,

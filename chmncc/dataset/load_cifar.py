@@ -50,7 +50,7 @@ class LoadDataset(Dataset):
 
         # compliant with Giunchiglia code
         self.g = nx.DiGraph()
-        self.to_eval, self.A  = self._initializeHierarchicalGraph()
+        self.to_eval, self.A = self._initializeHierarchicalGraph()
 
     def _initializeHierarchicalGraph(self):
         # prepare the hierarchy
@@ -63,11 +63,10 @@ class LoadDataset(Dataset):
         # get the nodes
         nodes = sorted(
             self.g.nodes(),
-            key=lambda x: (nx.shortest_path_length(self.g, x, "root"), x)
+            key=lambda x: (nx.shortest_path_length(self.g, x, "root"), x),
         )
 
         return nodes, np.array(nx.to_numpy_matrix(self.g, nodelist=nodes))
-
 
     def csv_to_list(self):
         """Reads the path of the file and its corresponding label"""

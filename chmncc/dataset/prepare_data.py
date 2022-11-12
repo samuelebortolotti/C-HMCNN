@@ -1,7 +1,3 @@
-
-
-
-
 def download_file_from_google_drive(id: str, destination: str) -> None:
     """Dowloads a file from a Google Drive link
     Args:
@@ -38,5 +34,3 @@ def filter_data(
             c_path = join(d, c)
             c_target = join(td, c)
             copytree(c_path, c_target)
-
-

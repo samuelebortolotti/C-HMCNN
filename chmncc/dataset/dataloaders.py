@@ -195,8 +195,8 @@ def load_cifar_dataloaders(
     print("\t# of test samples: %d" % int(len(test_dataset)))
 
     # get the Giunchiglia train like dictionary
-    train = dotdict({'to_eval': train_dataset.get_to_eval()})
-    test = dotdict({'to_eval': test_dataset.get_to_eval()})
+    train = dotdict({"to_eval": train_dataset.get_to_eval()})
+    test = dotdict({"to_eval": test_dataset.get_to_eval()})
 
     # define R
     R = np.zeros(train_dataset.get_A().shape)

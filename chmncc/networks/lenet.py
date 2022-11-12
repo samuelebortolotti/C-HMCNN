@@ -3,6 +3,7 @@ import torch
 from chmncc.utils import get_constr_out
 from torch.nn.modules.activation import Sigmoid
 
+
 class LeNet5(nn.Module):
     r"""
     LeNet5 architecture with Giunchiglia et al layer
@@ -28,7 +29,7 @@ class LeNet5(nn.Module):
             nn.Conv2d(in_channels=1, out_channels=6, kernel_size=(5, 5)),
             # input channel = 6, output channels = 16, kernel size = 5
             # input image size = (12, 12), output image size = (8, 8)
-            nn.Conv2d(in_channels=6, out_channels=16, kernel_size=(5, 5))
+            nn.Conv2d(in_channels=6, out_channels=16, kernel_size=(5, 5)),
         )
         self.classifier = nn.Sequential(
             # input dim = 4 * 4 * 16 ( H x W x C), output dim = 120
@@ -38,7 +39,7 @@ class LeNet5(nn.Module):
             # input dim = 84, output dim = 10
             nn.Linear(in_features=84, out_features=num_out_logits),
             # sigmoid in the last layer
-            nn.Sigmoid()
+            nn.Sigmoid(),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

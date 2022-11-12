@@ -93,7 +93,10 @@ def configure_subparsers(subparsers: Subparser) -> None:
     parser.add_argument("--device", type=str, default="gpu:0", help="GPU (default:0)")
 
     parser.add_argument(
-        "--giunchiglia", type=bool, default=False, help="apply Giunchiglia et al. approach"
+        "--giunchiglia",
+        type=bool,
+        default=False,
+        help="apply Giunchiglia et al. approach",
     )
 
     parser.add_argument("--batch-size", type=int, default=128, help="batch size")
@@ -166,7 +169,7 @@ def c_hmcnn(
     log_directory = "runs/exp_{}".format(exp_name)
 
     # old method
-    old_method = kwargs.pop('giunchiglia')
+    old_method = kwargs.pop("giunchiglia")
 
     # create a logger for the experiment
     writer = SummaryWriter(log_dir=log_directory)
@@ -228,11 +231,7 @@ def c_hmcnn(
     train_loader = dataloaders["train_loader"]
     test_loader = dataloaders["test_loader"]
 
-    print(
-        "#> Techinque: {}".format(
-            "Giunchiglia" if old_method else "Our approach"
-        )
-    )
+    print("#> Techinque: {}".format("Giunchiglia" if old_method else "Our approach"))
 
     # instantiate the optimizer
     optimizer = get_adam_optimizer(net, learning_rate, weight_decay=weight_decay)

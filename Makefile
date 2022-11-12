@@ -1,6 +1,6 @@
 # ======= FOLDERS ==================
 VENV := venv
-PROJECT_NAME := c-hmcnn
+PROJECT_NAME := chmncc
 
 # ======= PROGRAMS AND FLAGS =======
 PYTHON := python3
@@ -9,13 +9,19 @@ PIP := pip
 UPGRADE_PIP := --upgrade pip
 
 # ======= MAIN =====================
-MAIN := 
+MAIN := chmncc
 MAIN_FLAGS :=
 PIP := pip
 
 # ======= DATASET ==================
 DATASET:= dataset
 DATASET_FLAGS :=
+
+# ======= EXPERIMENT ===============
+EXPERIMENT := experiment 
+EXP_NAME := "chmncc"
+EPOCHS := 20
+EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 10 --test-batch-size 10 --device cpu
 
 # ======= DOC ======================
 AUTHORS := --author "Eleonora Giunchiglia, Thomas Lukasiewicz, Samuele Bortolotti" 
@@ -28,7 +34,7 @@ IMG_FOLDER := .github
 
 # ======= FORMAT ===================
 FORMAT := black
-FORMAT_FLAG := c-hmcnn
+FORMAT_FLAG := chmncc
 
 
 ## Quickstart
@@ -86,7 +92,7 @@ OPEN := xdg-open
 SED := sed
 	
 # RULES
-.PHONY: help env install install-dev doc-layout open-doc format-code
+.PHONY: help env install install-dev doc-layout open-doc format-code experiment dataset
 
 help:
 	@$(ECHO) '$(YELLOW)Makefile help$(NONE)'
@@ -94,6 +100,8 @@ help:
 	* env 			: generates the virtual environment using the current python version and venv\n \
 	* install		: install the requirements listed in requirements.txt\n \
 	* install-dev		: install the development requirements listed in requirements.dev.txt\n \
+	* dataset 		: downloads and filters out the Cifar100 dataset\n \
+	* experiment 		: runs the experiment\n \
 	* doc-layout 		: generates the Sphinx documentation layout\n \
 	* doc 			: generates the documentation (requires an existing documentation layout)\n \
 	* format-code 		: formats the code employing black python formatter\n \
@@ -118,6 +126,16 @@ install-dev:
 	@$(PYTHON) -m pip install $(UPGRADE_PIP)
 	@$(PIP) install -r requirements.dev.txt
 	@$(ECHO) '$(GREEN)Done$(NONE)'
+
+experiment:
+	@$(ECHO) '$(BLUE)Run the experiment..$(NONE)'
+	$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(EXPERIMENT) $(EXP_NAME) $(EPOCHS) $(EXPERIMENT_FLAGS)
+	@$(ECHO) '$(BLUE)Done$(NONE)'
+
+dataset:
+	@$(ECHO) '$(BLUE)Dowloading and filtering the Cifar-100 dataset..$(NONE)'
+	@$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(DATASET) $(DATASET_FLAGS)
+	@$(ECHO) '$(BLUE)Done$(NONE)'
 
 doc-layout:
 	@$(ECHO) '$(BLUE)Generating the Sphinx layout..$(NONE)'

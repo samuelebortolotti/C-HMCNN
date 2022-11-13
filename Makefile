@@ -23,6 +23,9 @@ EXP_NAME := "chmncc"
 EPOCHS := 20
 EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 10 --test-batch-size 10 --device cpu
 
+# ======= VISUALIZE ================
+VISUALIZE:= visualize
+
 # ======= DOC ======================
 AUTHORS := --author "Eleonora Giunchiglia, Thomas Lukasiewicz, Samuele Bortolotti" 
 VERSION :=-r 0.1 
@@ -92,7 +95,7 @@ OPEN := xdg-open
 SED := sed
 	
 # RULES
-.PHONY: help env install install-dev doc-layout open-doc format-code experiment dataset
+.PHONY: help env install install-dev doc-layout open-doc format-code experiment dataset visualize
 
 help:
 	@$(ECHO) '$(YELLOW)Makefile help$(NONE)'
@@ -102,6 +105,7 @@ help:
 	* install-dev		: install the development requirements listed in requirements.dev.txt\n \
 	* dataset 		: downloads and filters out the Cifar100 dataset\n \
 	* experiment 		: runs the experiment\n \
+	* visualize 		: shows the images associated to the specified label in the source and target dataset\n \
 	* doc-layout 		: generates the Sphinx documentation layout\n \
 	* doc 			: generates the documentation (requires an existing documentation layout)\n \
 	* format-code 		: formats the code employing black python formatter\n \
@@ -129,12 +133,17 @@ install-dev:
 
 experiment:
 	@$(ECHO) '$(BLUE)Run the experiment..$(NONE)'
-	$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(EXPERIMENT) $(EXP_NAME) $(EPOCHS) $(EXPERIMENT_FLAGS)
+	@$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(EXPERIMENT) $(EXP_NAME) $(EPOCHS) $(EXPERIMENT_FLAGS)
 	@$(ECHO) '$(BLUE)Done$(NONE)'
 
 dataset:
 	@$(ECHO) '$(BLUE)Dowloading and filtering the Cifar-100 dataset..$(NONE)'
 	@$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(DATASET) $(DATASET_FLAGS)
+	@$(ECHO) '$(BLUE)Done$(NONE)'
+
+visualize:
+	@$(ECHO) '$(BLUE)Visualize the requested images..$(NONE)'
+	@$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(VISUALIZE) $(VISUALIZE_FLAGS)
 	@$(ECHO) '$(BLUE)Done$(NONE)'
 
 doc-layout:

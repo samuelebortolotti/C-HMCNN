@@ -5,6 +5,7 @@ This code has been developed by Eleonora Giunchiglia and Thomas Lukasiewicz; lat
 
 import os
 import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import argparse
 import random
@@ -15,6 +16,7 @@ from argparse import Namespace
 from argparse import _SubParsersAction as Subparser
 from argparse import Namespace
 from typing import Any
+from torchsummary import summary
 
 # data folder
 os.environ["DATA_FOLDER"] = "./"
@@ -32,7 +34,8 @@ from chmncc.train import training_step
 from chmncc.optimizers import get_adam_optimizer
 from chmncc.test import test_step
 from chmncc.dataset import load_old_dataloaders, load_cifar_dataloaders
-import chmncc.dataset as data
+import chmncc.dataset.preproces_cifar as data
+import chmncc.dataset.visualize_dataset as visualize_data
 from chmncc.config.old_config import lrs, epochss, hidden_dims
 from chmncc.explanations import compute_integrated_gradient, output_gradients
 from torch.utils.tensorboard import SummaryWriter
@@ -55,6 +58,7 @@ def get_args() -> Namespace:
     configure_subparsers(subparsers)
     # configure the dataset subparser
     data.configure_subparsers(subparsers)
+    visualize_data.configure_subparsers(subparsers)
 
     # parse the command line arguments
     parsed_args = parser.parse_args()
@@ -189,7 +193,7 @@ def c_hmcnn(
         dataloaders = load_old_dataloaders(dataset, batch_size, device=device)
     else:
         dataloaders = load_cifar_dataloaders(
-            img_size=(32, 32),
+            img_size=32,
             img_depth=3,
             csv_path="./dataset/train.csv",
             test_csv_path="./dataset/train.csv",
@@ -223,9 +227,14 @@ def c_hmcnn(
         )
     else:
         # CNN
-        net = LeNet5(dataloaders["train_R"], 100)
+        net = LeNet5(
+            dataloaders["train_R"], 121
+        )  # 20 superclasses, 100 subclasses + the root
 
     net = net.to(device)
+
+    print("#> Model")
+    summary(net, (3, 32, 32))
 
     # dataloaders
     train_loader = dataloaders["train_loader"]
@@ -345,18 +354,36 @@ def c_hmcnn(
     print("#> Explanations")
 
     print("Get random example from test_loader...")
+
     test_el, _ = next(iter(test_loader))
-    test_el = test_el[0]
-
+    # get the single element batch
+    single_el = torch.unsqueeze(test_el[0], 0)
+    # set the gradients as required
+    single_el.requires_grad = True
     # get the predictions
-    preds = net(test_el.float())
+    preds = net(single_el.float())
 
-    grd = output_gradients(test_el, preds)
+    grd = output_gradients(single_el, preds)[0]
+
     print("\n\t Gradient with respect to the input {}".format(grd))
+    if not old_method:
+        # permute to show
+        grd = grd.permute(1, 2, 0)
+        plt.figure()
+        plt.imshow(grd)
+        plt.title("Gradient with respect to the input {}")
+        plt.show()  # display it
 
     i_gradient, mean_grad = compute_integrated_gradient(
-        test_el.float(), torch.zeros_like(test_el).float(), net
-    )
+        test_el.float(), torch.zeros_like(single_el).float(), net
+    )[0]
+    if not old_method:
+        # permute to show
+        i_gradient = i_gradient.permute(1, 2, 0)
+        plt.figure()
+        plt.imshow(i_gradient)
+        plt.title("Integrated Gradient with respect to the input {}")
+        plt.show()  # display it
     print(i_gradient, mean_grad)
 
     # closes the logger

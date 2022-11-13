@@ -3,11 +3,12 @@ Implementation taken from https://github.com/Ugenteraan/Deep_Hierarchical_Classi
 """
 
 import os
-import pickle
+import shutil
 import numpy as np
 import pandas as pd
 import imageio
-import cv2
+import tarfile
+import urllib.request
 from tqdm import tqdm
 from chmncc.utils import unpickle, read_meta
 from argparse import _SubParsersAction as Subparser
@@ -89,6 +90,22 @@ class Preprocess_Cifar100:
                 )
 
 
+def download_cifar() -> None:
+    """Dowloads cifar 100 and decompress it"""
+    CIFAR_100 = "https://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz"
+    urllib.request.urlretrieve(
+        CIFAR_100,
+        "cifar-100-python.tar.gz",
+    )
+    shutil.move("cifar-100-python.tar.gz", "./datasets/")
+    file = tarfile.open("./datasets/cifar-100-python.tar.gz")
+    file.extractall("./datasets/")
+    file.close()
+    shutil.move("./datasets/cifar-100-python/test", "./datasets/pickle_files")
+    shutil.move("./datasets/cifar-100-python/train", "./datasets/pickle_files")
+    shutil.move("./datasets/cifar-100-python/meta", "./datasets/pickle_files")
+
+
 def configure_subparsers(subparsers: Subparser) -> None:
     """Configure a new subparser for running the data dowload and preparation
     Args:
@@ -111,8 +128,11 @@ def main(args: Namespace) -> None:
         print("\t{}: {}".format(p, v))
     print("\n")
 
-    # dowload the full dataset from google drive
-    print("Preprocessing Cifar 100...")
+    # dowload cifar
+    print("#> Download Cifar 100...")
+    download_cifar()
+
+    print("#> Preprocessing Cifar 100...")
 
     p = Preprocess_Cifar100()
     p.process_data(train=True)  # process the training set

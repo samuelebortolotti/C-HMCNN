@@ -14,6 +14,9 @@ from chmncc.config.cifar_config import hierarchy
 from chmncc.utils import read_meta
 import networkx as nx
 
+# which node of the hierarchy to skip (root is only a confound)
+to_skip = ["root"]
+
 
 class LoadDataset(Dataset):
     """Reads the given csv file and loads the data."""
@@ -50,13 +53,15 @@ class LoadDataset(Dataset):
 
         # compliant with Giunchiglia code
         self.g = nx.DiGraph()
-        self.to_eval, self.A = self._initializeHierarchicalGraph()
+        self.nodes, self.nodes_idx, self.A = self._initializeHierarchicalGraph()
+        self.to_eval = torch.tensor(
+            [t not in to_skip for t in self.nodes], dtype=torch.bool
+        )
 
     def _initializeHierarchicalGraph(self):
         # prepare the hierarchy
         for img_class in hierarchy:
             self.g.add_edge(img_class, "root")
-            # this is because I know that there is only one class: TODO generalize
             for sub_class in hierarchy[img_class]:
                 self.g.add_edge(sub_class, img_class)
 
@@ -65,8 +70,9 @@ class LoadDataset(Dataset):
             self.g.nodes(),
             key=lambda x: (nx.shortest_path_length(self.g, x, "root"), x),
         )
-
-        return nodes, np.array(nx.to_numpy_matrix(self.g, nodelist=nodes))
+        # index of the nodes in the graph
+        nodes_idx = dict(zip(nodes, range(len(nodes))))
+        return nodes, nodes_idx, np.array(nx.to_numpy_matrix(self.g, nodelist=nodes))
 
     def csv_to_list(self):
         """Reads the path of the file and its corresponding label"""
@@ -78,7 +84,7 @@ class LoadDataset(Dataset):
         return data
 
     def get_to_eval(self):
-        return torch.ones(len(self.to_eval), dtype=torch.bool)
+        return self.to_eval
 
     def get_A(self):
         return self.A
@@ -109,11 +115,24 @@ class LoadDataset(Dataset):
         if self.transform:
             image = self.transform(image)
 
-        if self.return_label:
-            return {
-                "image": image / 255.0,
-                "label_1": self.coarse_labels.index(superclass.strip(" ")),
-                "label_2": self.fine_labels.index(subclass.strip(" ")),
-            }
-        else:
-            return {"image": image}
+        # the hierarchical label is compliant with Giunchiglia's model
+        # basically, it has all zeros, except for the indexes where there is a parent
+        subclass = subclass.strip()
+        hierarchical_label = np.zeros(len(self.nodes))
+        # set to one all my ancestors
+        hierarchical_label[
+            [self.nodes_idx.get(a) for a in nx.ancestors(self.g.reverse(), subclass)]
+        ] = 1
+        # set to one myself
+        hierarchical_label[self.nodes_idx[subclass]] = 1
+
+        return image, hierarchical_label
+
+        #  if self.return_label:
+        #      return {
+        #          "image": image / 255.0,
+        #          "label_1": self.coarse_labels.index(superclass.strip(" ")),
+        #          "label_2": self.fine_labels.index(subclass.strip(" ")),
+        #      }
+        #  else:
+        #      return {"image": image}

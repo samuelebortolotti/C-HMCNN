@@ -86,7 +86,7 @@ def get_mean_std(
 
 
 def load_cifar_dataloaders(
-    img_size: Tuple[int, int],
+    img_size: int,
     img_depth,
     csv_path,
     test_csv_path,
@@ -197,6 +197,14 @@ def load_cifar_dataloaders(
     # get the Giunchiglia train like dictionary
     train = dotdict({"to_eval": train_dataset.get_to_eval()})
     test = dotdict({"to_eval": test_dataset.get_to_eval()})
+
+    # count subclasses
+    count_subclasses = 0
+    for value in hierarchy.values():
+        count_subclasses += sum(1 for _ in value)
+
+    print("\t# of super-classes: %d" % int(len(hierarchy.keys())))
+    print("\t# of sub-classes: %d" % int(count_subclasses))
 
     # define R
     R = np.zeros(train_dataset.get_A().shape)

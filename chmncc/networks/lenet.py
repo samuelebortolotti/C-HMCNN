@@ -4,6 +4,13 @@ from chmncc.utils import get_constr_out
 from torch.nn.modules.activation import Sigmoid
 
 
+class Flatten(nn.Module):
+    """Flatten layer"""
+
+    def forward(self, x):
+        return x.view(x.shape[0], -1)
+
+
 class LeNet5(nn.Module):
     r"""
     LeNet5 architecture with Giunchiglia et al layer
@@ -24,21 +31,18 @@ class LeNet5(nn.Module):
         super().__init__()
         self.R = R  # matrix of the hierarchy
         self.features = nn.Sequential(
-            # input channel = 1, output channels = 6, kernel size = 5
-            # input image size = (28, 28), image output size = (24, 24)
-            nn.Conv2d(in_channels=1, out_channels=6, kernel_size=(5, 5)),
-            # input channel = 6, output channels = 16, kernel size = 5
-            # input image size = (12, 12), output image size = (8, 8)
+            nn.Conv2d(in_channels=3, out_channels=6, kernel_size=(5, 5)),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2)),
             nn.Conv2d(in_channels=6, out_channels=16, kernel_size=(5, 5)),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2)),
         )
+        self.flatten = Flatten()
         self.classifier = nn.Sequential(
-            # input dim = 4 * 4 * 16 ( H x W x C), output dim = 120
-            nn.Linear(in_features=4 * 4 * 16, out_features=120),
-            # input dim = 120, output dim = 84
+            nn.Linear(in_features=5 * 5 * 16, out_features=120),
             nn.Linear(in_features=120, out_features=84),
-            # input dim = 84, output dim = 10
             nn.Linear(in_features=84, out_features=num_out_logits),
-            # sigmoid in the last layer
             nn.Sigmoid(),
         )
 
@@ -51,6 +55,7 @@ class LeNet5(nn.Module):
             - constrained_out [torch.Tensor]: constrained_out
         """
         x = self.features(x)
+        x = self.flatten(x)
         x = self.classifier(x)
 
         # if we are in trainining, no need to enforce the herarchy constraint

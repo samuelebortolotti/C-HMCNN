@@ -28,9 +28,12 @@ def training_step(
     net.train()
 
     # iterate over the training set
-    for _, (inputs, label) in tqdm.tqdm(enumerate(train_loader), desc=title):
-        # load data into device
+    for _, inputs in tqdm.tqdm(enumerate(train_loader), desc=title):
 
+        # according to the Giunchiglia dataset
+        inputs, label = inputs
+
+        # load data into device
         inputs = inputs.to(device)
         label = label.to(device)
 

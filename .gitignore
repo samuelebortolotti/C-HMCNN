@@ -9,3 +9,9 @@ logs/*/.txt
 venv
 exp_*
 runs
+*.pth
+docs
+dataset/images
+dataset/cifar-100-python
+dataset/pickle_files/train
+dataset/pickle_files/test

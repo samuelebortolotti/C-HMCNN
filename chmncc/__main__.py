@@ -22,6 +22,7 @@ import wandb
 # data folder
 os.environ["DATA_FOLDER"] = "./"
 os.environ["MODELS"] = "./models"
+os.environ["IMAGE_FOLDER"] = "./plots"
 
 from chmncc.utils.utils import (
     load_best_weights,
@@ -176,7 +177,7 @@ def c_hmcnn(
     - \*\*kwargs [Any]: additional key-value arguments
     """
     # create the models directory
-    model_folder = os.environ['MODELS']
+    model_folder = os.environ["MODELS"]
     os.makedirs(model_folder, exist_ok=True)
 
     log_directory = "runs/exp_{}".format(exp_name)
@@ -365,7 +366,6 @@ def c_hmcnn(
             }
         )
 
-
     print(
         "\n\t Test loss {:.5f}, Test accuracy {:.2f}, Test score {:.2f}".format(
             test_loss, test_accuracy, test_score
@@ -391,10 +391,10 @@ def c_hmcnn(
     if not old_method:
         # permute to show
         grd = grd.permute(1, 2, 0)
-        plt.figure()
+        fig = plt.figure()
         plt.imshow(grd)
         plt.title("Gradient with respect to the input")
-        plt.show()  # display it
+        fig.savefig("{}/gradients.png".format(os.environ["IMAGE_FOLDER"]), dpi=fig.dpi)
 
     i_gradient, mean_grad = compute_integrated_gradient(
         test_el.float(), torch.zeros_like(single_el).float(), net
@@ -404,11 +404,18 @@ def c_hmcnn(
     if not old_method:
         # permute to show
         i_gradient = i_gradient.permute(1, 2, 0)
-        plt.figure()
+        fig = plt.figure()
         plt.imshow(i_gradient)
         plt.title("Integrated Gradient with respect to the input")
-        plt.show()  # display it
-    print("Integrated gradient with respect to the input: {}\nMean Gradient {}".format(i_gradient, mean_grad))
+        fig.savefig(
+            "{}/integrated_gradients.png".format(os.environ["IMAGE_FOLDER"]),
+            dpi=fig.dpi,
+        )
+    print(
+        "Integrated gradient with respect to the input: {}\nMean Gradient {}".format(
+            i_gradient, mean_grad
+        )
+    )
 
     # closes the logger
     writer.close()

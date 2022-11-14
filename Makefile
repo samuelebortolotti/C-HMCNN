@@ -133,7 +133,7 @@ install-dev:
 
 experiment:
 	@$(ECHO) '$(BLUE)Run the experiment..$(NONE)'
-	@$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(EXPERIMENT) $(EXP_NAME) $(EPOCHS) $(EXPERIMENT_FLAGS)
+	$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(EXPERIMENT) $(EXP_NAME) $(EPOCHS) $(EXPERIMENT_FLAGS)
 	@$(ECHO) '$(BLUE)Done$(NONE)'
 
 dataset:
@@ -168,7 +168,7 @@ doc:
 
 open-doc:
 	@$(ECHO) '$(BLUE)Open documentation..$(NONE)'
-	$(OPEN) $(DOC_FOLDER)/build/$(BUILDER)/$(DOC_INDEX)
+	@$(OPEN) $(DOC_FOLDER)/build/$(BUILDER)/$(DOC_INDEX)
 	@$(ECHO) '$(BLUE)Done$(NONE)'
 
 format-code:

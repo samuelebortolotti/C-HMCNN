@@ -17,9 +17,11 @@ from argparse import _SubParsersAction as Subparser
 from argparse import Namespace
 from typing import Any
 from torchsummary import summary
+import wandb
 
 # data folder
 os.environ["DATA_FOLDER"] = "./"
+os.environ["MODELS"] = "./models"
 
 from chmncc.utils.utils import (
     load_best_weights,
@@ -123,6 +125,9 @@ def configure_subparsers(subparsers: Subparser) -> None:
     parser.add_argument(
         "--project", "-w", type=str, default="chmcnn-project", help="wandb project"
     )
+    parser.add_argument(
+        "--entity", "-e", type=str, default="samu32", help="wandb entity"
+    )
     parser.add_argument("--wandb", "-wdb", type=bool, default=False, help="wandb")
     # set the main function to run when blob is called from the command line
     parser.set_defaults(func=experiment)
@@ -138,7 +143,7 @@ def c_hmcnn(
     epochs: int = 30,
     save_every_epochs: int = 10,
     dry: bool = False,
-    wandb: bool = False,
+    set_wandb: bool = False,
     dataset: str = "",
     **kwargs: Any,
 ) -> None:
@@ -153,7 +158,7 @@ def c_hmcnn(
     - weight_decay [float] = 1e-5
     - save_every_epochs [int] = 10: save a checkpoint every 10 epoch
     - dry [bool] = False: by default save weights
-    - wandb [bool] = False
+    - set_wandb [bool] = False
 
     Args:
 
@@ -166,10 +171,14 @@ def c_hmcnn(
     - weight_decay [float] = 1e-5: weigt decay
     - save_every_epochs: int = 10: save a checkpoint every `save_every_epochs` epoch
     - dry [bool] = False: whether to do not save weights
-    - wandb [bool] = False: whether to log values on wandb
+    - set_wandb [bool] = False: whether to log values on wandb
     - dataset [str] = str: dataset name: the dataset is specified -> old approach
     - \*\*kwargs [Any]: additional key-value arguments
     """
+    # create the models directory
+    model_folder = os.environ['MODELS']
+    os.makedirs(model_folder, exist_ok=True)
+
     log_directory = "runs/exp_{}".format(exp_name)
 
     # old method
@@ -250,11 +259,11 @@ def c_hmcnn(
 
     # Resume training or start a new experiment
     training_params, val_params, start_epoch = resume_training(
-        resume, exp_name, net, optimizer
+        resume, model_folder, net, optimizer
     )
 
     # log on wandb if and only if the module is loaded
-    if wandb:
+    if set_wandb:
         wandb.watch(net)
 
     # for each epoch, train the network and then compute evaluation results
@@ -280,11 +289,11 @@ def c_hmcnn(
         training_params["start_epoch"] = e + 1  # epoch where to start
 
         # check if I have outperformed the best loss in the validation set
-        if val_params["best_loss"] > metrics["loss"]["test"]:
-            val_params["best_loss"] = metrics["loss"]["test"]
+        if val_params["best_loss"] > metrics["loss"]["train"]:
+            val_params["best_loss"] = metrics["loss"]["train"]
             # save best weights
             if not dry:
-                torch.save(net.state_dict(), os.path.join(exp_name, "best.pth"))
+                torch.save(net.state_dict(), os.path.join(model_folder, "best.pth"))
         # what to save
         save_dict = {
             "state_dict": net.state_dict(),
@@ -294,14 +303,14 @@ def c_hmcnn(
         }
         # save current weights
         if not dry:
-            torch.save(net.state_dict(), os.path.join(exp_name, "net.pth"))
+            torch.save(net.state_dict(), os.path.join(model_folder, "net.pth"))
             # save current settings
-            torch.save(save_dict, os.path.join(exp_name, "ckpt.pth"))
+            torch.save(save_dict, os.path.join(model_folder, "ckpt.pth"))
             if e % save_every_epochs == 0:
                 # Dump every checkpoint
                 torch.save(
                     save_dict,
-                    os.path.join(exp_name, "ckpt_e{}.pth".format(e + 1)),
+                    os.path.join(model_folder, "ckpt_e{}.pth".format(e + 1)),
                 )
         del save_dict
 
@@ -310,7 +319,7 @@ def c_hmcnn(
         writer.add_scalar("Learning rate", get_lr(optimizer), e)
 
         # log on wandb if and only if the module is loaded
-        if wandb:
+        if set_wandb:
             wandb.log(
                 {
                     "train/train_loss": train_loss,
@@ -332,7 +341,7 @@ def c_hmcnn(
     print("#> After training:")
 
     # Test on best weights
-    #  load_best_weights(net, exp_name)
+    load_best_weights(net, model_folder)
 
     test_loss, test_accuracy, test_score = test_step(
         net=net,
@@ -343,6 +352,19 @@ def c_hmcnn(
         test=dataloaders["test"],
         device=device,
     )
+
+    # log values
+    log_values(writer, epochs, test_loss, test_accuracy, "Test")
+
+    # log on wandb if and only if the module is loaded
+    if set_wandb:
+        wandb.log(
+            {
+                "test/test_loss": test_loss,
+                "test/test_accuracy": test_accuracy,
+            }
+        )
+
 
     print(
         "\n\t Test loss {:.5f}, Test accuracy {:.2f}, Test score {:.2f}".format(
@@ -365,29 +387,35 @@ def c_hmcnn(
 
     grd = output_gradients(single_el, preds)[0]
 
-    print("\n\t Gradient with respect to the input {}".format(grd))
+    print("\nGradient with respect to the input: {}".format(grd))
     if not old_method:
         # permute to show
         grd = grd.permute(1, 2, 0)
         plt.figure()
         plt.imshow(grd)
-        plt.title("Gradient with respect to the input {}")
+        plt.title("Gradient with respect to the input")
         plt.show()  # display it
 
     i_gradient, mean_grad = compute_integrated_gradient(
         test_el.float(), torch.zeros_like(single_el).float(), net
-    )[0]
+    )
+    i_gradient = i_gradient[0]
+    mean_grad = mean_grad[0]
     if not old_method:
         # permute to show
         i_gradient = i_gradient.permute(1, 2, 0)
         plt.figure()
         plt.imshow(i_gradient)
-        plt.title("Integrated Gradient with respect to the input {}")
+        plt.title("Integrated Gradient with respect to the input")
         plt.show()  # display it
-    print(i_gradient, mean_grad)
+    print("Integrated gradient with respect to the input: {}\nMean Gradient {}".format(i_gradient, mean_grad))
 
     # closes the logger
     writer.close()
+
+    # set the dataset in case the dataset is not set
+    if not old_method:
+        dataset = "chmncc"
 
     f = open("results/" + dataset + ".csv", "a")
     f.write(str(kwargs.pop("seed")) + "," + str(epochs) + "," + str(test_score) + "\n")
@@ -412,11 +440,10 @@ def experiment(args: Namespace) -> None:
 
     # set wandb if needed
     if args.wandb:
-        # import wandb
-        import wandb
-
         # Log in to your W&B account
         wandb.login()
+        # set the argument to true
+        args.set_wandb = args.wandb
 
     if args.wandb:
         # start the log

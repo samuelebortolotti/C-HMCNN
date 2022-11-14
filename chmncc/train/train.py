@@ -11,7 +11,7 @@ def training_step(
     net: nn.Module,
     train_loader: torch.utils.data.DataLoader,
     train,
-    R,
+    R: torch.tensor,
     writer,
     optimizer: torch.optim.Optimizer,
     cost_function,

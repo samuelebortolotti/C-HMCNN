@@ -99,7 +99,7 @@ To set up base C-HMCNN you can run:
   --dataset <dataset_name> --seed <seed_num> --device <device_num> \
   --batch-size <batch_size> --test-batch-size <test_batch_size> \
   --learning-rate <learning-rate> --weigh-decay <weigh-decay> \
-  --day <dry> --project <project> --wandb <wandb> \
+  --day <dry> --project <project> --entity <wandb-entity> --wandb <wandb> \
   --giunchiglia true \
 ```
 

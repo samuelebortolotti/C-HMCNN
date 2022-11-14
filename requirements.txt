@@ -16,3 +16,4 @@ torchvision~=0.14.0
 pandas~=1.5.1
 imageio~=2.22.4
 PyQt6~=6.4.0
+wandb~=0.13.5

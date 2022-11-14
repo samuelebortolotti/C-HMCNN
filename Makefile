@@ -20,8 +20,8 @@ DATASET_FLAGS :=
 # ======= EXPERIMENT ===============
 EXPERIMENT := experiment 
 EXP_NAME := "chmncc"
-EPOCHS := 20
-EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 10 --test-batch-size 10 --device cpu
+EPOCHS := 50
+EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 10 --test-batch-size 10 --device cpu --project chmncc --wandb true
 
 # ======= VISUALIZE ================
 VISUALIZE:= visualize
@@ -133,7 +133,7 @@ install-dev:
 
 experiment:
 	@$(ECHO) '$(BLUE)Run the experiment..$(NONE)'
-	$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(EXPERIMENT) $(EXP_NAME) $(EPOCHS) $(EXPERIMENT_FLAGS)
+	@$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(EXPERIMENT) $(EXP_NAME) $(EPOCHS) $(EXPERIMENT_FLAGS)
 	@$(ECHO) '$(BLUE)Done$(NONE)'
 
 dataset:

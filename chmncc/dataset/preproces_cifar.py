@@ -97,13 +97,13 @@ def download_cifar() -> None:
         CIFAR_100,
         "cifar-100-python.tar.gz",
     )
-    shutil.move("cifar-100-python.tar.gz", "./datasets/")
-    file = tarfile.open("./datasets/cifar-100-python.tar.gz")
-    file.extractall("./datasets/")
+    shutil.move("cifar-100-python.tar.gz", "./dataset/")
+    file = tarfile.open("./dataset/cifar-100-python.tar.gz")
+    file.extractall("./dataset/")
     file.close()
-    shutil.move("./datasets/cifar-100-python/test", "./datasets/pickle_files")
-    shutil.move("./datasets/cifar-100-python/train", "./datasets/pickle_files")
-    shutil.move("./datasets/cifar-100-python/meta", "./datasets/pickle_files")
+    shutil.move("./dataset/cifar-100-python/test", "./dataset/pickle_files")
+    shutil.move("./dataset/cifar-100-python/train", "./dataset/pickle_files")
+    shutil.move("./dataset/cifar-100-python/meta", "./dataset/pickle_files")
 
 
 def configure_subparsers(subparsers: Subparser) -> None:

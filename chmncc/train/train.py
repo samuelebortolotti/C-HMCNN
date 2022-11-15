@@ -43,6 +43,11 @@ def training_step(
         # output
         outputs = net(inputs.float())
 
+        # moving elements to cpu
+        outputs = outputs.to("cpu")
+        label = label.to("cpu")
+        inputs = inputs.to("cpu")
+
         # general prediction loss computation
         # MCLoss (their loss)
         constr_output = get_constr_out(outputs, R)

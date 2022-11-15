@@ -20,8 +20,8 @@ DATASET_FLAGS :=
 # ======= EXPERIMENT ===============
 EXPERIMENT := experiment 
 EXP_NAME := "chmncc"
-EPOCHS := 50
-EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 10 --test-batch-size 10 --device cpu --project chmncc --wandb true
+EPOCHS := 200
+EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 128 --test-batch-size 128 --device cuda --project chmncc
 
 # ======= VISUALIZE ================
 VISUALIZE:= visualize
@@ -45,8 +45,7 @@ SPHINX_QUICKSTART := sphinx-quickstart
 SPHINX_QUICKSTART_FLAGS := --sep --no-batchfile --project relational-neural-machines $(AUTHORS) $(VERSION) $(LANGUAGE) $(SPHINX_EXTENSIONS)
 
 ## Build
-BUILDER := html
-SPHINX_BUILD := make $(BUILDER)
+BUILDER := html SPHINX_BUILD := make $(BUILDER)
 SPHINX_API_DOC := sphinx-apidoc
 SPHINX_API_DOC_FLAGS := -P -o $(DOC_FOLDER)/source .
 SPHINX_THEME = sphinx_rtd_theme
@@ -133,7 +132,8 @@ install-dev:
 
 experiment:
 	@$(ECHO) '$(BLUE)Run the experiment..$(NONE)'
-	@$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(EXPERIMENT) $(EXP_NAME) $(EPOCHS) $(EXPERIMENT_FLAGS)
+	echo "$PYTHON"
+	$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(EXPERIMENT) $(EXP_NAME) $(EPOCHS) $(EXPERIMENT_FLAGS)
 	@$(ECHO) '$(BLUE)Done$(NONE)'
 
 dataset:

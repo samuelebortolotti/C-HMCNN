@@ -49,6 +49,11 @@ def test_step(
             targets = targets.to(device)
             # forward pass
             outputs = net(inputs.float())
+            # moving elements to cpu
+            outputs = outputs.to("cpu")
+            targets = targets.to("cpu")
+            inputs = inputs.to("cpu")
+            # predicted
             predicted = outputs.data > 0.5
             # total
             total += targets.shape[0] * targets.shape[1]

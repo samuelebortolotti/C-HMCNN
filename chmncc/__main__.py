@@ -203,6 +203,7 @@ def c_hmcnn(
     # create the models directory
     model_folder = os.environ["MODELS"]
     os.makedirs(model_folder, exist_ok=True)
+    os.makedirs("plots", exist_ok=True)
 
     log_directory = "runs/exp_{}".format(exp_name)
 
@@ -230,7 +231,8 @@ def c_hmcnn(
             img_size=32,
             img_depth=3,
             csv_path="./dataset/train.csv",
-            test_csv_path="./dataset/train.csv",
+            test_csv_path="./dataset/test_reduced.csv",
+            val_csv_path="./dataset/val.csv",
             cifar_metadata="./dataset/pickle_files/meta",
             batch_size=10,
             test_batch_size=10,
@@ -273,6 +275,7 @@ def c_hmcnn(
     # dataloaders
     train_loader = dataloaders["train_loader"]
     test_loader = dataloaders["test_loader"]
+    val_loader = dataloaders["val_loader"]
 
     print("#> Techinque: {}".format("Giunchiglia" if old_method else "Our approach"))
 
@@ -310,12 +313,27 @@ def c_hmcnn(
         metrics["loss"]["train"] = train_loss
         metrics["acc"]["train"] = train_accuracy
 
+        # validation set
+        val_loss, val_accuracy, val_score = test_step(
+            net=net,
+            test_loader=iter(val_loader),
+            cost_function=cost_function,
+            writer=writer,
+            title="Validation",
+            test=dataloaders["val"],
+            device=device,
+        )
+
+        # save the values in the metrics
+        metrics["loss"]["val"] = val_loss
+        metrics["acc"]["val"] = val_accuracy
+
         # save model and checkpoint
         training_params["start_epoch"] = e + 1  # epoch where to start
 
         # check if I have outperformed the best loss in the validation set
-        if val_params["best_loss"] > metrics["loss"]["train"]:
-            val_params["best_loss"] = metrics["loss"]["train"]
+        if val_params["best_loss"] > metrics["loss"]["val"]:
+            val_params["best_loss"] = metrics["loss"]["val"]
             # save best weights
             if not dry:
                 torch.save(net.state_dict(), os.path.join(model_folder, "best.pth"))
@@ -341,6 +359,7 @@ def c_hmcnn(
 
         # logs to TensorBoard
         log_values(writer, e, train_loss, train_accuracy, "Train")
+        log_values(writer, e, val_loss, val_accuracy, "Validation")
         writer.add_scalar("Learning rate", get_lr(optimizer), e)
 
         # log on wandb if and only if the module is loaded
@@ -349,6 +368,9 @@ def c_hmcnn(
                 {
                     "train/train_loss": train_loss,
                     "train/train_accuracy": train_accuracy,
+                    "val/val_loss": val_loss,
+                    "val/val_accuracy": val_accuracy,
+                    "val/val_score": val_score,
                     "learning_rate": get_lr(optimizer),
                 }
             )
@@ -358,6 +380,11 @@ def c_hmcnn(
         print(
             "\t Training loss {:.5f}, Training accuracy {:.2f}".format(
                 train_loss, train_accuracy
+            )
+        )
+        print(
+            "\t Validation loss {:.5f}, Validation accuracy {:.2f}, Validation score {:.2f}".format(
+                val_loss, val_accuracy, val_score
             )
         )
         print("-----------------------------------------------------")

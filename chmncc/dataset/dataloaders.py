@@ -90,6 +90,7 @@ def load_cifar_dataloaders(
     img_depth,
     csv_path,
     test_csv_path,
+    val_csv_path,
     cifar_metadata,
     batch_size: int = 128,
     test_batch_size: int = 256,
@@ -180,6 +181,14 @@ def load_cifar_dataloaders(
         transform=transform_test,
     )
 
+    val_dataset = LoadDataset(
+        image_size=img_size,
+        image_depth=img_depth,
+        csv_path=val_csv_path,
+        cifar_metafile=cifar_metadata,
+        transform=transform_test,
+    )
+
     # Dataloaders
     training_loader = torch.utils.data.DataLoader(
         train_dataset,
@@ -190,6 +199,9 @@ def load_cifar_dataloaders(
     test_loader = torch.utils.data.DataLoader(
         test_dataset, batch_size=test_batch_size, shuffle=False, num_workers=2
     )
+    val_loader = torch.utils.data.DataLoader(
+        val_dataset, batch_size=test_batch_size, shuffle=False, num_workers=2
+    )
 
     print("\t# of training samples: %d" % int(len(train_dataset)))
     print("\t# of test samples: %d" % int(len(test_dataset)))
@@ -197,6 +209,7 @@ def load_cifar_dataloaders(
     # get the Giunchiglia train like dictionary
     train = dotdict({"to_eval": train_dataset.get_to_eval()})
     test = dotdict({"to_eval": test_dataset.get_to_eval()})
+    val = dotdict({"to_eval": val_dataset.get_to_eval()})
 
     # count subclasses
     count_subclasses = 0
@@ -231,6 +244,9 @@ def load_cifar_dataloaders(
         "test_loader": test_loader,
         "test_set": test_dataset,
         "test": test,
+        "val_set": val_dataset,
+        "val_loader": val_loader,
+        "val": val,
     }
 
     return dataloaders

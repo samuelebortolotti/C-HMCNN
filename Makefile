@@ -20,8 +20,8 @@ DATASET_FLAGS :=
 # ======= EXPERIMENT ===============
 EXPERIMENT := experiment 
 EXP_NAME := "chmncc"
-EPOCHS := 200
-EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 128 --test-batch-size 128 --device cuda --project chmncc
+EPOCHS := 1
+EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 10 --test-batch-size 10 --device cpu --project chmncc
 
 # ======= VISUALIZE ================
 VISUALIZE:= visualize

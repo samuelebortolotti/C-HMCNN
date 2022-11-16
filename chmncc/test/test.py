@@ -48,7 +48,7 @@ def test_step(
             inputs = inputs.to(device)
             targets = targets.to(device)
             # forward pass
-            outputs = net(inputs.float())
+            outputs = net(inputs.float(), device=device)
             # moving elements to cpu
             outputs = outputs.to("cpu")
             targets = targets.to("cpu")

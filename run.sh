@@ -4,6 +4,7 @@
 
 #SBATCH -p chaos 
 #SBATCH -A shared-sml-staff
+#SBATCH --signal=B:SIGTERM@120
 #SBATCH --gres gpu:1
 #SBATCH -t 01:00:00
 #SBATCH --mem=10G
@@ -45,5 +46,9 @@ cd "/nfs/data_chaos/sbortolotti/code/C-HMCNN"
 # load the right python environment
 python="/nfs/data_chaos/sbortolotti/pkgs/miniconda/envs/chmncc/bin/python"
 
+trap "trap ' ' TERM INT; kill -TERM 0; wait" TERM INT
+
 # run the experiment
 ${python} -m chmncc  experiment  "chmncc" 200 --learning-rate 0.001 --batch-size 128 --test-batch-size 128 --device cuda --project chmncc
+
+wait

@@ -32,7 +32,7 @@ from chmncc.utils.utils import (
     get_lr,
 )
 from chmncc.networks.ConstrainedFFNN import initializeConstrainedFFNNModel
-from chmncc.networks import LeNet5
+from chmncc.networks import LeNet5, ResNet18
 from chmncc.train import training_step
 from chmncc.optimizers import get_adam_optimizer
 from chmncc.test import test_step
@@ -54,7 +54,7 @@ class TerminationError(Exception):
         super().__init__("External signal received: forcing termination")
 
 
-def __handle_signal(signum, frame):
+def __handle_signal(signum: int, frame):
     raise TerminationError()
 
 
@@ -163,6 +163,7 @@ def c_hmcnn(
     resume: bool = False,
     device: str = "cuda",
     batch_size: int = 128,
+    test_batch_size: int = 128,
     learning_rate: float = 0.01,
     weight_decay: float = 1e-5,
     epochs: int = 30,
@@ -176,14 +177,16 @@ def c_hmcnn(
     Function which performs both training and test step
 
     - resume [bool] = False: by default do not resume last training
-    - device [str] = "cuda": move tensors on GPU
+    - device [str] = "cuda": move tensors on GPU, could be also "cpu"
     - batch_size [int] = 128
+    - test_batch_size [int] = 128
     - learning_rate [float] = 0.01
     - epochs [int] = 30
     - weight_decay [float] = 1e-5
     - save_every_epochs [int] = 10: save a checkpoint every 10 epoch
     - dry [bool] = False: by default save weights
-    - set_wandb [bool] = False
+    - set_wandb [bool] = False,
+    - dataset [str] = "", taken for retrocompatibility with Giunchiglia et al approach
 
     Args:
 
@@ -191,9 +194,10 @@ def c_hmcnn(
     - resume [bool] = False: whether to resume a checkpoint
     - device [str] = "cuda": where to load the tensors
     - batch_size [int] = 128: default batch size
+    - test_batch_size [int] = 128: default batch size for the test set
     - learning_rate [float] = 0.01: initial learning rate
-    - epochs [int] = 30: number of epochs
     - weight_decay [float] = 1e-5: weigt decay
+    - epochs [int] = 30: number of epochs
     - save_every_epochs: int = 10: save a checkpoint every `save_every_epochs` epoch
     - dry [bool] = False: whether to do not save weights
     - set_wandb [bool] = False: whether to log values on wandb
@@ -202,6 +206,7 @@ def c_hmcnn(
     """
     # create the models directory
     model_folder = os.environ["MODELS"]
+    # create folders for the project
     os.makedirs(model_folder, exist_ok=True)
     os.makedirs("plots", exist_ok=True)
 
@@ -228,19 +233,19 @@ def c_hmcnn(
         dataloaders = load_old_dataloaders(dataset, batch_size, device=device)
     else:
         dataloaders = load_cifar_dataloaders(
-            img_size=32,
-            img_depth=3,
+            img_size=32, # the size is squared
+            img_depth=3, # number of channels
             csv_path="./dataset/train.csv",
             test_csv_path="./dataset/test_reduced.csv",
             val_csv_path="./dataset/val.csv",
             cifar_metadata="./dataset/pickle_files/meta",
-            batch_size=10,
-            test_batch_size=10,
-            normalize=True,
+            batch_size=batch_size,
+            test_batch_size=test_batch_size,
+            normalize=True, # nrmalize the dataset
         )
 
     # network initialization
-    if old_method:
+    if old_method: # Giunchiglia et al method
         data = dataset.split("_")[0]  # first part is the data
         ontology = dataset.split("_")[1]  # second part is the ontology
 
@@ -263,9 +268,12 @@ def c_hmcnn(
         )
     else:
         # CNN
-        net = LeNet5(
-            dataloaders["train_R"], 121
-        )  # 20 superclasses, 100 subclasses + the root
+        #  net = LeNet5(
+        #      dataloaders["train_R"], 121
+        #  )  # 20 superclasses, 100 subclasses + the root
+        net = ResNet18(
+              dataloaders["train_R"], 121, True
+        )
 
     net = net.to(device)
 

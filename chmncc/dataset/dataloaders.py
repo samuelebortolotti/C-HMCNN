@@ -87,19 +87,19 @@ def get_mean_std(
 
 def load_cifar_dataloaders(
     img_size: int,
-    img_depth,
-    csv_path,
-    test_csv_path,
-    val_csv_path,
-    cifar_metadata,
+    img_depth: int,
+    csv_path: str,
+    test_csv_path: str,
+    val_csv_path: str,
+    cifar_metadata: str,
     batch_size: int = 128,
     test_batch_size: int = 256,
     mean: List[float] = [
-        0.5071,
+        0.5074,
         0.4867,
-        0.4408,
+        0.4411,
     ],
-    stdev: List[float] = [0.2675, 0.2565, 0.2761],
+    stdev: List[float] = [0.2011, 0.1987, 0.2025],
     additional_transformations: Optional[List[Any]] = None,
     normalize: bool = True,
 ) -> Dict[str, torch.utils.data.DataLoader]:
@@ -137,10 +137,10 @@ def load_cifar_dataloaders(
     transform_train = [
         torchvision.transforms.Resize(img_size),
         torchvision.transforms.RandomHorizontalFlip(),
-        torchvision.transforms.RandomPerspective(distortion_scale=0.2),
-        torchvision.transforms.ColorJitter(
-            brightness=0.5, contrast=0.5, saturation=0.5
-        ),
+        #  torchvision.transforms.RandomPerspective(distortion_scale=0.2),
+        #  torchvision.transforms.ColorJitter(
+        #      brightness=0.5, contrast=0.5, saturation=0.5
+        #  ),
         torchvision.transforms.ToTensor(),
     ]
 
@@ -194,13 +194,13 @@ def load_cifar_dataloaders(
         train_dataset,
         batch_size=batch_size,
         shuffle=True,
-        num_workers=2,
+        num_workers=4,
     )
     test_loader = torch.utils.data.DataLoader(
-        test_dataset, batch_size=test_batch_size, shuffle=False, num_workers=2
+        test_dataset, batch_size=test_batch_size, shuffle=False, num_workers=4
     )
     val_loader = torch.utils.data.DataLoader(
-        val_dataset, batch_size=test_batch_size, shuffle=False, num_workers=2
+        val_dataset, batch_size=test_batch_size, shuffle=False, num_workers=4
     )
 
     print("\t# of training samples: %d" % int(len(train_dataset)))

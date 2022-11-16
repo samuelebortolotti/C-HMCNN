@@ -48,7 +48,7 @@ class LeNet5(nn.Module):
             nn.Sigmoid(),
         )
 
-    def forward(self, x: torch.Tensor, device: str = 'cpu') -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""
         Forward method
         Args:
@@ -64,9 +64,7 @@ class LeNet5(nn.Module):
         if self.training:
             constrained_out = x
         else:
-            x_copy = x.to('cpu')
             constrained_out = get_constr_out(
-                x_copy, self.R
+                x, self.R
             )  # in validation and test: herarchy set
-            constrained_out = constrained_out.to(device)
         return constrained_out

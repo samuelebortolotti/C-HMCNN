@@ -92,6 +92,7 @@ def load_cifar_dataloaders(
     test_csv_path: str,
     val_csv_path: str,
     cifar_metadata: str,
+    device: str,
     batch_size: int = 128,
     test_batch_size: int = 256,
     mean: List[float] = [
@@ -234,6 +235,7 @@ def load_cifar_dataloaders(
     R = torch.tensor(R)
     # Transpose to get the descendants for each node
     R = R.transpose(1, 0)
+    R = R.unsqueeze(0).to(device)
 
     # dictionary of loaders
     dataloaders = {

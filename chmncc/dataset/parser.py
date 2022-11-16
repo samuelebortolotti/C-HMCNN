@@ -36,6 +36,19 @@ class arff_data:
 
 
 def parse_arff(arff_file, is_GO=False, is_test=False):
+    """Parse the arff data
+
+    Args:
+        arf_file [string]: arff file
+        isGO [boolean]: whether it is the GO dataset
+        is_test [boolean]: whether the dataset is test
+
+    Return:
+        X [torch.tensor] data instances
+        Y [torch.tensor] labels
+        R [torch.tensor[torch.tensor]] adjacency
+        g [nx.DiGraph] graph
+    """
     with open(arff_file) as f:
         read_data = False
         X = []
@@ -55,19 +68,24 @@ def parse_arff(arff_file, is_GO=False, is_test=False):
                             g.add_edge(terms[1], terms[0])
                         else:
                             if len(terms) == 1:
+                                # add edge from root to term
                                 g.add_edge(terms[0], "root")
                             else:
+                                # create the children terms
                                 for i in range(2, len(terms) + 1):
                                     g.add_edge(
                                         ".".join(terms[:i]), ".".join(terms[: i - 1])
                                     )
+                    # sort the nodes with respect to the distances of the root
                     nodes = sorted(
                         g.nodes(),
                         key=lambda x: (nx.shortest_path_length(g, x, "root"), x)
                         if is_GO
                         else (len(x.split(".")), x),
                     )
+                    # get the nodes list
                     nodes_idx = dict(zip(nodes, range(len(nodes))))
+                    # reverse
                     g_t = g.reverse()
                 else:
                     _, f_name, f_type = l.split()
@@ -109,6 +127,7 @@ def parse_arff(arff_file, is_GO=False, is_test=False):
                     )
                 )
 
+                # build the labels
                 for t in lab.split("@"):
                     y_[
                         [
@@ -125,10 +144,33 @@ def parse_arff(arff_file, is_GO=False, is_test=False):
 
 
 def initialize_dataset(name, datasets):
+    """Initialize the dataset
+
+    Args:
+        name [str]: name of the dataset to prepare
+        datasets [bool, str, str]: whether the dataset is go (?), the train,
+        validation and test data location
+
+    Returns:
+        train dataset [arff_data]
+        validation dataset [arff_data]
+        test dataset [arff_data]
+    """
     is_GO, train, val, test = datasets[name]
     return arff_data(train, is_GO), arff_data(val, is_GO), arff_data(test, is_GO, True)
 
 
 def initialize_other_dataset(name, datasets):
+    """Initialize the dataset
+
+    Args:
+        name [str]: name of the dataset to prepare
+        datasets [bool, str, str]: whether the dataset is go (?), the train
+        and test data location
+
+    Returns:
+        train dataset [arff_data]
+        test dataset [arff_data]
+    """
     is_GO, train, test = datasets[name]
     return arff_data(train, is_GO), arff_data(test, is_GO, True)

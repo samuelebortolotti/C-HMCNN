@@ -19,3 +19,4 @@ dataset/pickle_files/meta
 wandb
 HMC_data
 .gitignore
+plots

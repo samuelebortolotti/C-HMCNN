@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 from chmncc.utils import get_constr_out
 from chmncc.config.old_config import hidden_dims, input_dims, output_dims
 from typing import Dict
@@ -8,14 +9,24 @@ def initializeConstrainedFFNNModel(
     dataset_name: str,
     data: str,
     ontology: str,
-    R,
+    R: torch.tensor,
     hyperparams: Dict[str, float],
 ):
+    """Initialize the ConstrainedFFNNModel as described in the
+    Giunchiglia et al paper
+
+    Args:
+        dataset_name [str]: name of the dataset (data + ontology)
+        data [str]: name of the data
+        ontology [str]: name of the ontology
+        R [torch.tensor]: adjacency matrix
+    """
     if "GO" in dataset_name:
         num_to_skip = 4
     else:
         num_to_skip = 1
 
+    # return the model
     return ConstrainedFFNNModel(
         input_dims[data],
         hidden_dims[ontology][data],

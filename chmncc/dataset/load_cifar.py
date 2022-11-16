@@ -81,6 +81,7 @@ class LoadDataset(Dataset):
             reader = csv.reader(f)
             data = list(reader)
 
+        #  return data[:3]
         return data
 
     def get_to_eval(self):

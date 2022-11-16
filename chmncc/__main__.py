@@ -11,6 +11,7 @@ import argparse
 import random
 import torch
 import tqdm
+import cv2 as cv
 import torch.nn as nn
 from argparse import Namespace
 from argparse import _SubParsersAction as Subparser
@@ -233,19 +234,20 @@ def c_hmcnn(
         dataloaders = load_old_dataloaders(dataset, batch_size, device=device)
     else:
         dataloaders = load_cifar_dataloaders(
-            img_size=32, # the size is squared
-            img_depth=3, # number of channels
+            img_size=32,  # the size is squared
+            img_depth=3,  # number of channels
+            device=device,
             csv_path="./dataset/train.csv",
             test_csv_path="./dataset/test_reduced.csv",
             val_csv_path="./dataset/val.csv",
             cifar_metadata="./dataset/pickle_files/meta",
             batch_size=batch_size,
             test_batch_size=test_batch_size,
-            normalize=True, # nrmalize the dataset
+            normalize=True,  # nrmalize the dataset
         )
 
     # network initialization
-    if old_method: # Giunchiglia et al method
+    if old_method:  # Giunchiglia et al method
         data = dataset.split("_")[0]  # first part is the data
         ontology = dataset.split("_")[1]  # second part is the ontology
 
@@ -272,9 +274,10 @@ def c_hmcnn(
         #      dataloaders["train_R"], 121
         #  )  # 20 superclasses, 100 subclasses + the root
         net = ResNet18(
-              dataloaders["train_R"], 121, True
-        )
+            dataloaders["train_R"], 121, True
+        )  # 20 superclasses, 100 subclasses + the root
 
+    # move the network
     net = net.to(device)
 
     print("#> Model")
@@ -311,8 +314,6 @@ def c_hmcnn(
             train_loader=iter(train_loader),
             optimizer=optimizer,
             cost_function=cost_function,
-            epoch=e,
-            writer=writer,
             title="Training",
             device=device,
         )
@@ -326,7 +327,6 @@ def c_hmcnn(
             net=net,
             test_loader=iter(val_loader),
             cost_function=cost_function,
-            writer=writer,
             title="Validation",
             test=dataloaders["val"],
             device=device,
@@ -386,12 +386,12 @@ def c_hmcnn(
         # test value
         print("\nEpoch: {:d}".format(e + 1))
         print(
-            "\t Training loss {:.5f}, Training accuracy {:.2f}".format(
+            "\t Training loss {:.5f}, Training accuracy {:.2f}%".format(
                 train_loss, train_accuracy
             )
         )
         print(
-            "\t Validation loss {:.5f}, Validation accuracy {:.2f}, Validation score {:.2f}".format(
+            "\t Validation loss {:.5f}, Validation accuracy {:.2f}%, Validation score {:.2f}%".format(
                 val_loss, val_accuracy, val_score
             )
         )
@@ -403,11 +403,11 @@ def c_hmcnn(
     # Test on best weights
     load_best_weights(net, model_folder)
 
+    # test set
     test_loss, test_accuracy, test_score = test_step(
         net=net,
         test_loader=iter(test_loader),
         cost_function=cost_function,
-        writer=writer,
         title="Test",
         test=dataloaders["test"],
         device=device,
@@ -426,7 +426,7 @@ def c_hmcnn(
         )
 
     print(
-        "\n\t Test loss {:.5f}, Test accuracy {:.2f}, Test score {:.2f}".format(
+        "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test score {:.2f}%".format(
             test_loss, test_accuracy, test_score
         )
     )
@@ -446,10 +446,11 @@ def c_hmcnn(
 
     grd = output_gradients(single_el, preds)[0]
 
-    print("\nGradient with respect to the input: {}".format(grd))
+    print("Gradient with respect to the input: {}".format(grd))
     if not old_method:
         # permute to show
         grd = grd.permute(1, 2, 0)
+        grd = cv.normalize(grd, grd, 0, 255, cv.NORM_MINMAX)
         fig = plt.figure()
         plt.imshow(grd)
         plt.title("Gradient with respect to the input")
@@ -464,6 +465,7 @@ def c_hmcnn(
         # permute to show
         i_gradient = i_gradient.permute(1, 2, 0)
         fig = plt.figure()
+        i_gradient = cv.normalize(i_gradient, i_gradient, 0, 255, cv.NORM_MINMAX)
         plt.imshow(i_gradient)
         plt.title("Integrated Gradient with respect to the input")
         fig.savefig(

@@ -25,10 +25,9 @@ def test_step(
     net: nn.Module,
     test_loader: torch.utils.data.DataLoader,
     cost_function,
-    writer: torch.utils.tensorboard.SummaryWriter,
     title: str,
     test,
-    device="cuda",
+    device: str = "gpu",
 ) -> Tuple[float, float, float]:
     r""" """
     total = 0.0
@@ -48,11 +47,8 @@ def test_step(
             inputs = inputs.to(device)
             targets = targets.to(device)
             # forward pass
-            outputs = net(inputs.float(), device=device)
-            # moving elements to cpu
-            outputs = outputs.to("cpu")
-            targets = targets.to("cpu")
-            inputs = inputs.to("cpu")
+            outputs = net(inputs.float())
+
             # predicted
             predicted = outputs.data > 0.5
             # total
@@ -90,4 +86,8 @@ def test_step(
         y_test[:, test.to_eval], constr_test.data[:, test.to_eval], average="micro"
     )
 
-    return cumulative_loss / len(test_loader), cumulative_accuracy / total, score
+    return (
+        cumulative_loss / len(test_loader),
+        cumulative_accuracy / total * 100,
+        score * 100,
+    )

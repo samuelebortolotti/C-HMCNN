@@ -12,10 +12,8 @@ def training_step(
     train_loader: torch.utils.data.DataLoader,
     train,
     R: torch.tensor,
-    writer,
     optimizer: torch.optim.Optimizer,
     cost_function,
-    epoch: int,
     title: str,
     device: str = "cuda",
 ) -> Tuple[float, float]:
@@ -43,24 +41,20 @@ def training_step(
         # output
         outputs = net(inputs.float())
 
-        # moving elements to cpu
-        outputs = outputs.to("cpu")
-        label = label.to("cpu")
-        inputs = inputs.to("cpu")
-
         # general prediction loss computation
         # MCLoss (their loss)
         constr_output = get_constr_out(outputs, R)
         train_output = label * outputs.double()
         train_output = get_constr_out(train_output, R)
         train_output = (1 - label) * constr_output.double() + label * train_output
+        # get the loss masking the prediction on the root -> confunder
         loss = cost_function(train_output[:, train.to_eval], label[:, train.to_eval])
         cumulative_loss += loss.item()
 
         predicted = constr_output.data > 0.5
 
         # fetch prediction and loss value
-        total_train += inputs.shape[0] * inputs.shape[1]
+        total_train += label.shape[0] * label.shape[1]
 
         # compute training accuracy
         cumulative_accuracy += (predicted == label.byte()).sum().item()
@@ -70,4 +64,4 @@ def training_step(
         # optimizer
         optimizer.step()
 
-    return cumulative_loss / len(train_loader), cumulative_accuracy / total_train
+    return cumulative_loss / len(train_loader), cumulative_accuracy / total_train * 100

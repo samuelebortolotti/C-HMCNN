@@ -9,11 +9,9 @@ def get_adam_optimizer(
     ADAM optimizer
 
     Args:
-
-    - net [nn.Module]: network architecture
-    - lr [float]: learning rate
-
+        net [nn.Module]: network architecture
+        lr [float]: learning rate
     Returns:
-    - optimizer [nn.Optimizer]
+        optimizer [nn.Optimizer]
     """
     return torch.optim.Adam(net.parameters(), lr=lr, weight_decay=weight_decay)

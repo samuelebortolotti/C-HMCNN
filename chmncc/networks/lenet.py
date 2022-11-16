@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torch
 from chmncc.utils import get_constr_out
-from torch.nn.modules.activation import Sigmoid
 
 
 class Flatten(nn.Module):
@@ -18,15 +17,16 @@ class LeNet5(nn.Module):
 
     def __init__(
         self,
-        R: torch.tensor,
+        R: torch.Tensor,
         num_out_logits: int = 20,
     ) -> None:
         r"""
         Initialize the LeNet5 model
         Default:
-        - num_out_logits [int] = 20
+            num_out_logits [int] = 20
         Args:
-        - num_out_logits [int]: number of output logits
+            R [torch.Tensor]: adjacency matrix
+            num_out_logits [int]: number of output logits
         """
         super().__init__()
         self.R = R  # matrix of the hierarchy
@@ -52,9 +52,9 @@ class LeNet5(nn.Module):
         r"""
         Forward method
         Args:
-            - x [torch.Tensor]: source sample
+            x [torch.Tensor]: source sample
         Returns:
-            - constrained_out [torch.Tensor]: constrained_out
+            constrained_out [torch.Tensor]: constrained_out
         """
         x = self.features(x)
         x = self.flatten(x)

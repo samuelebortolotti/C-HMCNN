@@ -89,11 +89,13 @@ def main(args: Namespace) -> None:
         img_size=32,
         img_depth=3,
         csv_path="./dataset/train.csv",
-        test_csv_path="./dataset/train.csv",
+        test_csv_path="./dataset/test_reduced.csv",
+        val_csv_path="./dataset/val.csv",
         cifar_metadata="./dataset/pickle_files/meta",
         batch_size=10,
         test_batch_size=10,
         normalize=True,
+        device="cpu",
     )
 
     # visualize

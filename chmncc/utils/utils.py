@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import os
 import numpy as np
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Optional
 from torch.utils import tensorboard
 
 ################### Dotdict ##################
@@ -19,18 +19,16 @@ class dotdict(dict):
 ################### Get Lr  ##################
 
 
-def get_lr(optimizer: torch.optim.Optimizer) -> float:
+def get_lr(optimizer: torch.optim.Optimizer) -> Optional[float]:
     r"""
     Function which returns the learning rate value
     used in the optimizer
 
     Args:
-
-    - optimizer [torch.optim.Optimizer]: optimizer
+        optimizer [torch.optim.Optimizer]: optimizer
 
     Returns:
-
-    - lr [float]: learning rate
+        lr [float]: learning rate
     """
     for param_group in optimizer.param_groups:
         return param_group["lr"]
@@ -50,10 +48,9 @@ def log_images(
     debug sessions.
 
     Args:
-
-    - writer [tensorboard.SummaryWriter]: summary writer
-    - img [torch.Tensor]: image to log
-    - title [str]: title of the log
+        writer [tensorboard.SummaryWriter]: summary writer
+        img [torch.Tensor]: image to log
+        title [str]: title of the log
     """
     try:
         # Log training images in a row of 8
@@ -78,12 +75,11 @@ def log_values(
     a SummaryWriter
 
     Args:
-
-    - writer [tensorboard.SummaryWriter]: summary writer
-    - step [int]: current step
-    - loss [float]: current loss
-    - accuracy [float]: accuracy
-    - prefix [str]: log prefix
+        writer [tensorboard.SummaryWriter]: summary writer
+        step [int]: current step
+        loss [float]: current loss
+        accuracy [float]: accuracy
+        prefix [str]: log prefix
     """
     writer.add_scalar(f"{prefix}/loss", loss, step)
     writer.add_scalar(f"{prefix}/accuracy", accuracy, step)
@@ -98,9 +94,8 @@ def load_best_weights(net: nn.Module, exp_name: str) -> None:
     looks for the `{exp_name}/best.pth` and loads it
 
     Args:
-
-    - net [nn.Module]: network architecture
-    - exp_name [str]: folder name
+        net [nn.Module]: network architecture
+        exp_name [str]: folder name
     """
     best_file = os.path.join(exp_name, "best.pth")
     if os.path.isfile(best_file):
@@ -124,16 +119,14 @@ def resume_training(
     If the resume_training flag is set to false, the parameters are set to the default ones
 
     Args:
-
-    - model [nn.Module]: network architecture
-    - experiment_name [str]: where the weight file is located
-    - optimizer [torch.optim.Optimizer]: optimizer
+        model [nn.Module]: network architecture
+        experiment_name [str]: where the weight file is located
+        optimizer [torch.optim.Optimizer]: optimizer
 
     Returns:
-
-    - training_params [Dict]: training parameters
-    - val_params [Dict]: validation parameters [step, best_loss]
-    - start_epoch [int]: start epoch number
+        training_params [Dict]: training parameters
+        val_params [Dict]: validation parameters [step, best_loss]
+        start_epoch [int]: start epoch number
     """
     if resume_training:
         print(f"#> Recovering the last paramters at {experiment_name}/ckpt.pth")
@@ -164,7 +157,8 @@ def resume_training(
         start_epoch = 0
         training_params = {}
         val_params = {}
-        val_params["best_loss"] = np.inf
+        # worst possible auc score
+        val_params["best_score"] = -np.inf
 
     return training_params, val_params, start_epoch
 
@@ -172,9 +166,9 @@ def resume_training(
 ########## GET CONSTRAINED OUTPUT ######################:w
 
 
-def get_constr_out(x: torch.tensor, R: torch.tensor):
+def get_constr_out(x: torch.Tensor, R: torch.Tensor) -> torch.Tensor:
     """Given the output of the neural network x returns the output of MCM given the hierarchy constraint
-    expressed in the matrix R
+    expressed in the matrix R. This is employed only during the evaluation/test phase of the network
 
     Args:
         x [torch.tensor]: output of the neural network

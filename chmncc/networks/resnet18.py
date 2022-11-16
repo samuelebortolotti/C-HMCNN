@@ -11,16 +11,17 @@ class ResNet18(nn.Module):
     """
 
     def __init__(
-        self, R: torch.tensor, num_classes: int = 20, pretrained: bool = False
+        self, R: torch.Tensor, num_classes: int = 20, pretrained: bool = False
     ) -> None:
         r"""
         Initialize the basic ResNet18 architecture
         Default:
-        - num_classes [int] = 20
-        - pretrained [bool] = False
+            num_classes [int] = 20
+            pretrained [bool] = False
         Args:
-        - num_classes [int]: number of classes [used in the last layer]
-        - pretrained [bool]: whether to pretrain the model or not
+            R [torch.Tensor]: adjacency matrix
+            num_classes [int]: number of classes [used in the last layer]
+            pretrained [bool]: whether to pretrain the model or not
         """
         super(ResNet18, self).__init__()
         self.R = R  # matrix of the hierarchy

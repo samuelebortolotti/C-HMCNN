@@ -21,15 +21,25 @@ class Preprocess_Cifar100:
 
     def __init__(
         self,
-        meta_filename="./dataset/pickle_files/meta",
-        train_file="./dataset/pickle_files/train",
-        test_file="./dataset/pickle_files/test",
-        image_write_dir="./dataset/images/",
-        csv_write_dir="./dataset/",
-        train_csv_filename="train.csv",
-        test_csv_filename="test.csv",
+        meta_filename: str = "./dataset/pickle_files/meta",
+        train_file: str = "./dataset/pickle_files/train",
+        test_file: str = "./dataset/pickle_files/test",
+        image_write_dir: str = "./dataset/images/",
+        csv_write_dir: str = "./dataset/",
+        train_csv_filename: str = "train.csv",
+        test_csv_filename: str = "test.csv",
     ):
-        """Init params."""
+        """Init params.
+
+        Args:
+            meta_filename [str]: meta file
+            train_file [str]: train file
+            test_file [str]: test file
+            image_write_dir [str]: directory where to write the directory
+            csv_write_dir [str]: csv file directory
+            train_csv_filename [str]: train csv file
+            test_csv_filename [str]: test csv file name
+        """
         self.meta_filename = meta_filename
         self.train_file = train_file
         self.test_file = test_file
@@ -48,8 +58,11 @@ class Preprocess_Cifar100:
             metafile=self.meta_filename
         )
 
-    def process_data(self, train=True):
-        """Read the train/test data and write the image array and its corresponding label into the disk and a csv file respectively."""
+    def process_data(self, train: bool = True) -> None:
+        """Read the train/test data and write the image array and its corresponding label into the disk and a csv file respectively.
+        Args:
+            train [bool]: whether the data is for training
+        """
 
         if train:
             pickle_file = unpickle(self.train_file)

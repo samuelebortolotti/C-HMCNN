@@ -10,8 +10,9 @@ import torch
 import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
-from chmncc.config.cifar_config import hierarchy
+from chmncc.config import hierarchy
 from chmncc.utils import read_meta
+from typing import Any, Dict, Tuple, List
 import networkx as nx
 
 # which node of the hierarchy to skip (root is only a confound)
@@ -23,14 +24,23 @@ class LoadDataset(Dataset):
 
     def __init__(
         self,
-        csv_path,
-        cifar_metafile,
-        image_size=32,
-        image_depth=3,
-        return_label=True,
-        transform=None,
+        csv_path: str,
+        cifar_metafile: str,
+        image_size: int = 32,
+        image_depth: int = 3,
+        return_label: bool = True,
+        transform: Any = None,
     ):
-        """Init param."""
+        """Init param
+
+        Args:
+            csv_path [str]: cifar CSV
+            cifar_metafile [str]: meta file of CIFAR
+            image_size [int] = 32: size of the image (same width and height)
+            image_depth [int] = 3: number of channels of the images
+            return_label [bool] = True: whether to return labels
+            transform [Any] = None: torchvision transformation
+        """
 
         assert os.path.exists(csv_path), "The given csv path must be valid!"
 
@@ -58,7 +68,28 @@ class LoadDataset(Dataset):
             [t not in to_skip for t in self.nodes], dtype=torch.bool
         )
 
-    def _initializeHierarchicalGraph(self):
+    def _initializeHierarchicalGraph(
+        self,
+    ) -> Tuple[
+        nx.classes.reportviews.NodeView,
+        Dict[nx.classes.reportviews.NodeView, int],
+        np.ndarray,
+    ]:
+        """Init param
+
+        Args:
+            csv_path [str]: cifar CSV
+            cifar_metafile [str]: meta file of CIFAR
+            image_size [int] = 32: size of the image (same width and height)
+            image_depth [int] = 3: number of channels of the images
+            return_label [bool] = True: whether to return labels
+            transform [Any] = None: torchvision transformation
+
+        Returns:
+            nodes [nx.classes.reportviews.NodeView]: nodes of the graph
+            nodes_idx [Dict[nx.classes.reportviews.NodeView, int]]: dictionary node - index
+            matrix [np.ndarray]: A - matrix representation of the graph
+        """
         # prepare the hierarchy
         for img_class in hierarchy:
             self.g.add_edge(img_class, "root")
@@ -74,28 +105,49 @@ class LoadDataset(Dataset):
         nodes_idx = dict(zip(nodes, range(len(nodes))))
         return nodes, nodes_idx, np.array(nx.to_numpy_matrix(self.g, nodelist=nodes))
 
-    def csv_to_list(self):
-        """Reads the path of the file and its corresponding label"""
+    def csv_to_list(self) -> List[List[str]]:
+        """Reads the path of the file and its corresponding label
+        Returns:
+            csv file entries [List[List[str]]]
+        """
 
         with open(self.csv_path, newline="") as f:
             reader = csv.reader(f)
             data = list(reader)
 
-        #  return data[:3]
         return data
 
-    def get_to_eval(self):
+    def get_to_eval(self) -> torch.Tensor:
+        """Return the entries to eval in a form of a boolean tensor mask [all except to_skip]
+        Return:
+            to_eval [torch.Tensor]
+        """
         return self.to_eval
 
-    def get_A(self):
+    def get_A(self) -> np.ndarray:
+        """Get A property
+        Returns:
+            matrix A - matrix representation of the graph [np.ndarray]
+        """
         return self.A
 
-    def __len__(self):
-        """Returns the total amount of data."""
+    def __len__(self) -> int:
+        """Returns the total amount of data.
+        Returns:
+            number of dataset entries [int]
+        """
         return len(self.data_list)
 
-    def __getitem__(self, idx):
-        """Returns a single item."""
+    def __getitem__(self, idx: int) -> Tuple[np.ndarray, np.ndarray]:
+        """Returns a single item.
+        Args:
+            idx [int]: index of the entry
+        Returns:
+            image [np.ndarray]: image retrieved
+            hierarchical_label [np.ndarray]: hierarchical label. This label is basically a 0/1 vector
+            with 1s corresponding to the indexes of the nodes which should be predicted. Hence, the dimension
+            should be the same as the output layer of the network
+        """
         image_path, image, superclass, subclass = None, None, None, None
         if self.return_label:
             image_path, superclass, subclass = self.data_list[idx]

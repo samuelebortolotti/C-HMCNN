@@ -18,7 +18,9 @@ from argparse import _SubParsersAction as Subparser
 from argparse import Namespace
 from typing import Any
 from torchsummary import summary
+from torch.utils.tensorboard import SummaryWriter
 import wandb
+import signal
 
 # data folder
 os.environ["DATA_FOLDER"] = "./"
@@ -42,8 +44,6 @@ import chmncc.dataset.preproces_cifar as data
 import chmncc.dataset.visualize_dataset as visualize_data
 from chmncc.config.old_config import lrs, epochss, hidden_dims
 from chmncc.explanations import compute_integrated_gradient, output_gradients
-from torch.utils.tensorboard import SummaryWriter
-import signal
 
 
 class TerminationError(Exception):
@@ -154,6 +154,17 @@ def configure_subparsers(subparsers: Subparser) -> None:
     parser.add_argument(
         "--entity", "-e", type=str, default="samu32", help="wandb entity"
     )
+    parser.add_argument(
+        "--network",
+        "-n",
+        type=str,
+        choices=["lenet", "resnet"],
+        default="lenet",
+        help="CNN architecture",
+    )
+    parser.add_argument(
+        "--pretrained", type=bool, default=False, help="load the pretrained model"
+    )
     parser.add_argument("--wandb", "-wdb", type=bool, default=False, help="wandb")
     # set the main function to run when blob is called from the command line
     parser.set_defaults(func=experiment)
@@ -172,6 +183,8 @@ def c_hmcnn(
     dry: bool = False,
     set_wandb: bool = False,
     dataset: str = "",
+    network: str = "lenet",
+    pretrained: bool = False,
     **kwargs: Any,
 ) -> None:
     r"""
@@ -188,6 +201,8 @@ def c_hmcnn(
     - dry [bool] = False: by default save weights
     - set_wandb [bool] = False,
     - dataset [str] = "", taken for retrocompatibility with Giunchiglia et al approach
+    - network [str] = "lenet"
+    - pretrained [bool] = False
 
     Args:
 
@@ -203,13 +218,16 @@ def c_hmcnn(
     - dry [bool] = False: whether to do not save weights
     - set_wandb [bool] = False: whether to log values on wandb
     - dataset [str] = str: dataset name: the dataset is specified -> old approach
+    - network [str] = "lenet": which arachitecture to employ
+    - pretrained [bool] = False, whether the network is pretrained [Note: lenet is not pretrained]
     - \*\*kwargs [Any]: additional key-value arguments
     """
+
     # create the models directory
     model_folder = os.environ["MODELS"]
     # create folders for the project
     os.makedirs(model_folder, exist_ok=True)
-    os.makedirs("plots", exist_ok=True)
+    os.makedirs(os.environ["IMAGE_FOLDER"], exist_ok=True)
 
     log_directory = "runs/exp_{}".format(exp_name)
 
@@ -226,6 +244,7 @@ def c_hmcnn(
     metrics = {
         "loss": {"train": 0.0, "val": 0.0, "test": 0.0},
         "acc": {"train": 0.0, "val": 0.0, "test": 0.0},
+        "score": {"val": 0.0, "test": 0.0},
     }
 
     # get dataloaders
@@ -270,12 +289,14 @@ def c_hmcnn(
         )
     else:
         # CNN
-        #  net = LeNet5(
-        #      dataloaders["train_R"], 121
-        #  )  # 20 superclasses, 100 subclasses + the root
-        net = ResNet18(
-            dataloaders["train_R"], 121, True
-        )  # 20 superclasses, 100 subclasses + the root
+        if network == "lenet":
+            net = LeNet5(
+                dataloaders["train_R"], 121
+            )  # 20 superclasses, 100 subclasses + the root
+        else:
+            net = ResNet18(
+                dataloaders["train_R"], 121, pretrained
+            )  # 20 superclasses, 100 subclasses + the root
 
     # move the network
     net = net.to(device)
@@ -335,13 +356,14 @@ def c_hmcnn(
         # save the values in the metrics
         metrics["loss"]["val"] = val_loss
         metrics["acc"]["val"] = val_accuracy
+        metrics["score"]["val"] = train_accuracy
 
         # save model and checkpoint
         training_params["start_epoch"] = e + 1  # epoch where to start
 
         # check if I have outperformed the best loss in the validation set
-        if val_params["best_loss"] > metrics["loss"]["val"]:
-            val_params["best_loss"] = metrics["loss"]["val"]
+        if val_params["best_score"] < metrics["score"]["val"]:
+            val_params["best_score"] = metrics["score"]["val"]
             # save best weights
             if not dry:
                 torch.save(net.state_dict(), os.path.join(model_folder, "best.pth"))
@@ -450,7 +472,9 @@ def c_hmcnn(
     if not old_method:
         # permute to show
         grd = grd.permute(1, 2, 0)
-        grd = cv.normalize(grd, grd, 0, 255, cv.NORM_MINMAX)
+        grd = grd.numpy()
+        # normalize
+        grd = (grd - np.min(grd)) / (np.max(grd) - np.min(grd))
         fig = plt.figure()
         plt.imshow(grd)
         plt.title("Gradient with respect to the input")
@@ -464,8 +488,11 @@ def c_hmcnn(
     if not old_method:
         # permute to show
         i_gradient = i_gradient.permute(1, 2, 0)
+        i_gradient = i_gradient.numpy()
         fig = plt.figure()
-        i_gradient = cv.normalize(i_gradient, i_gradient, 0, 255, cv.NORM_MINMAX)
+        i_gradient = (i_gradient - np.min(i_gradient)) / (
+            np.max(i_gradient) - np.min(i_gradient)
+        )
         plt.imshow(i_gradient)
         plt.title("Integrated Gradient with respect to the input")
         fig.savefig(

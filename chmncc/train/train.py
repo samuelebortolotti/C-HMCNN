@@ -1,23 +1,40 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+from chmncc.utils import dotdict
 import numpy as np
 from typing import Tuple
 import tqdm
-import torch.nn.functional as F
 from chmncc.utils import get_constr_out
 
 
 def training_step(
     net: nn.Module,
     train_loader: torch.utils.data.DataLoader,
-    train,
-    R: torch.tensor,
+    train: dotdict,
+    R: torch.Tensor,
     optimizer: torch.optim.Optimizer,
-    cost_function,
+    cost_function: torch.nn.modules.loss.BCELoss,
     title: str,
     device: str = "cuda",
 ) -> Tuple[float, float]:
-    r""""""
+    """Training step of the network. It works both for our approach and for the one of
+    Giunchiglia et al.
+
+    Args:
+        net [nn.Module] network on device
+        train_loader [torch.utils.data.DataLoader] training data loader
+        train [dotdict] training set dictionary
+        R [torch.Tensor] adjency matrix
+        optimizer [torch.Tensor] adjency matrix
+        cost_function [torch.nn.modules.loss.BCELoss] Binary Cross Entropy loss
+        title [str] title of the experiment
+        device [str]: on which device to run the experiment [default: cuda]
+
+    Returns:
+        cumulative loss [float]
+        accuracy [float] in percentange
+    """
     total_train = 0.0
     cumulative_loss = 0.0
     cumulative_accuracy = 0.0

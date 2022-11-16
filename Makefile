@@ -132,8 +132,7 @@ install-dev:
 
 experiment:
 	@$(ECHO) '$(BLUE)Run the experiment..$(NONE)'
-	echo "$PYTHON"
-	$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(EXPERIMENT) $(EXP_NAME) $(EPOCHS) $(EXPERIMENT_FLAGS)
+	@$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(EXPERIMENT) $(EXP_NAME) $(EPOCHS) $(EXPERIMENT_FLAGS)
 	@$(ECHO) '$(BLUE)Done$(NONE)'
 
 dataset:

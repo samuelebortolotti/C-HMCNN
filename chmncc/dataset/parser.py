@@ -4,9 +4,11 @@ This code was adapted from https://github.com/lucamasera/AWX
 """
 
 import numpy as np
+import torch
 import networkx as nx
 import keras
 from itertools import chain
+from typing import Tuple, Dict, Tuple
 
 
 # Skip the root nodes
@@ -35,18 +37,20 @@ class arff_data:
             self.X[i, j] = m[j]
 
 
-def parse_arff(arff_file, is_GO=False, is_test=False):
+def parse_arff(
+    arff_file: str, is_GO=False, is_test=False
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, nx.DiGraph]:
     """Parse the arff data
 
     Args:
-        arf_file [string]: arff file
-        isGO [boolean]: whether it is the GO dataset
-        is_test [boolean]: whether the dataset is test
+        arf_file [str]: arff file
+        isGO [bool]: whether it is the GO dataset
+        is_test [bool]: whether the dataset is test
 
     Return:
-        X [torch.tensor] data instances
-        Y [torch.tensor] labels
-        R [torch.tensor[torch.tensor]] adjacency
+        X [torch.Tensor] data instances
+        Y [torch.Tensor] labels
+        R [torch.Tensor[torch.Tensor]] adjacency matrix
         g [nx.DiGraph] graph
     """
     with open(arff_file) as f:
@@ -143,12 +147,14 @@ def parse_arff(arff_file, is_GO=False, is_test=False):
     return X, Y, np.array(nx.to_numpy_matrix(g, nodelist=nodes)), nodes, g
 
 
-def initialize_dataset(name, datasets):
+def initialize_dataset(
+    name: str, datasets: Dict[str, Tuple[bool, str, str, str]]
+) -> Tuple[arff_data, arff_data, arff_data]:
     """Initialize the dataset
 
     Args:
         name [str]: name of the dataset to prepare
-        datasets [bool, str, str]: whether the dataset is go (?), the train,
+        datasets Dict[List[bool, str, str, str]]: whether the dataset is GO, the train,
         validation and test data location
 
     Returns:
@@ -160,7 +166,9 @@ def initialize_dataset(name, datasets):
     return arff_data(train, is_GO), arff_data(val, is_GO), arff_data(test, is_GO, True)
 
 
-def initialize_other_dataset(name, datasets):
+def initialize_other_dataset(
+    name: str, datasets: Dict[str, Tuple[bool, str, str]]
+) -> Tuple[arff_data, arff_data]:
     """Initialize the dataset
 
     Args:

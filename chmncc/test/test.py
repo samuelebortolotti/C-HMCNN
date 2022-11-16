@@ -3,6 +3,7 @@ import torch.nn as nn
 from typing import Tuple
 import tqdm
 import torch.nn.functional as F
+from chmncc.utils import dotdict
 from sklearn.metrics import average_precision_score
 
 
@@ -12,11 +13,10 @@ def tr_image(img: torch.Tensor) -> torch.Tensor:
     in Tensor board
 
     Args:
-
-    - img [torch.Tensor]: image
+        img [torch.Tensor]: image
 
     Returns:
-    - image after the processing [torch.Tensor]
+        image after the processing [torch.Tensor]
     """
     return (img + 1) / 2
 
@@ -24,12 +24,27 @@ def tr_image(img: torch.Tensor) -> torch.Tensor:
 def test_step(
     net: nn.Module,
     test_loader: torch.utils.data.DataLoader,
-    cost_function,
+    cost_function: torch.nn.modules.loss.BCELoss,
     title: str,
-    test,
+    test: dotdict,
     device: str = "gpu",
 ) -> Tuple[float, float, float]:
-    r""" """
+    r"""Test function for the network.
+    It computes the accuracy together with the area under the precision-recall-curve as a metric
+
+    Args:
+        net [nn.Module] network
+        test_loader [torch.utils.data.DataLoader] test data loader
+        cost_function [torch.nn.modules.loss.BCELoss] binary cross entropy function
+        title [str]: title of the experiment
+        test [dotdict] test set dictionary
+        device [str] = "gpu": device on which to run the experiment
+
+    Returns:
+        cumulative_loss [float] loss on the test set [not used to train!]
+        cumulative_accuracy [float] accuracy on the test set in percentage
+        score [float] area under the precision-recall curve
+    """
     total = 0.0
     cumulative_loss = 0.0
     cumulative_accuracy = 0.0

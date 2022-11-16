@@ -1,4 +1,4 @@
-"""Original datasets"""
+"""Original datasets metadata: Giunchiglia et al approach"""
 import os
 
 datasets = {

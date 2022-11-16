@@ -51,6 +51,12 @@ pip install -r requirements.txt
 > deactivate
 > ```
 
+Alternatively, you can use [`conda`](https://docs.conda.io/en/latest/) by typing:
+
+```bash
+conda env create --name chmncc --file=c-hmcnn_env.yml
+```
+
 ### Generate the code documentation
 
 The automatic code documentation is provided [Sphinx v4.5.0](https://www.sphinx-doc.org/en/master/).
@@ -203,6 +209,8 @@ python -m chmncc experiment [EXP_NAME] [EPOCHS_NUMBER] \
 As an effective representation, a valid command is the following:
 
 ```bash
-python -m chmncc experiment "chmncc" 20 --learning-rate 0.001 \
---batch-size 10 --test-batch-size 10 --device cuda
+python -m chmncc experiment "chmncc" 50 --learning-rate 0.001 \
+--batch-size 128 --test-batch-size 128 --device cuda
 ```
+
+> **Note:** `run.sh` is the Slurm script I employ to run the code on the University cluster

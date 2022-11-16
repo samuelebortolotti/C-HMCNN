@@ -1,8 +1,22 @@
 import torch
 import tqdm
+from typing import Tuple
 
-# Implementation taken from https://github.com/CVxTz/IntegratedGradientsPytorch/blob/main/code/mlp_gradient.py
-def compute_integrated_gradient(batch_x, batch_blank, model):
+
+def compute_integrated_gradient(
+    batch_x: torch.Tensor, batch_blank: torch.Tensor, model: torch.nn.Module
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Integrated gradients computation
+    Implementation taken from https://github.com/CVxTz/IntegratedGradientsPytorch/blob/main/code/mlp_gradient.py
+
+    Args:
+        batch_x [torch.Tensor] data instances batch
+        batch_blank [torch.Tensor] batch of zeros
+        model [torch.nn.Module] network
+    Returns:
+        integrated_gradients [torch.Tensor] integrated gradients
+        mean_grad [torch.Tensor] mean gradients
+    """
     mean_grad = 0
     n = 100
 
@@ -22,8 +36,15 @@ def compute_integrated_gradient(batch_x, batch_blank, model):
     return integrated_gradients, mean_grad
 
 
-def output_gradients(inputs, preds):
-    r"""Compute the gradients with respect to the input"""
+def output_gradients(inputs: torch.Tensor, preds: torch.Tensor) -> torch.Tensor:
+    """Compute the gradients with respect to the input
+
+    Args:
+        inputs [torch.Tensor] input tensor
+        preds [torch.Tensor] output tensor
+    Returns:
+        grad [torch.Tensor] gradients of the output with respect to the input
+    """
     return torch.autograd.grad(
         outputs=preds,
         inputs=inputs,

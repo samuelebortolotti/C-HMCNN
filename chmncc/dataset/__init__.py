@@ -6,3 +6,4 @@ original datasets
 from .parser import initialize_dataset, initialize_other_dataset
 from .datasets import datasets
 from .dataloaders import load_old_dataloaders, load_cifar_dataloaders
+from .load_cifar import LoadDataset

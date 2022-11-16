@@ -2,20 +2,24 @@ from typing import Tuple, List, Dict, Any, Optional
 import torchvision
 import torch
 from tqdm import tqdm
-from chmncc.dataset import initialize_dataset, initialize_other_dataset, datasets
-from chmncc.config.cifar_config import hierarchy
 import networkx as nx
 import numpy as np
 from sklearn.impute import SimpleImputer
 from sklearn import preprocessing
-from chmncc.dataset.load_cifar import LoadDataset
 from chmncc.utils import dotdict
+from chmncc.dataset import (
+    initialize_dataset,
+    initialize_other_dataset,
+    datasets,
+)
+from chmncc.dataset.load_cifar import LoadDataset
+from chmncc.config import hierarchy
 
 #### Compute Mean and Stdev ################
 
 
 def get_mean_std(
-    img_size: Tuple[int, int], source_data: str, target_data: str
+    img_size: Tuple[int, int], source_data: str
 ) -> Tuple[Tuple[float, float], Tuple[float, float]]:
     r"""
     Computes mean and standard deviation over the source and
@@ -25,13 +29,10 @@ def get_mean_std(
     [link]: https://github.com/aladdinpersson/Machine-Learning-Collection/blob/master/ML/Pytorch/Basics/pytorch_std_mean.py
 
     Args:
-
-    - img_size [Tuple[int, int]]: image shape
-    - source_data [str]: path to the source data
-    - target_data [str]: path to the target data
-
+        img_size [Tuple[int, int]]: image shape
+        source_data [str]: path to the source data
     Returns:
-        source mean and stdev, target mean and stdev [Tuple[Tuple[float, float], Tuple[float, float]]
+        source mean and stdev Tuple[float, float]
     """
 
     # basic transformations
@@ -44,14 +45,10 @@ def get_mean_std(
 
     # datasets
     source_data = torchvision.datasets.ImageFolder(source_data, transform=transform)
-    target_data = torchvision.datasets.ImageFolder(target_data, transform=transform)
 
     # data loader
     source_loader = torch.utils.data.DataLoader(
         dataset=source_data, batch_size=64, shuffle=True
-    )
-    target_loader = torch.utils.data.DataLoader(
-        dataset=target_data, batch_size=64, shuffle=True
     )
 
     def compute_mean_std(loader: torch.utils.data.DataLoader) -> Tuple[float, float]:
@@ -60,11 +57,10 @@ def get_mean_std(
         target dataloader
 
         Args:
-
-        - loader [torch.utils.data.DataLoader]: dataloader
+            loader [torch.utils.data.DataLoader]: dataloader
 
         Returns:
-          dataloader mean and stdev [Tuple[float, float]]
+            dataloader mean and stdev [Tuple[float, float]]
         """
         channels_sum, channels_sqrd_sum, num_batches = 0, 0, 0
 
@@ -79,7 +75,7 @@ def get_mean_std(
 
         return mean, std
 
-    return (compute_mean_std(source_loader), compute_mean_std(target_loader))
+    return compute_mean_std(source_loader)
 
 
 ############ Load dataloaders ############
@@ -103,33 +99,33 @@ def load_cifar_dataloaders(
     stdev: List[float] = [0.2011, 0.1987, 0.2025],
     additional_transformations: Optional[List[Any]] = None,
     normalize: bool = True,
-) -> Dict[str, torch.utils.data.DataLoader]:
+) -> Dict[str, Any]:
     r"""
     Load the CIFAR-100 dataloaders
     according to what has been specified by the arguments
 
     Default:
-
-    - batch_size [int] = 128
-    - test_batch_size [int] = 256
-    - mean [List[float]] = [0.5071, 0.4867, 0.4408]
-    - stdev [List[float]] = [0.2675, 0.2565, 0.2761]
-    - normalize [bool] = True
+        batch_size [int] = 128
+        test_batch_size [int] = 256
+        mean [List[float]] = [0.5071, 0.4867, 0.4408]
+        stdev [List[float]] = [0.2675, 0.2565, 0.2761]
+        additional_transformations: Optional[List[Any]] = None
+        normalize [bool] = True
 
     Args:
-
-    - img_size: Tuple[int, int]: image shape
-    - img_depth: depth
-    - csv_path: path of the images
-    - cifar_metadata: cifar metadata
-    - mean [List[float]]
-    - stdev [List[float]]
-    - additional_transformations = None
-    - normalize [bool] = True
+        img_size [int]: image shape
+        img_depth [int]: depth (number of channels)
+        csv_path [str]: path of the images
+        test_csv_path [str]: path of the test images
+        val_csv_path: [str]: validation path of images
+        cifar_metadata [str]: cifar metadata
+        mean [List[float]]: mean
+        stdev [List[float]]: stdev
+        additional_transformations Optional[List[Any]]: additional train, val and test transform
+        normalize [bool]: whether to normalize
 
     Returns:
-        dataloaders [Dict[str, torch.utils.data.DataLoader]]:
-        a dictionary containing the dataloaders, for training and test
+        dataloaders [Dict[str, Any]]: a dictionary containing the dataloaders, for training, validation and test
     """
 
     print("#> Loading dataloader ...")
@@ -138,10 +134,10 @@ def load_cifar_dataloaders(
     transform_train = [
         torchvision.transforms.Resize(img_size),
         torchvision.transforms.RandomHorizontalFlip(),
-        #  torchvision.transforms.RandomPerspective(distortion_scale=0.2),
-        #  torchvision.transforms.ColorJitter(
-        #      brightness=0.5, contrast=0.5, saturation=0.5
-        #  ),
+        torchvision.transforms.RandomPerspective(distortion_scale=0.2),
+        torchvision.transforms.ColorJitter(
+            brightness=0.5, contrast=0.5, saturation=0.5
+        ),
         torchvision.transforms.ToTensor(),
     ]
 
@@ -220,7 +216,7 @@ def load_cifar_dataloaders(
     print("\t# of super-classes: %d" % int(len(hierarchy.keys())))
     print("\t# of sub-classes: %d" % int(count_subclasses))
 
-    # define R
+    # define R: adjacency matrix
     R = np.zeros(train_dataset.get_A().shape)
     np.fill_diagonal(R, 1)
     g = nx.DiGraph(
@@ -229,7 +225,8 @@ def load_cifar_dataloaders(
     for i in range(len(train_dataset.get_A())):
         ancestors = list(
             nx.descendants(g, i)
-        )  # here we need to use the function nx.descendants() because in the directed graph the edges have source from the descendant and point towards the ancestor
+        )  # here we need to use the function nx.descendants() because in the directed graph
+        # the edges have source from the descendant and point towards the ancestor
         if ancestors:
             R[i, ancestors] = 1
     R = torch.tensor(R)
@@ -254,7 +251,16 @@ def load_cifar_dataloaders(
     return dataloaders
 
 
-def load_old_dataloaders(dataset: str, batch_size: int, device: str):
+def load_old_dataloaders(dataset: str, batch_size: int, device: str) -> Dict[str, Any]:
+    """
+    Load the old dataloaders:
+    Args:
+        dataset [str]: dataset name
+        batch_size [int]: batch size
+        device [str]: device
+    Returns:
+        dataloaders [Dict[str, Any]]: a dictionary containing the dataloaders, for training, validation and test
+    """
     if "others" in dataset:
         train, test = initialize_other_dataset(dataset, datasets)
         val = None

@@ -45,7 +45,8 @@ SPHINX_QUICKSTART := sphinx-quickstart
 SPHINX_QUICKSTART_FLAGS := --sep --no-batchfile --project relational-neural-machines $(AUTHORS) $(VERSION) $(LANGUAGE) $(SPHINX_EXTENSIONS)
 
 ## Build
-BUILDER := html SPHINX_BUILD := make $(BUILDER)
+BUILDER := html
+SPHINX_BUILD := make $(BUILDER)
 SPHINX_API_DOC := sphinx-apidoc
 SPHINX_API_DOC_FLAGS := -P -o $(DOC_FOLDER)/source .
 SPHINX_THEME = sphinx_rtd_theme
@@ -167,7 +168,7 @@ doc:
 
 open-doc:
 	@$(ECHO) '$(BLUE)Open documentation..$(NONE)'
-	@$(OPEN) $(DOC_FOLDER)/build/$(BUILDER)/$(DOC_INDEX)
+	$(OPEN) $(DOC_FOLDER)/build/$(BUILDER)/$(DOC_INDEX)
 	@$(ECHO) '$(BLUE)Done$(NONE)'
 
 format-code:

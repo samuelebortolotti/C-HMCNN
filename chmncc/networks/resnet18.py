@@ -38,6 +38,7 @@ class ResNet18(nn.Module):
 
         self.classifier = nn.Sequential(
             nn.Linear(512, num_classes),
+            nn.Sigmoid()
         )
 
     def forward(self, x: torch.Tensor, device: str = 'cpu') -> torch.Tensor:

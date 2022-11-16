@@ -41,7 +41,9 @@ class LeNet5(nn.Module):
         self.flatten = Flatten()
         self.classifier = nn.Sequential(
             nn.Linear(in_features=5 * 5 * 16, out_features=120),
+            nn.ReLU(),
             nn.Linear(in_features=120, out_features=84),
+            nn.ReLU(),
             nn.Linear(in_features=84, out_features=num_out_logits),
             #  nn.Sigmoid(),
         )

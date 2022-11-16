@@ -459,6 +459,9 @@ def c_hmcnn(
     print("Get random example from test_loader...")
 
     test_el, _ = next(iter(test_loader))
+    # move everything on the cpu
+    net = net.to('cpu')
+    net.R = net.R.to('cpu')
     # get the single element batch
     single_el = torch.unsqueeze(test_el[0], 0)
     # set the gradients as required

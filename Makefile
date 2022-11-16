@@ -42,7 +42,7 @@ FORMAT_FLAG := chmncc
 
 ## Quickstart
 SPHINX_QUICKSTART := sphinx-quickstart
-SPHINX_QUICKSTART_FLAGS := --sep --no-batchfile --project relational-neural-machines $(AUTHORS) $(VERSION) $(LANGUAGE) $(SPHINX_EXTENSIONS)
+SPHINX_QUICKSTART_FLAGS := --sep --no-batchfile --project chmncc $(AUTHORS) $(VERSION) $(LANGUAGE) $(SPHINX_EXTENSIONS)
 
 ## Build
 BUILDER := html

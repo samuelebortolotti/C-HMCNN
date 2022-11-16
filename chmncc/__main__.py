@@ -458,10 +458,17 @@ def c_hmcnn(
 
     print("Get random example from test_loader...")
 
-    test_el, _ = next(iter(test_loader))
+    if old_method:
+        test_el, _ = next(iter(test_loader))
+    else:
+        # load the human readable labels dataloader
+        test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
+        # extract also the names of the classes
+        test_el, superclass, subclass = next(iter(test_loader_with_label_names))
+
     # move everything on the cpu
-    net = net.to('cpu')
-    net.R = net.R.to('cpu')
+    net = net.to("cpu")
+    net.R = net.R.to("cpu")
     # get the single element batch
     single_el = torch.unsqueeze(test_el[0], 0)
     # set the gradients as required
@@ -470,6 +477,18 @@ def c_hmcnn(
     preds = net(single_el.float())
 
     grd = output_gradients(single_el, preds)[0]
+
+    # orginal image
+    fig = plt.figure()
+    # prepare for the show
+    single_el_show = single_el[0].clone().detach().numpy()
+    single_el_show = single_el_show.transpose(1, 2, 0)
+    plt.imshow(single_el_show)
+    if old_method:
+        plt.title("Random Sample")
+    else:
+        plt.title("Superclass:{}\nSubclass:{}".format(superclass[0], subclass[0]))
+    fig.savefig("{}/original.png".format(os.environ["IMAGE_FOLDER"]), dpi=fig.dpi)
 
     print("Gradient with respect to the input: {}".format(grd))
     if not old_method:

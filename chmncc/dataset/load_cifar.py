@@ -12,7 +12,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 from chmncc.config import hierarchy
 from chmncc.utils import read_meta
-from typing import Any, Dict, Tuple, List
+from typing import Any, Dict, Tuple, List, Union
 import networkx as nx
 
 # which node of the hierarchy to skip (root is only a confound)
@@ -30,6 +30,7 @@ class LoadDataset(Dataset):
         image_depth: int = 3,
         return_label: bool = True,
         transform: Any = None,
+        name_labels: bool = False,
     ):
         """Init param
 
@@ -40,6 +41,7 @@ class LoadDataset(Dataset):
             image_depth [int] = 3: number of channels of the images
             return_label [bool] = True: whether to return labels
             transform [Any] = None: torchvision transformation
+            name_labels [bool] = whether to use the label name
         """
 
         assert os.path.exists(csv_path), "The given csv path must be valid!"
@@ -52,6 +54,7 @@ class LoadDataset(Dataset):
         self.transform = transform
         self.data_list = self.csv_to_list()
         self.coarse_labels, self.fine_labels = read_meta(self.meta_filename)
+        self.name_labels = name_labels
 
         # check if the hierarchy dictionary is consistent with the csv file
         for k, v in hierarchy.items():
@@ -138,7 +141,9 @@ class LoadDataset(Dataset):
         """
         return len(self.data_list)
 
-    def __getitem__(self, idx: int) -> Tuple[np.ndarray, np.ndarray]:
+    def __getitem__(
+        self, idx: int
+    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, str, str]]:
         """Returns a single item.
         Args:
             idx [int]: index of the entry
@@ -146,7 +151,9 @@ class LoadDataset(Dataset):
             image [np.ndarray]: image retrieved
             hierarchical_label [np.ndarray]: hierarchical label. This label is basically a 0/1 vector
             with 1s corresponding to the indexes of the nodes which should be predicted. Hence, the dimension
-            should be the same as the output layer of the network
+            should be the same as the output layer of the network. This is returned for the standard training
+
+            Dict of image [np.ndarray], label_1 [str] and label_2 [str]. For exploring the dataset
         """
         image_path, image, superclass, subclass = None, None, None, None
         if self.return_label:
@@ -179,13 +186,14 @@ class LoadDataset(Dataset):
         # set to one myself
         hierarchical_label[self.nodes_idx[subclass]] = 1
 
-        return image, hierarchical_label
-
-        #  if self.return_label:
-        #      return {
-        #          "image": image / 255.0,
-        #          "label_1": self.coarse_labels.index(superclass.strip(" ")),
-        #          "label_2": self.fine_labels.index(subclass.strip(" ")),
-        #      }
-        #  else:
-        #      return {"image": image}
+        # dataset containing the real images
+        if self.name_labels:
+            #  return {
+            #      "image": image / 255.0,
+            #      "label_1": self.coarse_labels.index(superclass.strip(" ")),
+            #      "label_2": self.fine_labels.index(subclass.strip(" ")),
+            #  }
+            return image, superclass, subclass
+        else:
+            # test dataset with hierarchical labels
+            return image, hierarchical_label

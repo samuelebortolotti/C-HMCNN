@@ -244,7 +244,7 @@ def c_hmcnn(
     metrics = {
         "loss": {"train": 0.0, "val": 0.0, "test": 0.0},
         "acc": {"train": 0.0, "val": 0.0, "test": 0.0},
-        "score": {"val": 0.0, "test": 0.0},
+        "score": {"train": 0.0, "val": 0.0, "test": 0.0},
     }
 
     # get dataloaders
@@ -328,7 +328,7 @@ def c_hmcnn(
 
     # for each epoch, train the network and then compute evaluation results
     for e in tqdm.tqdm(range(start_epoch, epochs), desc="Epochs"):
-        train_loss, train_accuracy = training_step(
+        train_loss, train_accuracy, train_au_prc_score = training_step(
             net=net,
             train=dataloaders["train"],
             R=dataloaders["train_R"],
@@ -342,6 +342,7 @@ def c_hmcnn(
         # save the values in the metrics
         metrics["loss"]["train"] = train_loss
         metrics["acc"]["train"] = train_accuracy
+        metrics["score"]["train"] = train_au_prc_score
 
         # validation set
         val_loss, val_accuracy, val_score = test_step(
@@ -398,9 +399,10 @@ def c_hmcnn(
                 {
                     "train/train_loss": train_loss,
                     "train/train_accuracy": train_accuracy,
+                    "train/train_auprc": train_au_prc_score,
                     "val/val_loss": val_loss,
                     "val/val_accuracy": val_accuracy,
-                    "val/val_score": val_score,
+                    "val/val_auprc": val_score,
                     "learning_rate": get_lr(optimizer),
                 }
             )
@@ -408,12 +410,12 @@ def c_hmcnn(
         # test value
         print("\nEpoch: {:d}".format(e + 1))
         print(
-            "\t Training loss {:.5f}, Training accuracy {:.2f}%".format(
-                train_loss, train_accuracy
+            "\t Training loss {:.5f}, Training accuracy {:.2f}%, Training Area under Precision-Recall Curve {:.3f}".format(
+                train_loss, train_accuracy, train_au_prc_score
             )
         )
         print(
-            "\t Validation loss {:.5f}, Validation accuracy {:.2f}%, Validation score {:.2f}%".format(
+            "\t Validation loss {:.5f}, Validation accuracy {:.2f}%, Validation Area under Precision-Recall Curve {:.3f}".format(
                 val_loss, val_accuracy, val_score
             )
         )
@@ -444,11 +446,12 @@ def c_hmcnn(
             {
                 "test/test_loss": test_loss,
                 "test/test_accuracy": test_accuracy,
+                "test/test_auprc": test_score,
             }
         )
 
     print(
-        "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test score {:.2f}%".format(
+        "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
             test_loss, test_accuracy, test_score
         )
     )
@@ -469,63 +472,84 @@ def c_hmcnn(
     # move everything on the cpu
     net = net.to("cpu")
     net.R = net.R.to("cpu")
-    # get the single element batch
-    single_el = torch.unsqueeze(test_el[0], 0)
-    # set the gradients as required
-    single_el.requires_grad = True
-    # get the predictions
-    preds = net(single_el.float())
 
-    grd = output_gradients(single_el, preds)[0]
+    # explainations
+    for i in range(test_el.shape[0]):
+        # get the single element batch
+        single_el = torch.unsqueeze(test_el[i], 0)
+        # set the gradients as required
+        single_el.requires_grad = True
+        # get the predictions
+        preds = net(single_el.float())
 
-    # orginal image
-    fig = plt.figure()
-    # prepare for the show
-    single_el_show = single_el[0].clone().detach().numpy()
-    single_el_show = single_el_show.transpose(1, 2, 0)
-    plt.imshow(single_el_show)
-    if old_method:
-        plt.title("Random Sample")
-    else:
-        plt.title("Superclass:{}\nSubclass:{}".format(superclass[0], subclass[0]))
-    fig.savefig("{}/original.png".format(os.environ["IMAGE_FOLDER"]), dpi=fig.dpi)
+        grd = output_gradients(single_el, preds)[0]
 
-    print("Gradient with respect to the input: {}".format(grd))
-    if not old_method:
-        # permute to show
-        grd = grd.permute(1, 2, 0)
-        grd = grd.numpy()
+        # orginal image
+        fig = plt.figure()
+        # prepare for the show
+        single_el_show = single_el[0].clone().cpu().data.numpy()
+        single_el_show = single_el_show.transpose(1, 2, 0)
         # normalize
-        grd = (grd - np.min(grd)) / (np.max(grd) - np.min(grd))
-        fig = plt.figure()
-        plt.imshow(grd)
-        plt.title("Gradient with respect to the input")
-        fig.savefig("{}/gradients.png".format(os.environ["IMAGE_FOLDER"]), dpi=fig.dpi)
+        single_el_show = np.fabs(single_el_show)
+        single_el_show = single_el_show / np.max(single_el_show)
+        plt.imshow(single_el_show)
 
-    i_gradient, mean_grad = compute_integrated_gradient(
-        test_el.float(), torch.zeros_like(single_el).float(), net
-    )
-    i_gradient = i_gradient[0]
-    mean_grad = mean_grad[0]
-    if not old_method:
-        # permute to show
-        i_gradient = i_gradient.permute(1, 2, 0)
-        i_gradient = i_gradient.numpy()
-        fig = plt.figure()
-        i_gradient = (i_gradient - np.min(i_gradient)) / (
-            np.max(i_gradient) - np.min(i_gradient)
-        )
-        plt.imshow(i_gradient)
-        plt.title("Integrated Gradient with respect to the input")
+        if old_method:
+            plt.title("Random Sample")
+        else:
+            plt.title("Superclass:{}\nSubclass:{}".format(superclass[i], subclass[i]))
         fig.savefig(
-            "{}/integrated_gradients.png".format(os.environ["IMAGE_FOLDER"]),
+            "{}/{}_{}_original.png".format(os.environ["IMAGE_FOLDER"], i, network),
             dpi=fig.dpi,
         )
-    print(
-        "Integrated gradient with respect to the input: {}\nMean Gradient {}".format(
-            i_gradient, mean_grad
+
+        print("Gradient with respect to the input: {}".format(grd))
+
+        if not old_method:
+            # permute to show
+            grd = grd.permute(1, 2, 0)
+            grd = grd.cpu().data.numpy()
+            # normalize
+            grd = np.fabs(grd)
+            grd = grd / np.max(grd)
+            fig = plt.figure()
+            plt.imshow(grd)
+            plt.title("Gradient with respect to the input")
+            fig.savefig(
+                "{}/{}_{}_gradients.png".format(os.environ["IMAGE_FOLDER"], i, network),
+                dpi=fig.dpi,
+            )
+
+        i_gradient = compute_integrated_gradient(
+            single_el, torch.zeros_like(single_el), net
         )
-    )
+
+
+        if not old_method:
+            # permute to show
+            i_gradient = i_gradient.permute(0, 2, 3, 1)
+            # get the numpy array
+            i_gradient = i_gradient[0, :, :, :].cpu().data.numpy()
+            # get the absolute value
+            i_gradient = np.fabs(i_gradient)
+            # normalize the value
+            i_gradient = i_gradient / np.max(i_gradient)
+            # figure
+            fig = plt.figure()
+            # show
+            plt.imshow(i_gradient)
+            plt.title("Integrated Gradient with respect to the input")
+            fig.savefig(
+                "{}/{}_{}_integrated_gradients.png".format(
+                    os.environ["IMAGE_FOLDER"], i, network
+                ),
+                dpi=fig.dpi,
+            )
+        print(
+            "Integrated gradient with respect to the input: {}".format(
+                i_gradient
+            )
+        )
 
     # closes the logger
     writer.close()

@@ -46,6 +46,12 @@ cd "/nfs/data_chaos/sbortolotti/code/C-HMCNN"
 # load the right python environment
 python="/nfs/data_chaos/sbortolotti/pkgs/miniconda/envs/chmncc/bin/python"
 
+# load wandb
+wandb="/nfs/data_chaos/sbortolotti/pkgs/miniconda/envs/chmncc/bin/wandb"
+
+# log in wandb (REQUIRES KEY)
+$wandb login $KEY
+
 trap "trap ' ' TERM INT; kill -TERM 0; wait" TERM INT
 
 # run the experiment

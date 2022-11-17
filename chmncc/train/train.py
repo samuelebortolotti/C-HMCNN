@@ -6,6 +6,7 @@ import numpy as np
 from typing import Tuple
 import tqdm
 from chmncc.utils import get_constr_out
+from sklearn.metrics import average_precision_score, f1_score
 
 
 def training_step(
@@ -17,7 +18,7 @@ def training_step(
     cost_function: torch.nn.modules.loss.BCELoss,
     title: str,
     device: str = "cuda",
-) -> Tuple[float, float]:
+) -> Tuple[float, float, float]:
     """Training step of the network. It works both for our approach and for the one of
     Giunchiglia et al.
 
@@ -34,6 +35,7 @@ def training_step(
     Returns:
         cumulative loss [float]
         accuracy [float] in percentange
+        au prc [float]
     """
     total_train = 0.0
     cumulative_loss = 0.0
@@ -43,7 +45,7 @@ def training_step(
     net.train()
 
     # iterate over the training set
-    for _, inputs in tqdm.tqdm(enumerate(train_loader), desc=title):
+    for batch_idx, inputs in tqdm.tqdm(enumerate(train_loader), desc=title):
 
         # according to the Giunchiglia dataset
         inputs, label = inputs
@@ -81,4 +83,27 @@ def training_step(
         # optimizer
         optimizer.step()
 
-    return cumulative_loss / len(train_loader), cumulative_accuracy / total_train * 100
+        # compute the au(prc)
+        predicted = predicted.to("cpu")
+        cpu_constrained_output = train_output.to("cpu")
+        label = label.to("cpu")
+
+        if batch_idx == 0:
+            predicted_train = predicted
+            constr_train = cpu_constrained_output
+            y_test = label
+        else:
+            predicted_train = torch.cat((predicted_train, predicted), dim=0)
+            constr_train = torch.cat((constr_train, cpu_constrained_output), dim=0)
+            y_test = torch.cat((y_test, label), dim=0)
+
+    # average precision score
+    score = average_precision_score(
+        y_test[:, train.to_eval], constr_train.data[:, train.to_eval], average="micro"
+    )
+
+    return (
+        cumulative_loss / len(train_loader),
+        cumulative_accuracy / total_train * 100,
+        score,
+    )

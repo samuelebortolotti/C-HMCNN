@@ -4,7 +4,7 @@ from typing import Tuple
 import tqdm
 import torch.nn.functional as F
 from chmncc.utils import dotdict
-from sklearn.metrics import average_precision_score
+from sklearn.metrics import average_precision_score, f1_score
 
 
 def tr_image(img: torch.Tensor) -> torch.Tensor:
@@ -104,5 +104,5 @@ def test_step(
     return (
         cumulative_loss / len(test_loader),
         cumulative_accuracy / total * 100,
-        score * 100,
+        score,
     )

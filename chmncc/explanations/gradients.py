@@ -5,7 +5,7 @@ from typing import Tuple
 
 def compute_integrated_gradient(
     batch_x: torch.Tensor, batch_blank: torch.Tensor, model: torch.nn.Module
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> torch.Tensor:
     """Integrated gradients computation
     Implementation taken from https://github.com/CVxTz/IntegratedGradientsPytorch/blob/main/code/mlp_gradient.py
 
@@ -15,14 +15,13 @@ def compute_integrated_gradient(
         model [torch.nn.Module] network
     Returns:
         integrated_gradients [torch.Tensor] integrated gradients
-        mean_grad [torch.Tensor] mean gradients
     """
     mean_grad = 0
     n = 100
 
     for i in tqdm.tqdm(range(1, n + 1)):
         x = batch_blank + i / n * (batch_x - batch_blank)
-        x.requires_grad = True
+        #  x.requires_grad = True
         y = model(x)
         (grad,) = torch.autograd.grad(
             y,
@@ -33,7 +32,7 @@ def compute_integrated_gradient(
 
     integrated_gradients = (batch_x - batch_blank) * mean_grad
 
-    return integrated_gradients, mean_grad
+    return integrated_gradients
 
 
 def output_gradients(inputs: torch.Tensor, preds: torch.Tensor) -> torch.Tensor:

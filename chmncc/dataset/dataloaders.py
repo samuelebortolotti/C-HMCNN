@@ -99,6 +99,7 @@ def load_cifar_dataloaders(
     stdev: List[float] = [0.2011, 0.1987, 0.2025],
     additional_transformations: Optional[List[Any]] = None,
     normalize: bool = True,
+    confunder: bool = True,
 ) -> Dict[str, Any]:
     r"""
     Load the CIFAR-100 dataloaders
@@ -111,6 +112,7 @@ def load_cifar_dataloaders(
         stdev [List[float]] = [0.2675, 0.2565, 0.2761]
         additional_transformations: Optional[List[Any]] = None
         normalize [bool] = True
+        confunder [bool] = True
 
     Args:
         img_size [int]: image shape
@@ -123,6 +125,7 @@ def load_cifar_dataloaders(
         stdev [List[float]]: stdev
         additional_transformations Optional[List[Any]]: additional train, val and test transform
         normalize [bool]: whether to normalize
+        confunder [bool]: whether to put confunders in the images
 
     Returns:
         dataloaders [Dict[str, Any]]: a dictionary containing the dataloaders, for training, validation and test
@@ -161,13 +164,18 @@ def load_cifar_dataloaders(
     transform_train = torchvision.transforms.Compose(transform_train)
     transform_test = torchvision.transforms.Compose(transform_test)
 
-    # datasets
+    # datasets, all of them will have confunders
+    # training confunders for validation and train
+    # test confunders for test
+    # test with label will have no confunders
     train_dataset = LoadDataset(
         image_size=img_size,
         image_depth=img_depth,
         csv_path=csv_path,
         cifar_metafile=cifar_metadata,
         transform=transform_train,
+        confund=confunder,
+        train=True,
     )
 
     test_dataset = LoadDataset(
@@ -176,6 +184,8 @@ def load_cifar_dataloaders(
         csv_path=test_csv_path,
         cifar_metafile=cifar_metadata,
         transform=transform_test,
+        confund=confunder,
+        train=False,
     )
 
     test_dataset_with_labels = LoadDataset(
@@ -185,6 +195,8 @@ def load_cifar_dataloaders(
         cifar_metafile=cifar_metadata,
         transform=transform_test,
         name_labels=True,
+        confund=False,
+        train=False,
     )
 
     val_dataset = LoadDataset(
@@ -193,6 +205,8 @@ def load_cifar_dataloaders(
         csv_path=val_csv_path,
         cifar_metafile=cifar_metadata,
         transform=transform_test,
+        confund=confunder,
+        train=True,
     )
 
     # Dataloaders

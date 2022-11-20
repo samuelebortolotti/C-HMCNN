@@ -3,7 +3,9 @@ import torchvision
 import matplotlib.pyplot as plt
 from argparse import _SubParsersAction as Subparser
 from argparse import Namespace
-from chmncc.dataset import load_cifar_dataloaders
+from chmncc.dataset import load_cifar_dataloaders, get_named_label_predictions
+from chmncc.config import confunders
+from typing import List
 
 
 def configure_subparsers(subparsers: Subparser) -> None:
@@ -13,7 +15,28 @@ def configure_subparsers(subparsers: Subparser) -> None:
     """
     parser = subparsers.add_parser("visualize", help="Dataset visualization subparser")
     parser.add_argument(
-        "--batch-size", "-bs", type=int, default=128, help="batch size of the datasets"
+        "--batch-size", "-bs", type=int, default=12, help="batch size of the datasets"
+    )
+    parser.add_argument(
+        "--confunder",
+        "-c",
+        type=bool,
+        default=True,
+        help="whether to show confunders according to the config",
+    )
+    parser.add_argument(
+        "--train",
+        "-t",
+        type=bool,
+        default=True,
+        help="whether to show the dataset retrieved in training mode",
+    )
+    parser.add_argument(
+        "--only-confunders",
+        "-oc",
+        type=bool,
+        default=False,
+        help="whether to show images with confunder only",
     )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(func=main)
@@ -21,8 +44,11 @@ def configure_subparsers(subparsers: Subparser) -> None:
 
 def visualize_train_datasets(
     train_loader: torch.utils.data.DataLoader,
-    rows: int = 3,
-    cols: int = 3,
+    nodes: List[str],
+    phase: str,
+    num_images: int,
+    rows: int = 4,
+    only_confunders: bool = False,
 ) -> None:
     r"""
     Show the data from the dataloader
@@ -32,22 +58,51 @@ def visualize_train_datasets(
     desired label to be displayed.
 
     Default:
-
-    - rows [int] = 3
-    - cols [int] = 3
+        rows [int] = 4
+        only_confunders [bool] = False
 
     Args:
-
-    - train_loader [torch.utils.data.DataLoader]
-    - rows [int]
-    - cols [int]
+        train_loader [torch.utils.data.DataLoader]
+        nodes [List[str]]: list of nodes names
+        phase [str]: which phase we are in (test or train)
+        num_images [int]: number of images to retrieved
+        rows [int]
+        only_confunders [bool]: whether to show only confunded images
     """
 
-    # define iterators over both datasets
     train_iter = iter(train_loader)
 
-    # get labels of source data
-    data_source, _ = next(train_iter)
+    if only_confunders:
+        data_source, labels = [], []
+        # fill the data
+        while len(data_source) < num_images:
+            tmp_data_source, tmp_labels = next(train_iter)
+            label_names = [
+                get_named_label_predictions(tmp_labels[i], nodes)
+                for i in range(tmp_labels.shape[0])
+            ]
+            # filter data
+            for i in range(len(label_names)):
+                superclass, subclass = label_names[i]
+                # skip the data not confunded
+                if not superclass in confunders:
+                    continue
+                # set the data
+                for j in range(len(confunders[superclass][phase])):
+                    # skip invalid subclasses
+                    if not subclass in confunders[superclass][phase][j]["subclass"]:
+                        continue
+                    # add the correct data
+                    data_source.append(tmp_data_source[i])
+                    labels.append(tmp_labels[i])
+                    # exit when the dimension is ok
+                    if len(data_source) == num_images:
+                        break
+        # to tensor
+        data_source = torch.stack(data_source)
+        labels = torch.stack(labels)
+    else:
+        data_source, labels = next(train_iter)
 
     if len(data_source) == 0:
         print("No data retrieved with given label")
@@ -56,18 +111,24 @@ def visualize_train_datasets(
     # How many image it was able to retrieve
     print("Retreived {} images".format(len(data_source)))
 
+    print("Labels:")
+    for i in range(labels.shape[0]):
+        named_labels = get_named_label_predictions(labels[i], nodes)
+        print("Image {} has labels {}: ".format(i, named_labels))
+
     # source display
     display_grid = torchvision.utils.make_grid(
         data_source,
         nrow=rows,
         padding=2,
         pad_value=1,
-        normalize=True,
+        normalize=False,
         value_range=(data_source.min(), data_source.max()),
     )
+
     plt.imshow((display_grid.numpy().transpose(1, 2, 0)))
     plt.axis("off")
-    plt.title(f"Train Dataset")
+    plt.title("Dataset")
     plt.tight_layout()
     plt.show()
 
@@ -92,14 +153,23 @@ def main(args: Namespace) -> None:
         test_csv_path="./dataset/test_reduced.csv",
         val_csv_path="./dataset/val.csv",
         cifar_metadata="./dataset/pickle_files/meta",
-        batch_size=10,
-        test_batch_size=10,
-        normalize=True,
+        batch_size=args.batch_size,
+        test_batch_size=args.batch_size,
+        normalize=False,
         device="cpu",
+        confunder=args.confunder,
     )
+
+    dataloader = dataloaders["train_loader"]  # train source loader
+    phase = "train"
+    nodes = dataloaders["train_set"].get_nodes()
+    if not args.train:
+        phase = "test"
+        dataloader = dataloaders["test_loader"]  # test source loader
+        nodes = dataloaders["test_set"].get_nodes()
 
     # visualize
     print("Visualizing...")
     visualize_train_datasets(
-        dataloaders["train_set"],  # train source loader
+        dataloader, nodes, phase, args.batch_size, only_confunders=args.only_confunders
     )

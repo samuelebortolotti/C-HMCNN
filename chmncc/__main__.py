@@ -4,11 +4,10 @@ This code has been developed by Eleonora Giunchiglia and Thomas Lukasiewicz; lat
 """
 
 import os
-import matplotlib
+import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse
-import random
 import torch
 import tqdm
 import cv2 as cv
@@ -39,10 +38,15 @@ from chmncc.networks import LeNet5, ResNet18
 from chmncc.train import training_step
 from chmncc.optimizers import get_adam_optimizer
 from chmncc.test import test_step
-from chmncc.dataset import load_old_dataloaders, load_cifar_dataloaders
+from chmncc.dataset import (
+    load_old_dataloaders,
+    load_cifar_dataloaders,
+    get_named_label_predictions,
+)
 import chmncc.dataset.preproces_cifar as data
 import chmncc.dataset.visualize_dataset as visualize_data
 from chmncc.config.old_config import lrs, epochss, hidden_dims
+from chmncc.config import confunders, hierarchy
 from chmncc.explanations import compute_integrated_gradient, output_gradients
 
 
@@ -190,37 +194,37 @@ def c_hmcnn(
     r"""
     Function which performs both training and test step
 
-    - resume [bool] = False: by default do not resume last training
-    - device [str] = "cuda": move tensors on GPU, could be also "cpu"
-    - batch_size [int] = 128
-    - test_batch_size [int] = 128
-    - learning_rate [float] = 0.01
-    - epochs [int] = 30
-    - weight_decay [float] = 1e-5
-    - save_every_epochs [int] = 10: save a checkpoint every 10 epoch
-    - dry [bool] = False: by default save weights
-    - set_wandb [bool] = False,
-    - dataset [str] = "", taken for retrocompatibility with Giunchiglia et al approach
-    - network [str] = "lenet"
-    - pretrained [bool] = False
+    Default:
+        resume [bool] = False: by default do not resume last training
+        device [str] = "cuda": move tensors on GPU, could be also "cpu"
+        batch_size [int] = 128
+        test_batch_size [int] = 128
+        learning_rate [float] = 0.01
+        epochs [int] = 30
+        weight_decay [float] = 1e-5
+        save_every_epochs [int] = 10: save a checkpoint every 10 epoch
+        dry [bool] = False: by default save weights
+        set_wandb [bool] = False,
+        dataset [str] = "", taken for retrocompatibility with Giunchiglia et al approach
+        network [str] = "lenet"
+        pretrained [bool] = False
 
     Args:
-
-    - exp_name [str]: name of the experiment, basically where to save the logs of the SummaryWriter
-    - resume [bool] = False: whether to resume a checkpoint
-    - device [str] = "cuda": where to load the tensors
-    - batch_size [int] = 128: default batch size
-    - test_batch_size [int] = 128: default batch size for the test set
-    - learning_rate [float] = 0.01: initial learning rate
-    - weight_decay [float] = 1e-5: weigt decay
-    - epochs [int] = 30: number of epochs
-    - save_every_epochs: int = 10: save a checkpoint every `save_every_epochs` epoch
-    - dry [bool] = False: whether to do not save weights
-    - set_wandb [bool] = False: whether to log values on wandb
-    - dataset [str] = str: dataset name: the dataset is specified -> old approach
-    - network [str] = "lenet": which arachitecture to employ
-    - pretrained [bool] = False, whether the network is pretrained [Note: lenet is not pretrained]
-    - \*\*kwargs [Any]: additional key-value arguments
+        exp_name [str]: name of the experiment, basically where to save the logs of the SummaryWriter
+        resume [bool] = False: whether to resume a checkpoint
+        device [str] = "cuda": where to load the tensors
+        batch_size [int] = 128: default batch size
+        test_batch_size [int] = 128: default batch size for the test set
+        learning_rate [float] = 0.01: initial learning rate
+        weight_decay [float] = 1e-5: weigt decay
+        epochs [int] = 30: number of epochs
+        save_every_epochs: int = 10: save a checkpoint every `save_every_epochs` epoch
+        dry [bool] = False: whether to do not save weights
+        set_wandb [bool] = False: whether to log values on wandb
+        dataset [str] = str: dataset name: the dataset is specified -> old approach
+        network [str] = "lenet": which arachitecture to employ
+        pretrained [bool] = False, whether the network is pretrained [Note: lenet is not pretrained]
+        \*\*kwargs [Any]: additional key-value arguments
     """
 
     # create the models directory
@@ -475,15 +479,16 @@ def c_hmcnn(
 
     # explainations
     for i in range(test_el.shape[0]):
+        # whether the sample is confunded
+        confunded = False
         # get the single element batch
         single_el = torch.unsqueeze(test_el[i], 0)
         # set the gradients as required
         single_el.requires_grad = True
         # get the predictions
         preds = net(single_el.float())
-
+        # output gradients
         grd = output_gradients(single_el, preds)[0]
-
         # orginal image
         fig = plt.figure()
         # prepare for the show
@@ -497,14 +502,63 @@ def c_hmcnn(
         if old_method:
             plt.title("Random Sample")
         else:
-            plt.title("Superclass:{}\nSubclass:{}".format(superclass[i], subclass[i]))
+            # get named predictions
+            torch.set_printoptions(profile="full")
+            # get the prediction
+            predicted_1_0 = preds.data > 0.5
+            predicted_1_0 = predicted_1_0.to(torch.float)[0]
+            # get the named prediction
+            named_prediction = get_named_label_predictions(
+                predicted_1_0, dataloaders["test_set"].get_nodes()
+            )
+            # extract parent and children
+            parents = hierarchy.keys()
+            children = [
+                element
+                for element_list in hierarchy.values()
+                for element in element_list
+            ]
+            parent_predictions = list(filter(lambda x: x in parents, named_prediction))
+            children_predictions = list(
+                filter(lambda x: x in children, named_prediction)
+            )
+            # select whether it is confunded
+            for tmp_parent in parent_predictions:
+                if not tmp_parent in confunders:
+                    continue
+                for tmp_children in children_predictions:
+                    if not tmp_children in confunders[tmp_parent]:
+                        continue
+                    for tmp_index in range(len(confunders[tmp_parent]["test"])):
+                        if (
+                            confunders[tmp_parent]["test"][tmp_index]["subclass"]
+                            == tmp_children
+                        ):
+                            confunded = True
+                            break
+            # plot the title
+            prediction_text = "Predicted: {}\nbecause of: {}".format(
+                parent_predictions, children_predictions
+            )
+            plt.title(
+                "Groundtruth superclass: {} \nGroundtruth subclass: {}\n\n{}".format(
+                    superclass[i], subclass[i], prediction_text
+                )
+            )
+            plt.tight_layout()
+
         fig.savefig(
-            "{}/{}_{}_original.png".format(os.environ["IMAGE_FOLDER"], i, network),
+            "{}/{}_{}_original{}.png".format(
+                os.environ["IMAGE_FOLDER"],
+                i,
+                network,
+                "_confunded" if confunded else "",
+            ),
             dpi=fig.dpi,
         )
+        plt.close()
 
-        print("Gradient with respect to the input: {}".format(grd))
-
+        #  print("Gradient with respect to the input: {}".format(grd))
         if not old_method:
             # permute to show
             grd = grd.permute(1, 2, 0)
@@ -519,11 +573,11 @@ def c_hmcnn(
                 "{}/{}_{}_gradients.png".format(os.environ["IMAGE_FOLDER"], i, network),
                 dpi=fig.dpi,
             )
+            plt.close()
 
         i_gradient = compute_integrated_gradient(
             single_el, torch.zeros_like(single_el), net
         )
-
 
         if not old_method:
             # permute to show
@@ -545,11 +599,12 @@ def c_hmcnn(
                 ),
                 dpi=fig.dpi,
             )
-        print(
-            "Integrated gradient with respect to the input: {}".format(
-                i_gradient
-            )
-        )
+            plt.close()
+        #  print(
+        #      "Integrated gradient with respect to the input: {}".format(
+        #          i_gradient
+        #      )
+        #  )
 
     # closes the logger
     writer.close()
@@ -595,7 +650,6 @@ def experiment(args: Namespace) -> None:
     torch.manual_seed(seed)
     np.random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
-    random.seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
@@ -629,4 +683,6 @@ if __name__ == "__main__":
 
     Calls the main function with the command line arguments passed as parameters
     """
+
+    # disable tensorflow warnings
     main(get_args())

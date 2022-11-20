@@ -3,14 +3,14 @@ Implementation taken from https://github.com/Ugenteraan/Deep_Hierarchical_Classi
 """
 
 import os
-import pickle
+import random
 import csv
 import cv2
 import torch
 import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
-from chmncc.config import hierarchy
+from chmncc.config import hierarchy, confunders
 from chmncc.utils import read_meta
 from typing import Any, Dict, Tuple, List, Union
 import networkx as nx
@@ -31,6 +31,8 @@ class LoadDataset(Dataset):
         return_label: bool = True,
         transform: Any = None,
         name_labels: bool = False,
+        confund: bool = True,
+        train: bool = True,
     ):
         """Init param
 
@@ -42,6 +44,8 @@ class LoadDataset(Dataset):
             return_label [bool] = True: whether to return labels
             transform [Any] = None: torchvision transformation
             name_labels [bool] = whether to use the label name
+            confund [bool] = whether to put confunders
+            train [bool] = whether the set is training or not (used to apply the confunders)
         """
 
         assert os.path.exists(csv_path), "The given csv path must be valid!"
@@ -70,6 +74,58 @@ class LoadDataset(Dataset):
         self.to_eval = torch.tensor(
             [t not in to_skip for t in self.nodes], dtype=torch.bool
         )
+
+        # set whether to confund
+        self.confund = confund
+        # whether we are in the training phase
+        self.train = train
+
+    def _confund(
+        self,
+        confunder: Dict[str, str],
+        seed: int,
+        image: np.ndarray,
+    ) -> np.ndarray:
+        """Method used in order to apply the confunders on top of the images
+        Which confunders to apply are specified in the confunders.py file in the config directory
+
+        Args:
+            confunder [Dict[str, str]]: confunder information, such as the dimension, shape and color
+            seed [int]: which seed to use in order to place the confunder
+            image [np.ndarray]: image
+
+        Returns:
+            image [np.ndarray]: image with the confunder on top
+        """
+        # the random number generated is the same for the same image over and over
+        # in this way the experiment is reproducible
+        random.seed(seed)
+        # get the random sizes
+        crop_width = random.randint(confunder["min_dim"], confunder["max_dim"])
+        crop_height = random.randint(confunder["min_dim"], confunder["max_dim"])
+        # only for the circle
+        radius = int(crop_width / 2)
+        # get the shape
+        shape = confunder["shape"]
+        # generate the segments
+        starting_point = 0 if shape == "rectangle" else radius
+        # get random point
+        x = random.randint(starting_point, 32 - crop_width)
+        y = random.randint(starting_point, 32 - crop_height)
+        # starting and ending points
+        p0 = (x, y)
+        p1 = (x + crop_width, y + crop_height)
+        # whether the shape should be filled
+        filled = cv2.FILLED if confunder["type"] else 2
+        # draw the shape
+        if shape == "rectangle":
+            cv2.rectangle(image, p0, p1, confunder["color"], filled)
+        elif shape == "circle":
+            cv2.circle(image, p0, int(crop_width / 2), confunder["color"], filled)
+        else:
+            raise Exception("The shape selected does not exist")
+        # return the image
+        return image
 
     def _initializeHierarchicalGraph(
         self,
@@ -134,6 +190,13 @@ class LoadDataset(Dataset):
         """
         return self.A
 
+    def get_nodes(self) -> List[str]:
+        """Get nodes property
+        Returns:
+            nodes [List[str]]: nodes list
+        """
+        return self.nodes
+
     def __len__(self) -> int:
         """Returns the total amount of data.
         Returns:
@@ -145,6 +208,8 @@ class LoadDataset(Dataset):
         self, idx: int
     ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, str, str]]:
         """Returns a single item.
+        It adds the confunder if specified in the initialization of the class.
+
         Args:
             idx [int]: index of the entry
         Returns:
@@ -158,6 +223,8 @@ class LoadDataset(Dataset):
         image_path, image, superclass, subclass = None, None, None, None
         if self.return_label:
             image_path, superclass, subclass = self.data_list[idx]
+            superclass = superclass.strip()
+            subclass = subclass.strip()
         else:
             image_path = self.data_list[idx]
 
@@ -170,6 +237,20 @@ class LoadDataset(Dataset):
         if self.image_size != 32:
             cv2.resize(image, (self.image_size, self.image_size))
 
+        # Add the confunders
+        if self.confund:
+            # get the phase
+            phase = "train" if self.train else "test"
+            if superclass.strip() in confunders:
+                # look if the subclass is contained confunder
+                confunder_info = filter(
+                    lambda x: x["subclass"] == subclass, confunders[superclass][phase]
+                )
+                for confunder_shape in confunder_info:
+                    # add the confunders
+                    image = self._confund(confunder_shape, idx, image)
+
+        # get the PIL image out of it
         image = Image.fromarray(image)
 
         if self.transform:
@@ -179,7 +260,7 @@ class LoadDataset(Dataset):
         # basically, it has all zeros, except for the indexes where there is a parent
         subclass = subclass.strip()
         hierarchical_label = np.zeros(len(self.nodes))
-        # set to one all my ancestors
+        # set to one all my ancestors including myself
         hierarchical_label[
             [self.nodes_idx.get(a) for a in nx.ancestors(self.g.reverse(), subclass)]
         ] = 1
@@ -197,3 +278,20 @@ class LoadDataset(Dataset):
         else:
             # test dataset with hierarchical labels
             return image, hierarchical_label
+
+
+def get_named_label_predictions(
+    hierarchical_label: torch.Tensor, nodes: List[str]
+) -> List[str]:
+    """Retrive the named predictions from the hierarchical ones
+    Args:
+        hierarchical_label [torch.Tensor]: label prediction
+        nodes: List[str]: list of nodes
+    Returns:
+        named_predictions
+    """
+    names = []
+    for idx in range(len(hierarchical_label)):
+        if nodes[idx] not in to_skip and hierarchical_label[idx] > 0.5:
+            names.append(nodes[idx])
+    return names

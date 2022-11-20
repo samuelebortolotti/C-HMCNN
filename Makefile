@@ -21,10 +21,11 @@ DATASET_FLAGS :=
 EXPERIMENT := experiment 
 EXP_NAME := "chmncc"
 EPOCHS := 30
-EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 128 --test-batch-size 128 --device cpu --project chmncc
+EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 128 --test-batch-size 128 --device gpu --project chmncc
 
 # ======= VISUALIZE ================
 VISUALIZE:= visualize
+VISUALIZE_FLAGS := --only-confunders true
 
 # ======= DOC ======================
 AUTHORS := --author "Eleonora Giunchiglia, Thomas Lukasiewicz, Samuele Bortolotti" 

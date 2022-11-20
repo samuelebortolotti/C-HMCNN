@@ -166,8 +166,7 @@ def load_cifar_dataloaders(
 
     # datasets, all of them will have confunders
     # training confunders for validation and train
-    # test confunders for test
-    # test with label will have no confunders
+    # test confunders for test and test with labels
     train_dataset = LoadDataset(
         image_size=img_size,
         image_depth=img_depth,
@@ -195,7 +194,7 @@ def load_cifar_dataloaders(
         cifar_metafile=cifar_metadata,
         transform=transform_test,
         name_labels=True,
-        confund=False,
+        confund=confunder,
         train=False,
     )
 

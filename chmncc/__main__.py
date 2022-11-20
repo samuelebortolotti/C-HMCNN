@@ -523,19 +523,16 @@ def c_hmcnn(
                 filter(lambda x: x in children, named_prediction)
             )
             # select whether it is confunded
-            for tmp_parent in parent_predictions:
-                if not tmp_parent in confunders:
-                    continue
-                for tmp_children in children_predictions:
-                    if not tmp_children in confunders[tmp_parent]:
-                        continue
-                    for tmp_index in range(len(confunders[tmp_parent]["test"])):
-                        if (
-                            confunders[tmp_parent]["test"][tmp_index]["subclass"]
-                            == tmp_children
-                        ):
-                            confunded = True
-                            break
+            print(superclass[i], subclass[i])
+            if superclass[i] in confunders:
+                for tmp_index in range(len(confunders[superclass[i]]["test"])):
+                    if (
+                        confunders[superclass[i]]["test"][tmp_index]["subclass"]
+                        == subclass[i]
+                    ):
+                        print("Found confunder!")
+                        confunded = True
+                        break
             # plot the title
             prediction_text = "Predicted: {}\nbecause of: {}".format(
                 parent_predictions, children_predictions
@@ -605,6 +602,7 @@ def c_hmcnn(
         #          i_gradient
         #      )
         #  )
+    print("Done with the explainations")
 
     # closes the logger
     writer.close()

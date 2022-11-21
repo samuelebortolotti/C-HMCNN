@@ -32,6 +32,7 @@ from chmncc.utils.utils import (
     load_best_weights,
     resume_training,
     get_lr,
+    average_image_contributions
 )
 from chmncc.networks.ConstrainedFFNN import initializeConstrainedFFNNModel
 from chmncc.networks import LeNet5, ResNet18
@@ -560,11 +561,12 @@ def c_hmcnn(
             # permute to show
             grd = grd.permute(1, 2, 0)
             grd = grd.cpu().data.numpy()
+            grd = average_image_contributions(grd)
             # normalize
             grd = np.fabs(grd)
             grd = grd / np.max(grd)
             fig = plt.figure()
-            plt.imshow(grd)
+            plt.imshow(grd, cmap='gray')
             plt.title("Gradient with respect to the input")
             fig.savefig(
                 "{}/{}_{}_gradients.png".format(os.environ["IMAGE_FOLDER"], i, network),
@@ -578,9 +580,10 @@ def c_hmcnn(
 
         if not old_method:
             # permute to show
-            i_gradient = i_gradient.permute(0, 2, 3, 1)
+            i_gradient = i_gradient.permute(1, 2, 0)
+            i_gradient = i_gradient.cpu().data.numpy()
+            i_gradient = average_image_contributions(i_gradient)
             # get the numpy array
-            i_gradient = i_gradient[0, :, :, :].cpu().data.numpy()
             # get the absolute value
             i_gradient = np.fabs(i_gradient)
             # normalize the value
@@ -588,7 +591,7 @@ def c_hmcnn(
             # figure
             fig = plt.figure()
             # show
-            plt.imshow(i_gradient)
+            plt.imshow(i_gradient, cmap='gray')
             plt.title("Integrated Gradient with respect to the input")
             fig.savefig(
                 "{}/{}_{}_integrated_gradients.png".format(

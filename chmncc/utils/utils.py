@@ -183,3 +183,14 @@ def get_constr_out(x: torch.Tensor, R: torch.Tensor) -> torch.Tensor:
     R_batch = R.expand(len(x), R.shape[1], R.shape[1])
     final_out, _ = torch.max(R_batch * c_out.double(), dim=2)
     return final_out
+
+
+def average_image_contributions(image: np.ndarray) -> np.ndarray:
+    """Returns a black and white image making the average contribution of each channel
+
+    Args:
+        image [np.ndarray]: numpy array of size [size1, ...., channels]
+    Returns:
+        average [np.ndarray] image
+    """
+    return np.mean(image, axis=image.ndim - 1)

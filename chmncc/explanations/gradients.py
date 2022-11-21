@@ -32,7 +32,7 @@ def compute_integrated_gradient(
 
     integrated_gradients = (batch_x - batch_blank) * mean_grad
 
-    return integrated_gradients
+    return integrated_gradients[0]
 
 
 def output_gradients(inputs: torch.Tensor, preds: torch.Tensor) -> torch.Tensor:

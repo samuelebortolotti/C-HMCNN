@@ -31,6 +31,7 @@ class LoadDataset(Dataset):
         return_label: bool = True,
         transform: Any = None,
         name_labels: bool = False,
+        confunders_position: bool = False,
         confund: bool = True,
         train: bool = True,
     ):
@@ -44,6 +45,7 @@ class LoadDataset(Dataset):
             return_label [bool] = True: whether to return labels
             transform [Any] = None: torchvision transformation
             name_labels [bool] = whether to use the label name
+            confunders_position [bool] = whether to return the confunder position
             confund [bool] = whether to put confunders
             train [bool] = whether the set is training or not (used to apply the confunders)
         """
@@ -54,6 +56,7 @@ class LoadDataset(Dataset):
         self.image_size = image_size
         self.image_depth = image_depth
         self.return_label = return_label
+        self.confunders_position = confunders_position
         self.meta_filename = cifar_metafile
         self.transform = transform
         self.data_list = self.csv_to_list()
@@ -85,7 +88,7 @@ class LoadDataset(Dataset):
         confunder: Dict[str, str],
         seed: int,
         image: np.ndarray,
-    ) -> np.ndarray:
+    ) -> Tuple[np.ndarray, int, int, int, int]:
         """Method used in order to apply the confunders on top of the images
         Which confunders to apply are specified in the confunders.py file in the config directory
 
@@ -96,6 +99,9 @@ class LoadDataset(Dataset):
 
         Returns:
             image [np.ndarray]: image with the confunder on top
+            p0, p1 [Tuple[Tuple[int]]]: tuple of integers which depicts the points where the confunder has been added
+            shape [str]: name of the shape
+            TODO descrivere
         """
         # the random number generated is the same for the same image over and over
         # in this way the experiment is reproducible
@@ -115,17 +121,24 @@ class LoadDataset(Dataset):
         # starting and ending points
         p0 = (x, y)
         p1 = (x + crop_width, y + crop_height)
+        if shape == "circle":
+            p1 = int(crop_width / 2)
         # whether the shape should be filled
         filled = cv2.FILLED if confunder["type"] else 2
         # draw the shape
         if shape == "rectangle":
             cv2.rectangle(image, p0, p1, confunder["color"], filled)
         elif shape == "circle":
-            cv2.circle(image, p0, int(crop_width / 2), confunder["color"], filled)
+            cv2.circle(image, p0, p1, confunder["color"], filled)
         else:
             raise Exception("The shape selected does not exist")
         # return the image
-        return image
+        p0x, p0y = p0
+        if len(p1) > 1:
+            p1x, p1y = p1
+        else:
+            p1x, p1y = p1[0], p1[0]
+        return image, p0x, p0y, p1x, p1y
 
     def _initializeHierarchicalGraph(
         self,
@@ -147,7 +160,7 @@ class LoadDataset(Dataset):
         Returns:
             nodes [nx.classes.reportviews.NodeView]: nodes of the graph
             nodes_idx [Dict[nx.classes.reportviews.NodeView, int]]: dictionary node - index
-            matrix [np.ndarray]: A - matrix representation of the graph
+            matrix [np.ndarray]: A - matrix representation of the grap else p[0]h
         """
         # prepare the hierarchy
         for img_class in hierarchy:
@@ -219,6 +232,8 @@ class LoadDataset(Dataset):
             should be the same as the output layer of the network. This is returned for the standard training
 
             Dict of image [np.ndarray], label_1 [str] and label_2 [str]. For exploring the dataset
+
+            TODO: for the dataloader constraints, empty strings and -1 are returned for invalid positions
         """
         image_path, image, superclass, subclass = None, None, None, None
         if self.return_label:
@@ -237,6 +252,13 @@ class LoadDataset(Dataset):
         if self.image_size != 32:
             cv2.resize(image, (self.image_size, self.image_size))
 
+        # set to null the confudner shape and confunder pos
+        confunder_pos_1_x = -1
+        confunder_pos_1_y = -1
+        confunder_pos_2_x = -1
+        confunder_pos_2_y = -1
+        confunder_shape = ""
+
         # Add the confunders
         if self.confund:
             # get the phase
@@ -246,9 +268,21 @@ class LoadDataset(Dataset):
                 confunder_info = filter(
                     lambda x: x["subclass"] == subclass, confunders[superclass][phase]
                 )
-                for confunder_shape in confunder_info:
-                    # add the confunders
-                    image = self._confund(confunder_shape, idx, image)
+                for c_shape in confunder_info:
+                    # add the confunders to the image
+                    (
+                        image,
+                        c_pos_1_x,
+                        c_pos_1_y,
+                        c_pos_2_x,
+                        c_pos_2_y,
+                    ) = self._confund(c_shape, idx, image)
+                    # TODO confunders can be extended to a list
+                    confunder_pos_1_x = c_pos_1_x
+                    confunder_pos_1_y = c_pos_1_y
+                    confunder_pos_2_x = c_pos_2_x
+                    confunder_pos_2_y = c_pos_2_y
+                    confunder_shape = c_shape
 
         # get the PIL image out of it
         image = Image.fromarray(image)
@@ -268,13 +302,34 @@ class LoadDataset(Dataset):
         hierarchical_label[self.nodes_idx[subclass]] = 1
 
         # dataset containing the real images
-        if self.name_labels:
+        if self.name_labels and self.confunders_position:
+            return (
+                image,
+                superclass,
+                subclass,
+                confunder_pos_1_x,
+                confunder_pos_1_y,
+                confunder_pos_2_x,
+                confunder_pos_2_y,
+                confunder_shape,
+            )
+        elif self.name_labels:
             #  return {
             #      "image": image / 255.0,
             #      "label_1": self.coarse_labels.index(superclass.strip(" ")),
             #      "label_2": self.fine_labels.index(subclass.strip(" ")),
             #  }
-            return image, superclass, subclass
+            return image, superclass, subclass, hierarchical_label
+        elif self.confunders_position:
+            return (
+                image,
+                hierarchical_label,
+                confunder_pos_1_x,
+                confunder_pos_1_y,
+                confunder_pos_2_x,
+                confunder_pos_2_y,
+                confunder_shape,
+            )
         else:
             # test dataset with hierarchical labels
             return image, hierarchical_label

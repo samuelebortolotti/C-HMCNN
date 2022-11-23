@@ -20,6 +20,7 @@ from torchsummary import summary
 from torch.utils.tensorboard import SummaryWriter
 import wandb
 import signal
+import matplotlib.image
 
 # data folder
 os.environ["DATA_FOLDER"] = "./"
@@ -27,12 +28,11 @@ os.environ["MODELS"] = "./models"
 os.environ["IMAGE_FOLDER"] = "./plots"
 
 from chmncc.utils.utils import (
-    load_best_weights,
     log_values,
     load_best_weights,
     resume_training,
     get_lr,
-    average_image_contributions
+    average_image_contributions,
 )
 from chmncc.networks.ConstrainedFFNN import initializeConstrainedFFNNModel
 from chmncc.networks import LeNet5, ResNet18
@@ -45,6 +45,7 @@ from chmncc.dataset import (
     get_named_label_predictions,
 )
 import chmncc.dataset.preproces_cifar as data
+import chmncc.debug.debug as debug
 import chmncc.dataset.visualize_dataset as visualize_data
 from chmncc.config.old_config import lrs, epochss, hidden_dims
 from chmncc.config import confunders, hierarchy
@@ -92,6 +93,7 @@ def get_args() -> Namespace:
     # configure the dataset subparser
     data.configure_subparsers(subparsers)
     visualize_data.configure_subparsers(subparsers)
+    debug.configure_subparsers(subparsers)
 
     # parse the command line arguments
     parsed_args = parser.parse_args()
@@ -430,7 +432,7 @@ def c_hmcnn(
     print("#> After training:")
 
     # Test on best weights
-    load_best_weights(net, model_folder)
+    #  load_best_weights(net, model_folder, device)
 
     # test set
     test_loss, test_accuracy, test_score = test_step(
@@ -472,7 +474,7 @@ def c_hmcnn(
         # load the human readable labels dataloader
         test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
         # extract also the names of the classes
-        test_el, superclass, subclass = next(iter(test_loader_with_label_names))
+        test_el, superclass, subclass, _ = next(iter(test_loader_with_label_names))
 
     # move everything on the cpu
     net = net.to("cpu")
@@ -486,6 +488,7 @@ def c_hmcnn(
         single_el = torch.unsqueeze(test_el[i], 0)
         # set the gradients as required
         single_el.requires_grad = True
+        print(single_el.shape)
         # get the predictions
         preds = net(single_el.float())
         # output gradients
@@ -566,7 +569,7 @@ def c_hmcnn(
             grd = np.fabs(grd)
             grd = grd / np.max(grd)
             fig = plt.figure()
-            plt.imshow(grd, cmap='gray')
+            plt.imshow(grd, cmap="gray")
             plt.title("Gradient with respect to the input")
             fig.savefig(
                 "{}/{}_{}_gradients.png".format(os.environ["IMAGE_FOLDER"], i, network),
@@ -588,10 +591,17 @@ def c_hmcnn(
             i_gradient = np.fabs(i_gradient)
             # normalize the value
             i_gradient = i_gradient / np.max(i_gradient)
+            # save the raw image
+            matplotlib.image.imsave(
+                "{}/{}_{}_integrated_gradients_raw.png".format(
+                    os.environ["IMAGE_FOLDER"], i, network
+                ),
+                i_gradient,
+            )
             # figure
             fig = plt.figure()
             # show
-            plt.imshow(i_gradient, cmap='gray')
+            plt.imshow(i_gradient, cmap="gray")
             plt.title("Integrated Gradient with respect to the input")
             fig.savefig(
                 "{}/{}_{}_integrated_gradients.png".format(

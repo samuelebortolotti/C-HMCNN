@@ -20,12 +20,16 @@ DATASET_FLAGS :=
 # ======= EXPERIMENT ===============
 EXPERIMENT := experiment 
 EXP_NAME := "chmncc"
-EPOCHS := 30
-EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 128 --test-batch-size 128 --device gpu --project chmncc
+EPOCHS := 0
+EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 128 --test-batch-size 10 --device cpu --project chmncc --network resnet
 
 # ======= VISUALIZE ================
 VISUALIZE:= visualize
 VISUALIZE_FLAGS := --only-confunders true
+
+# ======= DEBUG ===================
+DEBUG:= debug
+DEBUG_FLAGS := 
 
 # ======= DOC ======================
 AUTHORS := --author "Eleonora Giunchiglia, Thomas Lukasiewicz, Samuele Bortolotti" 
@@ -96,7 +100,7 @@ OPEN := xdg-open
 SED := sed
 	
 # RULES
-.PHONY: help env install install-dev doc-layout open-doc format-code experiment dataset visualize
+.PHONY: help env install install-dev doc-layout open-doc format-code experiment dataset visualize debug
 
 help:
 	@$(ECHO) '$(YELLOW)Makefile help$(NONE)'
@@ -106,6 +110,7 @@ help:
 	* install-dev		: install the development requirements listed in requirements.dev.txt\n \
 	* dataset 		: downloads and filters out the Cifar100 dataset\n \
 	* experiment 		: runs the experiment\n \
+	* debug 		: runs the debug of the model to solve confund\n \
 	* visualize 		: shows the images associated to the specified label in the source and target dataset\n \
 	* doc-layout 		: generates the Sphinx documentation layout\n \
 	* doc 			: generates the documentation (requires an existing documentation layout)\n \
@@ -140,6 +145,11 @@ experiment:
 dataset:
 	@$(ECHO) '$(BLUE)Dowloading and filtering the Cifar-100 dataset..$(NONE)'
 	@$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(DATASET) $(DATASET_FLAGS)
+	@$(ECHO) '$(BLUE)Done$(NONE)'
+
+debug:
+	@$(ECHO) '$(BLUE)Debugging the model..$(NONE)'
+	@$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(DEBUG) $(DEBUG_FLAGS)
 	@$(ECHO) '$(BLUE)Done$(NONE)'
 
 visualize:

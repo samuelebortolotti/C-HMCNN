@@ -88,7 +88,7 @@ def log_values(
 ################### Resume the network ###################
 
 
-def load_best_weights(net: nn.Module, exp_name: str) -> None:
+def load_best_weights(net: nn.Module, exp_name: str, device: str) -> None:
     r"""
     Function which loads the best weights of the network, basically it
     looks for the `{exp_name}/best.pth` and loads it
@@ -96,10 +96,11 @@ def load_best_weights(net: nn.Module, exp_name: str) -> None:
     Args:
         net [nn.Module]: network architecture
         exp_name [str]: folder name
+        device [str]: device name
     """
     best_file = os.path.join(exp_name, "best.pth")
     if os.path.isfile(best_file):
-        checkpoint = torch.load(best_file)
+        checkpoint = torch.load(best_file, map_location=torch.device(device))
         print("#> Resume best")
         net.load_state_dict(checkpoint)
     else:

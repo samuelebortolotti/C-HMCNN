@@ -29,7 +29,7 @@ VISUALIZE_FLAGS := --only-confunders true
 
 # ======= DEBUG ===================
 DEBUG:= debug
-DEBUG_FLAGS := 
+DEBUG_FLAGS := -igrad false
 
 # ======= DOC ======================
 AUTHORS := --author "Eleonora Giunchiglia, Thomas Lukasiewicz, Samuele Bortolotti" 
@@ -43,7 +43,6 @@ IMG_FOLDER := .github
 # ======= FORMAT ===================
 FORMAT := black
 FORMAT_FLAG := chmncc
-
 
 ## Quickstart
 SPHINX_QUICKSTART := sphinx-quickstart

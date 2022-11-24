@@ -2,20 +2,16 @@ from argparse import _SubParsersAction as Subparser
 from argparse import Namespace
 import torch
 import torch.nn as nn
-from torch.utils.tensorboard.summary import image_boxes
-from chmncc.test import test_step
+from torch.nn.modules.loss import BCELoss
 from chmncc.networks import ResNet18, LeNet5
 from chmncc.config import confunders, hierarchy
-from chmncc.utils.utils import (
-    load_best_weights,
-    load_best_weights,
-    average_image_contributions_tensor,
-)
+from chmncc.utils.utils import load_best_weights, average_image_contributions_tensor
 from chmncc.dataset import (
     load_cifar_dataloaders,
     get_named_label_predictions,
 )
-from chmncc.explanations import compute_integrated_gradient
+from chmncc.explanations import compute_integrated_gradient, output_gradients
+from chmncc.loss import RRRLoss, IGRRRLoss
 from typing import Dict, Any, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
@@ -57,7 +53,9 @@ def save_test_sample(
     superclass: str,
     subclass: str,
 ) -> Tuple[bool, bool]:
-    """Save the test sample only if it presents a confunder
+    """Save the test sample only if it presents a confunder.
+    Then it returns whether the sample contains a confunder or if the sample has been
+    guessed correctly.
 
     Args:
         test_sample [torch.Tensor]: test sample depicting the image
@@ -109,8 +107,6 @@ def save_test_sample(
         ):
             correct_guess = True
 
-    print(superclass, subclass)
-
     # check if the sample is confunded
     if superclass in confunders:
         for tmp_index in range(len(confunders[superclass]["test"])):
@@ -155,7 +151,7 @@ def save_test_sample(
 def save_i_gradient(
     single_el: torch.Tensor, net: nn.Module, debug_folder: str, idx: int
 ) -> torch.Tensor:
-    """Save the the integrated gradients
+    """Computes the integrated graditents and saves them in an image
 
     Args:
         single_el [torch.Tensor]: test sample depicting the image
@@ -169,17 +165,19 @@ def save_i_gradient(
     i_gradient = compute_integrated_gradient(
         single_el, torch.zeros_like(single_el), net
     )
+    # sum over RGB channels
+    i_gradient = torch.sum(i_gradient, dim=0)
+
     # permute to show
-    i_gradient = i_gradient.permute(1, 2, 0)
-    i_gradient = average_image_contributions_tensor(i_gradient)
+    i_gradient_to_show = i_gradient.clone()
     # get the absolute value
-    i_gradient = torch.abs(i_gradient)
+    i_gradient_to_show = torch.abs(i_gradient_to_show)
     # normalize the value
-    i_gradient = i_gradient / torch.max(i_gradient)
+    i_gradient_to_show = i_gradient_to_show / torch.max(i_gradient_to_show)
 
     # show
     fig = plt.figure()
-    plt.imshow(i_gradient.cpu().data.numpy(), cmap="gray")
+    plt.imshow(i_gradient_to_show.cpu().data.numpy(), cmap="gray")
     plt.title("Integrated Gradient with respect to the input")
     # show the figure
     fig.savefig(
@@ -192,61 +190,119 @@ def save_i_gradient(
     return i_gradient
 
 
+def save_input_gradient(
+    single_el: torch.Tensor, net: nn.Module, debug_folder: str, idx: int
+) -> torch.Tensor:
+    """Computes the input graditents and saves them in an image
+
+    Args:
+        single_el [torch.Tensor]: test sample depicting the image
+        net [nn.Module]: neural network
+        debug_folder [str]: string depicting the folder path
+        idx [int]: index of the image
+    Returns:
+        gradient [torch.Tensor]: integrated_gradient
+    """
+    # integrated gradients
+    gradient = output_gradients(single_el, net(single_el))[0]
+
+    # sum over RGB channels
+    gradient = torch.sum(gradient, dim=0)
+
+    # permute to show
+    gradient_to_show = gradient.clone()
+    # get the absolute value
+    gradient_to_show = torch.abs(gradient_to_show)
+    # normalize the value
+    gradient_to_show = gradient_to_show / torch.max(gradient_to_show)
+
+    # show
+    fig = plt.figure()
+    plt.imshow(gradient_to_show.cpu().data.numpy(), cmap="gray")
+    plt.title("Input Gradient with respect to the input")
+    # show the figure
+    fig.savefig(
+        "{}/{}_i_gradient.png".format(debug_folder, idx),
+        dpi=fig.dpi,
+    )
+    plt.close()
+
+    # return the gradients
+    return gradient
+
+
 def debug_iter(
     net: nn.Module,
+    sample_test: torch.Tensor,
+    ground_truth: torch.Tensor,
+    preds: torch.Tensor,
+    reviveLoss: RRRLoss,
     debug_folder: str,
     idx: int,
-    i_gradient: torch.Tensor,
+    gradient: torch.Tensor,
     confunder_pos1_x: int,
     confunder_pos1_y: int,
     confunder_pos2_x: int,
     confunder_pos2_y: int,
     confunder_shape: Dict[str, str],
 ) -> None:
-    """Debug iteration:
+    """Debug iteration
         - remove the confunder from the integrated gradient
-        - save the figure
+        - saves the figure (integrated gradient without confunder)
+        - revives the network (gives the feedback to the network)
 
     Args:
+        net [nn.Module]: neural network
+        sample_test [torch.Tensor]: sample element tensor
+        ground_truth [torch.Tensor]: ground truth label of the tensor
+        preds [torch.Tensor]: prediction of the network given the input
         debug_folder [str]: string depicting the folder path
         idx [int]: index of the image
-        i_gradient [torch.Tensor]: integrated gradient tensor
+        gradient [torch.Tensor]: integrated gradient tensor
         confuder_pos1_x [int]: x of the starting point
         confuder_pos1_y [int]: y of the starting point
         confuder_pos2_x [int]: x of the ending point
         confuder_pos2_y [int]: y of the ending point
         confunder_shape [Dict[str, Any]]: confunder information
     """
-    # NOW SET TO ZERO THE INTEGRATED CRADIENT OF THE CONFUNDER
-    # DISCRIMINATE FOR RECTANGLE OR CIRCLE
-    i_gradient_np = i_gradient.clone().data.cpu().numpy()
+    # confounder mask
+    confounder_mask = np.zeros_like(gradient.data.numpy())
+
+    print(confounder_mask.shape, gradient.shape)
+
     if confunder_shape["shape"] == "rectangle":
         # get the image of the modified gradient
         cv2.rectangle(
-            i_gradient_np,
+            confounder_mask,
             (confunder_pos1_x.item(), confunder_pos1_y.item()),
             (confunder_pos2_x.item(), confunder_pos2_y.item()),
-            (0, 0, 0),
+            (255, 255, 255),
             cv2.FILLED,
         )
     else:
         # get the image of the modified gradient
         cv2.circle(
-            i_gradient_np,
+            confounder_mask,
             (confunder_pos1_x.numpy(), confunder_pos1_y.numpy()),
             confunder_pos2_x.numpy(),
-            (0, 0, 0),
+            (255, 255, 255),
             cv2.FILLED,
         )
-    # copy the numpy value into the tensor
-    i_gradient_modified = torch.tensor(i_gradient_np)
-    # override the values of the previos tensor
-    i_gradient[:] = i_gradient_modified
+
+    # binarize the mask and adjust it the right way
+    confounder_mask = torch.tensor((confounder_mask > 0.5).astype(np.float_))
+
+    # gradient to show
+    gradient_to_show = gradient.clone().data.numpy()
+    gradient_to_show = np.where(confounder_mask < 0.5, gradient_to_show, 0)
+    gradient_to_show = np.fabs(gradient_to_show)
+    # normalize the value
+    gradient_to_show = gradient_to_show / np.max(gradient_to_show)
 
     # show the picture
     fig = plt.figure()
-    plt.imshow(i_gradient.cpu().data.numpy(), cmap="gray")
-    plt.title("Integrated Gradient user modified no confunder")
+    plt.imshow(gradient_to_show, cmap="gray")
+    plt.title("Gradient user modified: no confunder")
     # show the figure
     fig.savefig(
         "{}/{}_i_gradient_no_confunder.png".format(debug_folder, idx),
@@ -254,9 +310,21 @@ def debug_iter(
     )
     plt.close()
 
+    # compute the RRR loss
+    print("Ground_truth", ground_truth.shape)
+    print("Predictions", preds.shape)
+    loss, ra_loss_c, rr_loss_c = reviveLoss(
+        X=sample_test, y=ground_truth, expl=confounder_mask, logits=preds
+    )
+    print(loss, ra_loss_c, rr_loss_c)
+
 
 def debug(
-    net: nn.Module, dataloaders: Dict[str, Any], debug_folder: str, **kwargs: Any
+    net: nn.Module,
+    dataloaders: Dict[str, Any],
+    debug_folder: str,
+    integrated_gradients: bool,
+    **kwargs: Any
 ):
     """Method which performs the debug step, by detecting the confunded images first;
     then correcting the integrated gradient associated and finally re-training the model with the RRR loss
@@ -265,6 +333,7 @@ def debug(
         net [nn.Module]: neural network
         dataloaders [Dict[str, Any]]: dataloaders
         debug_folder [str]: debug_folder
+        integrated gradients [bool]: whether to use integrated gradients or not
         **kwargs [Any]: kwargs
     """
 
@@ -280,6 +349,7 @@ def debug(
         test_el,  # test image
         superclass,  # str superclass
         subclass,  # str subclass
+        hierarchical_label,  # ground_truth
         confunder_pos1_x,  # integer first point second coordinate
         confunder_pos1_y,  # integer first point second coordinate
         confunder_pos2_x,  # integer second point first coordinate
@@ -287,20 +357,27 @@ def debug(
         confunder_shape,  # dictionary of the shape information
     ) = next(iter(test_loader_with_label_names))
 
+    # if integrated gradients are not available then go for the classical gradients
+    if not integrated_gradients:
+        reviveLoss = RRRLoss(net=net, regularizer_rate=20, base_criterion=BCELoss())
+    else:
+        # integrated gradients RRRLoss
+        reviveLoss = IGRRRLoss(net=net, regularizer_rate=20, base_criterion=BCELoss())
+
     # loop over the examples
     for i in range(test_el.shape[0]):
-        # parepare the test example and the explainatinos in the right shape
-        single_el, preds = prepare_test_sample(net, test_el, i)
+        # parepare the test example and the explainations in the right shape
+        single_el, preds = prepare_test_sample(net=net, sample_batch=test_el, idx=i)
 
-        # save the test sample
+        # save the test sample only if it is the right one
         confunded_sample, correct_guess = save_test_sample(
-            single_el,  # single torch image element
-            preds,  # torch prediction
-            i,  # iteration
-            debug_folder,  # string fdebug folde rname
-            dataloaders,  # dictionary of dataloaders
-            superclass[i],  # ith superclass string
-            subclass[i],  # ith subclass string
+            test_sample=single_el,  # single torch image element
+            prediction=preds,  # torch prediction
+            idx=i,  # iteration
+            debug_folder=debug_folder,  # string fdebug folde rname
+            dataloaders=dataloaders,  # dictionary of dataloaders
+            superclass=superclass[i],  # ith superclass string
+            subclass=subclass[i],  # ith subclass string
         )
 
         # confunded sample found, starting the debug procedure
@@ -311,19 +388,34 @@ def debug(
                 print("The machine start to understand something...")
                 continue
 
+            # get the example label
+            label = torch.unsqueeze(hierarchical_label[i], 0)
+
             # save the integrated gradients
-            i_gradient = save_i_gradient(single_el, net, debug_folder, i)
+            if integrated_gradients:
+                gradient = save_i_gradient(
+                    single_el=single_el, net=net, debug_folder=debug_folder, idx=i
+                )
+            else:
+                gradient = save_input_gradient(
+                    single_el=single_el, net=net, debug_folder=debug_folder, idx=i
+                )
+
             # debug iteration
             debug_iter(
-                net,
-                debug_folder,
-                i,
-                i_gradient,
-                confunder_pos1_x[i],
-                confunder_pos1_y[i],
-                confunder_pos2_x[i],
-                confunder_pos2_y[i],
-                confunder_shape[i],
+                net=net,
+                sample_test=single_el,  # single torch image element
+                ground_truth=label,  # hierarchical label
+                preds=preds,
+                reviveLoss=reviveLoss,
+                debug_folder=debug_folder,
+                idx=i,
+                gradient=gradient,
+                confunder_pos1_x=confunder_pos1_x[i],
+                confunder_pos1_y=confunder_pos1_y[i],
+                confunder_pos2_x=confunder_pos2_x[i],
+                confunder_pos2_y=confunder_pos2_y[i],
+                confunder_shape=confunder_shape[i],
             )
 
     print("Done with debug")
@@ -358,6 +450,13 @@ def configure_subparsers(subparsers: Subparser) -> None:
     )
     parser.add_argument(
         "--test-batch-size", "-tbs", type=int, default=128, help="Test batch size"
+    )
+    parser.add_argument(
+        "--integrated-gradients",
+        "-igrad",
+        type=bool,
+        default=False,
+        help="Use integrated gradients",
     )
     parser.add_argument(
         "--device",
@@ -444,6 +543,9 @@ def main(args: Namespace) -> None:
     #  )
 
     print("-----------------------------------------------------")
+
+    # zero grad
+    net.zero_grad()
 
     # launch the debug
     debug(net, dataloaders, **vars(args))

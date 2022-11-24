@@ -205,4 +205,4 @@ def average_image_contributions_tensor(image: torch.Tensor) -> torch.Tensor:
     Returns:
         average [torch.Tensor]: average image
     """
-    return torch.mean(image, dim=image.ndim - 1)
+    return torch.mean(image, dim=0)

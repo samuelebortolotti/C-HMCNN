@@ -121,7 +121,7 @@ class LoadDataset(Dataset):
         p0 = (x, y)
         p1 = (x + crop_width, y + crop_height)
         if shape == "circle":
-            p1 = (int(crop_width / 2), )
+            p1 = (int(crop_width / 2),)
         # whether the shape should be filled
         filled = cv2.FILLED if confunder["type"] else 2
         # draw the shape
@@ -218,7 +218,12 @@ class LoadDataset(Dataset):
 
     def __getitem__(
         self, idx: int
-    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, str, str, np.ndarray], Tuple[np.ndarray, str, str, int, int, int, int, Dict[str, str]], Tuple[np.ndarray, np.ndarray, int, int, int, int, Dict[str, str]]]:
+    ) -> Union[
+        Tuple[np.ndarray, np.ndarray],
+        Tuple[np.ndarray, str, str, np.ndarray],
+        Tuple[np.ndarray, str, str, int, int, int, int, Dict[str, str]],
+        Tuple[np.ndarray, np.ndarray, int, int, int, int, Dict[str, str]],
+    ]:
         """Returns a single item.
         It adds the confunder if specified in the initialization of the class.
 
@@ -317,38 +322,36 @@ class LoadDataset(Dataset):
         # requested: labels and confunders
         if self.name_labels and self.confunders_position:
             return (
-                image, # image
-                superclass, # string label
-                subclass, # string label
-                confunder_pos_1_x, # int position
-                confunder_pos_1_y, # int position
-                confunder_pos_2_x, # int position
-                confunder_pos_2_y, # int position
-                confunder_shape, # dictionary containing informations
+                image,  # image
+                superclass,  # string label
+                subclass,  # string label
+                hierarchical_label,  # hierarchical label [that matrix of 1 hot encodings]
+                confunder_pos_1_x,  # int position
+                confunder_pos_1_y,  # int position
+                confunder_pos_2_x,  # int position
+                confunder_pos_2_y,  # int position
+                confunder_shape,  # dictionary containing informations
             )
-        elif self.name_labels: # only the named labels requested
+        elif self.name_labels:  # only the named labels requested
             return (
-                image, # image
-                superclass, # string label
-                subclass, # string label
-                hierarchical_label # hierarchical label [that matrix of 1 hot encodings]
+                image,  # image
+                superclass,  # string label
+                subclass,  # string label
+                hierarchical_label,  # hierarchical label [that matrix of 1 hot encodings]
             )
         elif self.confunders_position:
             return (
-                image, # image
-                hierarchical_label, # hierarchical label [that matrix of 1 hot encodings]
-                confunder_pos_1_x, # integer position
-                confunder_pos_1_y, # integer position
-                confunder_pos_2_x, # integer position
-                confunder_pos_2_y, # integer position
-                confunder_shape, # dictionary containing informations
+                image,  # image
+                hierarchical_label,  # hierarchical label [that matrix of 1 hot encodings]
+                confunder_pos_1_x,  # integer position
+                confunder_pos_1_y,  # integer position
+                confunder_pos_2_x,  # integer position
+                confunder_pos_2_y,  # integer position
+                confunder_shape,  # dictionary containing informations
             )
         else:
             # test dataset with hierarchical labels
-            return (
-                image, # image
-                hierarchical_label # matrix of 1 hot encodings
-            )
+            return (image, hierarchical_label)  # image  # matrix of 1 hot encodings
 
 
 def get_named_label_predictions(

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import os
 import numpy as np
-from typing import Tuple, Dict, Optional
+from typing import Tuple, Dict, Optional, Union
 from torch.utils import tensorboard
 
 ################### Dotdict ##################
@@ -192,6 +192,17 @@ def average_image_contributions(image: np.ndarray) -> np.ndarray:
     Args:
         image [np.ndarray]: numpy array of size [size1, ...., channels]
     Returns:
-        average [np.ndarray] image
+        average [np.ndarray]: average image
     """
     return np.mean(image, axis=image.ndim - 1)
+
+
+def average_image_contributions_tensor(image: torch.Tensor) -> torch.Tensor:
+    """Returns a black and white image making the average contribution of each channel
+
+    Args:
+        image [torch.Tensor]: torch array of size [size1, ...., channels]
+    Returns:
+        average [torch.Tensor]: average image
+    """
+    return torch.mean(image, dim=image.ndim - 1)

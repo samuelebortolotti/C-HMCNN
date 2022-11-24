@@ -2,13 +2,14 @@ from argparse import _SubParsersAction as Subparser
 from argparse import Namespace
 import torch
 import torch.nn as nn
+from torch.utils.tensorboard.summary import image_boxes
 from chmncc.test import test_step
 from chmncc.networks import ResNet18, LeNet5
 from chmncc.config import confunders, hierarchy
 from chmncc.utils.utils import (
     load_best_weights,
     load_best_weights,
-    average_image_contributions,
+    average_image_contributions_tensor,
 )
 from chmncc.dataset import (
     load_cifar_dataloaders,
@@ -56,7 +57,22 @@ def save_test_sample(
     superclass: str,
     subclass: str,
 ) -> Tuple[bool, bool]:
-    # prepare for the show
+    """Save the test sample only if it presents a confunder
+
+    Args:
+        test_sample [torch.Tensor]: test sample depicting the image
+        prediction [torch.Tensor]: prediction of the network on top of the test function
+        idx [int]: index of the element of the batch to consider
+        debug_folder [str]: string depicting the folder where to save the figures
+        dataloaders [Dict[str, Any]]: dictionary depicting the dataloaders of the data
+        superclass [str]: superclass string
+        subclass [str]: subclass string
+
+    Returns:
+        confunded [bool]: whether the sample is confunded
+        correct_guess [bool]: whether the model has guessed correctly
+    """
+    # prepare the element in order to show it
     single_el_show = test_sample[0].clone().cpu().data.numpy()
     single_el_show = single_el_show.transpose(1, 2, 0)
 
@@ -81,17 +97,21 @@ def save_test_sample(
     parent_predictions = list(filter(lambda x: x in parents, named_prediction))
     children_predictions = list(filter(lambda x: x in children, named_prediction))
 
-    # select whether it is confunded
+    # check whether it is confunded
     confunded = False
     correct_guess = False
-    # set the guess as correct
+
+    # set the guess as correct if it is
     if len(parent_predictions) == 1 and len(children_predictions) == 1:
         if (
             superclass.strip() == parent_predictions[0].strip()
             and subclass == children_predictions[0].strip()
         ):
             correct_guess = True
+
     print(superclass, subclass)
+
+    # check if the sample is confunded
     if superclass in confunders:
         for tmp_index in range(len(confunders[superclass]["test"])):
             print(superclass, idx)
@@ -100,6 +120,7 @@ def save_test_sample(
                 confunded = True
                 break
 
+    # if confunded, it is worth to save it
     if confunded:
         # plot the title
         prediction_text = "Predicted: {}\nbecause of: {}".format(
@@ -126,30 +147,39 @@ def save_test_sample(
         )
         # close the figure
         plt.close()
+
     # whether the image is confunded or not
     return confunded, correct_guess
 
 
 def save_i_gradient(
     single_el: torch.Tensor, net: nn.Module, debug_folder: str, idx: int
-) -> np.ndarray:
+) -> torch.Tensor:
+    """Save the the integrated gradients
+
+    Args:
+        single_el [torch.Tensor]: test sample depicting the image
+        net [nn.Module]: neural network
+        debug_folder [str]: string depicting the folder path
+        idx [int]: index of the image
+    Returns:
+        integrated_gradient [torch.Tensor]: integrated_gradient
+    """
     # integrated gradients
     i_gradient = compute_integrated_gradient(
         single_el, torch.zeros_like(single_el), net
     )
-
     # permute to show
     i_gradient = i_gradient.permute(1, 2, 0)
-    i_gradient = i_gradient.cpu().data.numpy()
-    i_gradient = average_image_contributions(i_gradient)
-    # get the numpy array
+    i_gradient = average_image_contributions_tensor(i_gradient)
     # get the absolute value
-    i_gradient = np.fabs(i_gradient)
+    i_gradient = torch.abs(i_gradient)
     # normalize the value
-    i_gradient = i_gradient / np.max(i_gradient)
+    i_gradient = i_gradient / torch.max(i_gradient)
+
     # show
     fig = plt.figure()
-    plt.imshow(i_gradient, cmap="gray")
+    plt.imshow(i_gradient.cpu().data.numpy(), cmap="gray")
     plt.title("Integrated Gradient with respect to the input")
     # show the figure
     fig.savefig(
@@ -157,6 +187,7 @@ def save_i_gradient(
         dpi=fig.dpi,
     )
     plt.close()
+
     # return the integrated gradients
     return i_gradient
 
@@ -165,32 +196,56 @@ def debug_iter(
     net: nn.Module,
     debug_folder: str,
     idx: int,
-    i_gradient: np.ndarray,
+    i_gradient: torch.Tensor,
     confunder_pos1_x: int,
     confunder_pos1_y: int,
     confunder_pos2_x: int,
     confunder_pos2_y: int,
     confunder_shape: Dict[str, str],
-):
+) -> None:
+    """Debug iteration:
+        - remove the confunder from the integrated gradient
+        - save the figure
+
+    Args:
+        debug_folder [str]: string depicting the folder path
+        idx [int]: index of the image
+        i_gradient [torch.Tensor]: integrated gradient tensor
+        confuder_pos1_x [int]: x of the starting point
+        confuder_pos1_y [int]: y of the starting point
+        confuder_pos2_x [int]: x of the ending point
+        confuder_pos2_y [int]: y of the ending point
+        confunder_shape [Dict[str, Any]]: confunder information
+    """
+    # NOW SET TO ZERO THE INTEGRATED CRADIENT OF THE CONFUNDER
+    # DISCRIMINATE FOR RECTANGLE OR CIRCLE
+    i_gradient_np = i_gradient.clone().data.cpu().numpy()
     if confunder_shape["shape"] == "rectangle":
-        user_modified_i_gradient = cv2.rectangle(
-            i_gradient,
+        # get the image of the modified gradient
+        cv2.rectangle(
+            i_gradient_np,
             (confunder_pos1_x.item(), confunder_pos1_y.item()),
             (confunder_pos2_x.item(), confunder_pos2_y.item()),
             (0, 0, 0),
             cv2.FILLED,
         )
     else:
-        user_modified_i_gradient = cv2.circle(
-            i_gradient,
+        # get the image of the modified gradient
+        cv2.circle(
+            i_gradient_np,
             (confunder_pos1_x.numpy(), confunder_pos1_y.numpy()),
             confunder_pos2_x.numpy(),
             (0, 0, 0),
             cv2.FILLED,
         )
-    # show
+    # copy the numpy value into the tensor
+    i_gradient_modified = torch.tensor(i_gradient_np)
+    # override the values of the previos tensor
+    i_gradient[:] = i_gradient_modified
+
+    # show the picture
     fig = plt.figure()
-    plt.imshow(i_gradient, cmap="gray")
+    plt.imshow(i_gradient.cpu().data.numpy(), cmap="gray")
     plt.title("Integrated Gradient user modified no confunder")
     # show the figure
     fig.savefig(
@@ -200,52 +255,52 @@ def debug_iter(
     plt.close()
 
 
-def debug(net: nn.Module, dataloaders, debug_folder: str, **kwargs: Any):
+def debug(
+    net: nn.Module, dataloaders: Dict[str, Any], debug_folder: str, **kwargs: Any
+):
     """Method which performs the debug step, by detecting the confunded images first;
     then correcting the integrated gradient associated and finally re-training the model with the RRR loss
+
     Args:
         net [nn.Module]: neural network
-        dataloaders: dataloaders
+        dataloaders [Dict[str, Any]]: dataloaders
+        debug_folder [str]: debug_folder
+        **kwargs [Any]: kwargs
     """
+
     print("#> Debug...")
 
-    # load the human readable labels dataloader
+    # load the human readable labels dataloader and the confunders position
     test_loader_with_label_names = dataloaders[
         "test_loader_with_labels_name_confunders_pos"
     ]
+
     # extract also the names of the classes
     (
-        test_el,
-        superclass,
-        subclass,
-        confunder_pos1_x,
-        confunder_pos1_y,
-        confunder_pos2_x,
-        confunder_pos2_y,
-        confunder_shape,
+        test_el,  # test image
+        superclass,  # str superclass
+        subclass,  # str subclass
+        confunder_pos1_x,  # integer first point second coordinate
+        confunder_pos1_y,  # integer first point second coordinate
+        confunder_pos2_x,  # integer second point first coordinate
+        confunder_pos2_y,  # integer second point second coordinate
+        confunder_shape,  # dictionary of the shape information
     ) = next(iter(test_loader_with_label_names))
 
-    # explainations
+    # loop over the examples
     for i in range(test_el.shape[0]):
-        print(test_el.shape)
+        # parepare the test example and the explainatinos in the right shape
         single_el, preds = prepare_test_sample(net, test_el, i)
-        # prepare for the show
-        single_el_show = single_el[0].clone().cpu().data.numpy()
-        single_el_show = single_el_show.transpose(1, 2, 0)
-        # normalize
-        single_el_show = np.fabs(single_el_show)
-        single_el_show = single_el_show / np.max(single_el_show)
-        plt.imshow(single_el_show)
 
-        # show the test sample
+        # save the test sample
         confunded_sample, correct_guess = save_test_sample(
-            single_el,
-            preds,
-            i,
-            debug_folder,
-            dataloaders,
-            superclass[i],
-            subclass[i],
+            single_el,  # single torch image element
+            preds,  # torch prediction
+            i,  # iteration
+            debug_folder,  # string fdebug folde rname
+            dataloaders,  # dictionary of dataloaders
+            superclass[i],  # ith superclass string
+            subclass[i],  # ith subclass string
         )
 
         # confunded sample found, starting the debug procedure
@@ -258,6 +313,7 @@ def debug(net: nn.Module, dataloaders, debug_folder: str, **kwargs: Any):
 
             # save the integrated gradients
             i_gradient = save_i_gradient(single_el, net, debug_folder, i)
+            # debug iteration
             debug_iter(
                 net,
                 debug_folder,
@@ -316,9 +372,10 @@ def configure_subparsers(subparsers: Subparser) -> None:
 
 
 def main(args: Namespace) -> None:
-    r"""Checks the command line arguments and then runs the debug
+    """Checks the command line arguments and then runs the debug
+
     Args:
-      args (Namespace): command line arguments
+        args (Namespace): command line arguments
     """
     print("\n### Network debug ###")
     print("> Parameters:")
@@ -337,7 +394,7 @@ def main(args: Namespace) -> None:
         cifar_metadata="./dataset/pickle_files/meta",
         batch_size=args.batch_size,
         test_batch_size=args.test_batch_size,
-        normalize=True,  # nrmalize the dataset
+        normalize=True,  # normalize the dataset
     )
 
     # Load dataloaders
@@ -356,16 +413,17 @@ def main(args: Namespace) -> None:
     # move everything on the cpu
     net = net.to("cpu")
     net.R = net.R.to("cpu")
+    # show a summary
     summary(net, (3, 32, 32))
 
     # Test on best weights
     load_best_weights(net, args.weights_path_folder, args.device)
 
     # dataloaders
-    test_loader = dataloaders["test_loader"]
+    #  test_loader = dataloaders["test_loader"]
 
     # define the cost function
-    cost_function = torch.nn.BCELoss()
+    #  cost_function = torch.nn.BCELoss()
 
     # test set
     #  test_loss, test_accuracy, test_score = test_step(
@@ -387,4 +445,5 @@ def main(args: Namespace) -> None:
 
     print("-----------------------------------------------------")
 
+    # launch the debug
     debug(net, dataloaders, **vars(args))

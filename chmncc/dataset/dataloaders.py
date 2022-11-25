@@ -86,6 +86,8 @@ def load_cifar_dataloaders(
     img_depth: int,
     csv_path: str,
     test_csv_path: str,
+    test_debug_csv_path: str,
+    test_debug_test_csv_path: str,
     val_csv_path: str,
     cifar_metadata: str,
     device: str,
@@ -227,15 +229,18 @@ def load_cifar_dataloaders(
         shuffle=True,
         num_workers=4,
     )
+
     test_loader = torch.utils.data.DataLoader(
         test_dataset, batch_size=test_batch_size, shuffle=False, num_workers=4
     )
+
     test_loader_with_labels_name_confunders_pos = torch.utils.data.DataLoader(
         test_dataset_with_labels_and_confunders_pos,
         batch_size=test_batch_size,
         shuffle=False,
         num_workers=4,
     )
+
     test_loader_with_labels_names = torch.utils.data.DataLoader(
         test_dataset_with_labels,
         batch_size=test_batch_size,
@@ -289,6 +294,7 @@ def load_cifar_dataloaders(
         "test_loader": test_loader,
         "test_loader_with_labels_name": test_loader_with_labels_names,
         "test_loader_with_labels_name_confunders_pos": test_loader_with_labels_name_confunders_pos,
+        "test_set_with_labels_name_confunders_pos": test_dataset_with_labels_and_confunders_pos,
         "test_set": test_dataset,
         "test": test,
         "val_set": val_dataset,

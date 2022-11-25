@@ -55,6 +55,12 @@ class RRRLoss(nn.Module):
         # get gradients w.r.t. to the input
         log_prob_ys = logits
         log_prob_ys.retain_grad()
+
+        # integrated gradients
+        gradXes = None
+
+        self.net.eval()
+        # sum each axes contribution
         gradXes = torch.autograd.grad(
             log_prob_ys,
             X,
@@ -62,9 +68,8 @@ class RRRLoss(nn.Module):
             create_graph=True,
             allow_unused=True,
         )[0]
-
-        # if expl.shape [n,1,h,w] and gradXes.shape [n,3,h,w] then torch broadcasting
-        # is used implicitly
+        self.net.train()
+        gradXes = torch.sum(gradXes, dim=1)
         # when the feature is 0 -> relevant, since if it is 1 we are adding a penality
         A_gradX = torch.mul(expl, gradXes) ** 2
 
@@ -117,7 +122,6 @@ class IGRRRLoss(RRRLoss):
             rr_clipping: clip the RR loss to a maximum per batch.
         """
         super().__init__(net, regularizer_rate, base_criterion, weight, rr_clipping)
-        print("Using Integrated Gradient RRR...")
 
     def forward(self, X, y, expl, logits):
         """
@@ -137,7 +141,34 @@ class IGRRRLoss(RRRLoss):
         log_prob_ys.retain_grad()
 
         # integrated gradients
-        gradXes = compute_integrated_gradient(X, torch.zeros_like(X), self.net)
+        gradXes = None
+
+        self.net.eval()
+        for i in range(X.shape[0]):
+            x_sample = torch.unsqueeze(X[i], 0)
+            if gradXes is None:
+                gradXes = torch.unsqueeze(
+                    compute_integrated_gradient(
+                        x_sample, torch.zeros_like(x_sample), self.net
+                    ),
+                    0,
+                )
+            else:
+                gradXes = torch.cat(
+                    (
+                        gradXes,
+                        torch.unsqueeze(
+                            compute_integrated_gradient(
+                                x_sample, torch.zeros_like(x_sample), self.net
+                            ),
+                            0,
+                        ),
+                    ),
+                    0,
+                )
+        self.net.train()
+        # sum each axes contribution
+        gradXes = torch.sum(gradXes, dim=1)
 
         # if expl.shape [n,1,h,w] and gradXes.shape [n,3,h,w] then torch broadcasting
         # is used implicitly

@@ -29,7 +29,7 @@ VISUALIZE_FLAGS := --only-confunders true
 
 # ======= DEBUG ===================
 DEBUG:= debug
-DEBUG_FLAGS := -igrad false
+DEBUG_FLAGS := --integrated-gradients
 
 # ======= DOC ======================
 AUTHORS := --author "Eleonora Giunchiglia, Thomas Lukasiewicz, Samuele Bortolotti" 

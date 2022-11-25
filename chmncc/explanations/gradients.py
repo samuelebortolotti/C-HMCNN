@@ -1,6 +1,5 @@
 import torch
 import tqdm
-from typing import Tuple
 
 
 def compute_integrated_gradient(

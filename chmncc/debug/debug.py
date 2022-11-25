@@ -619,7 +619,6 @@ def main(args: Namespace) -> None:
     Args:
         args (Namespace): command line arguments
     """
-    args.integrated_gradients = False
     print("\n### Network debug ###")
     print("> Parameters:")
     for p, v in zip(args.__dict__.keys(), args.__dict__.values()):
@@ -695,7 +694,7 @@ def main(args: Namespace) -> None:
     # define the cost function
     cost_function = torch.nn.BCELoss()
 
-    # test set
+    #  # test set
     test_loss, test_accuracy, test_score = test_step(
         net=net,
         test_loader=iter(test_loader),
@@ -705,7 +704,7 @@ def main(args: Namespace) -> None:
         device=args.device,
     )
 
-    print("Netowrk resumed, performances:")
+    print("Network resumed, performances:")
 
     print(
         "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
@@ -730,7 +729,7 @@ def main(args: Namespace) -> None:
         net=net,
         dataloaders=dataloaders,
         optimizer=optimizer,
-        set_wandb=arg.wandb,
+        set_wandb=args.wandb,
         title="debug",
         **vars(args)
     )

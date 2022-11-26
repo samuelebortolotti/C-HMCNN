@@ -204,12 +204,8 @@ def save_input_gradient(
     Returns:
         gradient [torch.Tensor]: integrated_gradient
     """
-    # move the element to cpu
-    single_el = single_el.to("cpu")
     # integrated gradients
     gradient = output_gradients(single_el, net(single_el))[0]
-    # move the element to cpu
-    single_el = single_el.to(device)
 
     # sum over RGB channels
     gradient = torch.sum(gradient, dim=0)
@@ -404,7 +400,11 @@ def debug(
 
             # machine understands, keep looping
             if correct_guess:
-                print("The machine start to understand something...")
+                print(
+                    "The machine start to understand something: {}-th sample is a correct guess!".format(
+                        i
+                    )
+                )
 
             # get the example label
             label = torch.unsqueeze(hierarchical_label[i], 0)
@@ -578,7 +578,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--no-integrated-gradients",
         "-noigrad",
         dest="integrated_gradients",
-        action="store_true",
+        action="store_false",
         help="Use input gradients",
     )
     parser.add_argument(
@@ -684,22 +684,22 @@ def main(args: Namespace) -> None:
     cost_function = torch.nn.BCELoss()
 
     #  # test set
-    test_loss, test_accuracy, test_score = test_step(
-        net=net,
-        test_loader=iter(test_loader),
-        cost_function=cost_function,
-        title="Test",
-        test=dataloaders["test"],
-        device=args.device,
-    )
-
-    print("Network resumed, performances:")
-
-    print(
-        "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
-            test_loss, test_accuracy, test_score
-        )
-    )
+    #  test_loss, test_accuracy, test_score = test_step(
+    #      net=net,
+    #      test_loader=iter(test_loader),
+    #      cost_function=cost_function,
+    #      title="Test",
+    #      test=dataloaders["test"],
+    #      device=args.device,
+    #  )
+    #
+    #  print("Network resumed, performances:")
+    #
+    #  print(
+    #      "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
+    #          test_loss, test_accuracy, test_score
+    #      )
+    #  )
 
     print("-----------------------------------------------------")
 

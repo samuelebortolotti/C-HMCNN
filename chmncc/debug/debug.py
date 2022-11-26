@@ -64,7 +64,7 @@ def save_test_sample(
     dataloaders: Dict[str, Any],
     superclass: str,
     subclass: str,
-) -> Tuple[bool, bool]:
+) -> bool:
     """Save the test sample only if it presents a confunder.
     Then it returns whether the sample contains a confunder or if the sample has been
     guessed correctly.
@@ -79,7 +79,6 @@ def save_test_sample(
         subclass [str]: subclass string
 
     Returns:
-        confunded [bool]: whether the sample is confunded
         correct_guess [bool]: whether the model has guessed correctly
     """
     # prepare the element in order to show it
@@ -119,46 +118,37 @@ def save_test_sample(
         ):
             correct_guess = True
 
-    # check if the sample is confunded
-    if superclass in confunders:
-        for tmp_index in range(len(confunders[superclass]["test"])):
-            if confunders[superclass]["test"][tmp_index]["subclass"] == subclass:
-                confunded = True
-                break
-
-    # if confunded, it is worth to save it
-    if confunded:
-        # plot the title
-        prediction_text = "Predicted: {}\nbecause of: {}".format(
-            parent_predictions, children_predictions
+    # plot the title
+    prediction_text = "Predicted: {}\nbecause of: {}".format(
+        parent_predictions, children_predictions
+    )
+    # get figure
+    fig = plt.figure()
+    plt.imshow(single_el_show)
+    plt.title(
+        "Groundtruth superclass: {} \nGroundtruth subclass: {}\n\n{}".format(
+            superclass, subclass, prediction_text
         )
-        # get figure
-        fig = plt.figure()
-        plt.imshow(single_el_show)
-        plt.title(
-            "Groundtruth superclass: {} \nGroundtruth subclass: {}\n\n{}".format(
-                superclass, subclass, prediction_text
-            )
-        )
-        plt.tight_layout()
-        # show the figure
-        fig.savefig(
-            "{}/{}_original{}.png".format(
-                debug_folder,
-                idx,
-                "_confunded" if confunded else "",
-            ),
-            dpi=fig.dpi,
-        )
-        # close the figure
-        plt.close()
+    )
+    plt.tight_layout()
+    # show the figure
+    fig.savefig(
+        "{}/{}_original{}.png".format(
+            debug_folder,
+            idx,
+            "_confunded" if confunded else "",
+        ),
+        dpi=fig.dpi,
+    )
+    # close the figure
+    plt.close()
 
     # whether the image is confunded or not
-    return confunded, correct_guess
+    return correct_guess
 
 
 def save_i_gradient(
-    single_el: torch.Tensor, net: nn.Module, debug_folder: str, idx: int, device: str
+    single_el: torch.Tensor, net: nn.Module, debug_folder: str, idx: int
 ) -> torch.Tensor:
     """Computes the integrated graditents and saves them in an image
 
@@ -254,7 +244,7 @@ def debug_iter(
     confunder_pos1_y: int,
     confunder_pos2_x: int,
     confunder_pos2_y: int,
-    confunder_shape: Dict[str, str],
+    confunder_shape: str,
 ) -> torch.Tensor:
     """Debug iteration
         - remove the confunder from the integrated gradient
@@ -278,7 +268,7 @@ def debug_iter(
     # confounder mask
     confounder_mask = np.zeros_like(gradient.cpu().data.numpy())
 
-    if confunder_shape["shape"] == "rectangle":
+    if confunder_shape == "rectangle":
         # get the image of the modified gradient
         cv2.rectangle(
             confounder_mask,
@@ -353,16 +343,15 @@ def debug(
     if set_wandb:
         wandb.watch(net)
 
-    # load the human readable labels dataloader and the confunders position for debug and test
-    #  test_set_confunder = dataloaders["test_set_with_labels_name_confunders_pos"]
-    test_loader_confunder = dataloaders["test_loader_with_labels_name_confunders_pos"]
+    # load the human readable labels dataloader and the confunders position for debug and test (contains only confounders)
+    test_set_confunder = dataloaders["test_dataset_with_labels_and_confunders_pos_only_confounders"]
 
-    #  debug_train_loader = torch.utils.data.DataLoader(
-    #      test_set_confunder, batch_size=batch_size
-    #  )
-    #  debug_test_loader = torch.utils.data.DataLoader(
-    #      test_set_confunder, batch_size=test_batch_size
-    #  )
+    debug_train_loader = torch.utils.data.DataLoader(
+        test_set_confunder, batch_size=batch_size
+    )
+    debug_test_loader = torch.utils.data.DataLoader(
+        test_set_confunder, batch_size=test_batch_size
+    )
 
     if not integrated_gradients:
         reviseLoss = RRRLoss(net=net, regularizer_rate=20, base_criterion=BCELoss())
@@ -375,9 +364,9 @@ def debug(
     ground_truth_list = None
     confounder_mask_list = None
 
-    print(len(iter(test_loader_confunder)))
+    print(len(iter(debug_train_loader)))
     # loop over the examples
-    for _, inputs in tqdm.tqdm(enumerate(iter(test_loader_confunder)), desc=title):
+    for _, inputs in tqdm.tqdm(enumerate(iter(debug_train_loader)), desc=title):
         print(_)
         (
             test_el,
@@ -401,7 +390,7 @@ def debug(
                 net=net, sample_batch=test_el, idx=i, device=device
             )
             # save the test sample only if it is the right one
-            confunded_sample, correct_guess = save_test_sample(
+            correct_guess = save_test_sample(
                 test_sample=single_el,  # single torch image element
                 prediction=preds,  # torch prediction
                 idx=i,  # iteration
@@ -411,61 +400,57 @@ def debug(
                 subclass=subclass[i],  # ith subclass string
             )
 
-            # confunded sample found, starting the debug procedure
-            if confunded_sample:
-                # machine understands, keep looping
-                if correct_guess:
-                    print("The machine start to understand something...")
-                    continue
+            # machine understands, keep looping
+            if correct_guess:
+                print("The machine start to understand something...")
 
-                # get the example label
-                label = torch.unsqueeze(hierarchical_label[i], 0)
+            # get the example label
+            label = torch.unsqueeze(hierarchical_label[i], 0)
 
-                # save the integrated gradients
-                if integrated_gradients:
-                    gradient = save_i_gradient(
-                        single_el=single_el,
-                        net=net,
-                        debug_folder=debug_folder,
-                        idx=i,
-                        device=device,
-                    )
-                else:
-                    gradient = save_input_gradient(
-                        single_el=single_el,
-                        net=net,
-                        debug_folder=debug_folder,
-                        idx=i,
-                        device=device,
-                    )
-
-                # debug iteration
-                confounder_mask = debug_iter(
+            # save the integrated gradients
+            if integrated_gradients:
+                gradient = save_i_gradient(
+                    single_el=single_el,
+                    net=net,
                     debug_folder=debug_folder,
                     idx=i,
-                    gradient=gradient,
-                    confunder_pos1_x=confunder_pos1_x[i],
-                    confunder_pos1_y=confunder_pos1_y[i],
-                    confunder_pos2_x=confunder_pos2_x[i],
-                    confunder_pos2_y=confunder_pos2_y[i],
-                    confunder_shape=confunder_shape[i],
                 )
-                confounder_mask = torch.unsqueeze(confounder_mask, 0)
+            else:
+                gradient = save_input_gradient(
+                    single_el=single_el,
+                    net=net,
+                    debug_folder=debug_folder,
+                    idx=i,
+                    device=device,
+                )
 
-                if (
-                    samples_list == None
-                    or ground_truth_list == None
-                    or confounder_mask_list == None
-                ):
-                    samples_list = single_el
-                    ground_truth_list = label
-                    confounder_mask_list = confounder_mask
-                else:
-                    samples_list = torch.cat((samples_list, single_el), 0)
-                    ground_truth_list = torch.cat((ground_truth_list, label), 0)
-                    confounder_mask_list = torch.cat(
-                        (confounder_mask_list, confounder_mask), 0
-                    )
+            # debug iteration
+            confounder_mask = debug_iter(
+                debug_folder=debug_folder,
+                idx=i,
+                gradient=gradient,
+                confunder_pos1_x=confunder_pos1_x[i],
+                confunder_pos1_y=confunder_pos1_y[i],
+                confunder_pos2_x=confunder_pos2_x[i],
+                confunder_pos2_y=confunder_pos2_y[i],
+                confunder_shape=confunder_shape[i],
+            )
+            confounder_mask = torch.unsqueeze(confounder_mask, 0)
+
+            if (
+                samples_list == None
+                or ground_truth_list == None
+                or confounder_mask_list == None
+            ):
+                samples_list = single_el
+                ground_truth_list = label
+                confounder_mask_list = confounder_mask
+            else:
+                samples_list = torch.cat((samples_list, single_el), 0)
+                ground_truth_list = torch.cat((ground_truth_list, label), 0)
+                confounder_mask_list = torch.cat(
+                    (confounder_mask_list, confounder_mask), 0
+                )
 
         # check whether the model can be trained in this way
         if (
@@ -528,7 +513,7 @@ def debug(
     # test set
     test_loss, test_accuracy, test_score = test_step(
         net=net,
-        test_loader=iter(test_loader_confunder),
+        test_loader=iter(debug_test_loader),
         cost_function=cost_function,
         title="Test",
         test=dataloaders["test"],
@@ -675,6 +660,8 @@ def main(args: Namespace) -> None:
         wandb.login()
         # set the argument to true
         args.set_wandb = args.wandb
+    else:
+        args.set_wandb = False
 
     if args.wandb:
         # start the log

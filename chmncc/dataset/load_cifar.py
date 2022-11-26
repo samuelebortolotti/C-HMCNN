@@ -13,6 +13,7 @@ from torch.utils.data import Dataset
 from chmncc.config import hierarchy, confunders
 from chmncc.utils import read_meta
 from typing import Any, Dict, Tuple, List, Union
+from chmncc.config import confunders, hierarchy
 import networkx as nx
 
 # which node of the hierarchy to skip (root is only a confound)
@@ -32,6 +33,7 @@ class LoadDataset(Dataset):
         transform: Any = None,
         name_labels: bool = False,
         confunders_position: bool = False,
+        only_confounders: bool = False,
         confund: bool = True,
         train: bool = True,
     ):
@@ -46,6 +48,7 @@ class LoadDataset(Dataset):
             transform [Any] = None: torchvision transformation
             name_labels [bool] = whether to use the label name
             confunders_position [bool] = whether to return the confunder position
+            only_confounders [bool] = whether to return only the confounder data
             confund [bool] = whether to put confunders
             train [bool] = whether the set is training or not (used to apply the confunders)
         """
@@ -80,8 +83,29 @@ class LoadDataset(Dataset):
 
         # set whether to confund
         self.confund = confund
+        # whether to have only confounders
+        self.only_confounders = only_confounders
         # whether we are in the training phase
         self.train = train
+        # filter the data according to the confounders
+        if only_confounders:
+            self.data_list = self._confounders_only(
+                self.data_list, "train" if self.train else "test"
+            )
+
+    def _confounders_only(
+        self, confounders_list: List[Tuple[str, str, str]], phase: str
+    ) -> List[Tuple[str, str, str]]:
+        filtered = []
+        for image, superclass, subclass in confounders_list:
+            # check if the sample is confunded
+            superclass = superclass.strip()
+            subclass = subclass.strip()
+            if superclass in confunders:
+                for tmp_index in range(len(confunders[superclass][phase])):
+                    if confunders[superclass][phase][tmp_index]["subclass"] == subclass:
+                        filtered.append((image, superclass, subclass))
+        return filtered
 
     def _confund(
         self,
@@ -176,7 +200,7 @@ class LoadDataset(Dataset):
         nodes_idx = dict(zip(nodes, range(len(nodes))))
         return nodes, nodes_idx, np.array(nx.to_numpy_matrix(self.g, nodelist=nodes))
 
-    def csv_to_list(self) -> List[List[str]]:
+    def csv_to_list(self) -> List[Tuple[str, str, str]]:
         """Reads the path of the file and its corresponding label
         Returns:
             csv file entries [List[List[str]]]
@@ -300,7 +324,7 @@ class LoadDataset(Dataset):
                     confunder_pos_2_x = c_pos_2_x
                     confunder_pos_2_y = c_pos_2_y
                     # Get the shape (and all the info) of the confunder
-                    confunder_shape = c_shape
+                    confunder_shape = c_shape["shape"]
 
         # get the PIL image out of it
         image = Image.fromarray(image)

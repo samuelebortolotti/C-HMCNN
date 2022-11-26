@@ -212,6 +212,19 @@ def load_cifar_dataloaders(
         train=False,
     )
 
+    test_dataset_with_labels_and_confunders_pos_only_confounders = LoadDataset(
+        image_size=img_size,
+        image_depth=img_depth,
+        csv_path=test_csv_path,
+        cifar_metafile=cifar_metadata,
+        transform=transform_test,
+        confunders_position=True,
+        name_labels=True,
+        only_confounders=True,
+        confund=confunder,
+        train=False,
+    )
+
     val_dataset = LoadDataset(
         image_size=img_size,
         image_depth=img_depth,
@@ -295,6 +308,7 @@ def load_cifar_dataloaders(
         "test_loader_with_labels_name": test_loader_with_labels_names,
         "test_loader_with_labels_name_confunders_pos": test_loader_with_labels_name_confunders_pos,
         "test_set_with_labels_name_confunders_pos": test_dataset_with_labels_and_confunders_pos,
+        "test_dataset_with_labels_and_confunders_pos_only_confounders": test_dataset_with_labels_and_confunders_pos_only_confounders,
         "test_set": test_dataset,
         "test": test,
         "val_set": val_dataset,

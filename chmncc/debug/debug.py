@@ -170,14 +170,10 @@ def save_i_gradient(
     Returns:
         integrated_gradient [torch.Tensor]: integrated_gradient
     """
-    # move the single_el to cpu
-    single_el = single_el.to("cpu")
     # integrated gradients
     i_gradient = compute_integrated_gradient(
         single_el, torch.zeros_like(single_el), net
     )
-    # move it back
-    single_el = single_el.to(device)
 
     # sum over RGB channels
     i_gradient = torch.sum(i_gradient, dim=0)
@@ -280,7 +276,7 @@ def debug_iter(
         confunder_shape [Dict[str, Any]]: confunder information
     """
     # confounder mask
-    confounder_mask = np.zeros_like(gradient.data.numpy())
+    confounder_mask = np.zeros_like(gradient.cpu().data.numpy())
 
     if confunder_shape["shape"] == "rectangle":
         # get the image of the modified gradient
@@ -295,8 +291,8 @@ def debug_iter(
         # get the image of the modified gradient
         cv2.circle(
             confounder_mask,
-            (int(confunder_pos1_x.numpy()), int(confunder_pos1_y.numpy())),
-            int(confunder_pos2_x.numpy()),
+            (int(confunder_pos1_x.item()), int(confunder_pos1_y.item())),
+            int(confunder_pos2_x.item()),
             (255, 255, 255),
             cv2.FILLED,
         )
@@ -305,7 +301,7 @@ def debug_iter(
     confounder_mask = torch.tensor((confounder_mask > 0.5).astype(np.float_))
 
     # gradient to show
-    gradient_to_show = gradient.clone().data.numpy()
+    gradient_to_show = gradient.clone().cpu().data.numpy()
     gradient_to_show = np.where(confounder_mask < 0.5, gradient_to_show, 0)
     gradient_to_show = np.fabs(gradient_to_show)
     # normalize the value
@@ -358,14 +354,15 @@ def debug(
         wandb.watch(net)
 
     # load the human readable labels dataloader and the confunders position for debug and test
-    test_set_confunder = dataloaders["test_set_with_labels_name_confunders_pos"]
+    #  test_set_confunder = dataloaders["test_set_with_labels_name_confunders_pos"]
+    test_loader_confunder = dataloaders["test_loader_with_labels_name_confunders_pos"]
 
-    debug_train_loader = torch.utils.data.DataLoader(
-        test_set_confunder, batch_size=batch_size
-    )
-    debug_test_loader = torch.utils.data.DataLoader(
-        test_set_confunder, batch_size=test_batch_size
-    )
+    #  debug_train_loader = torch.utils.data.DataLoader(
+    #      test_set_confunder, batch_size=batch_size
+    #  )
+    #  debug_test_loader = torch.utils.data.DataLoader(
+    #      test_set_confunder, batch_size=test_batch_size
+    #  )
 
     if not integrated_gradients:
         reviseLoss = RRRLoss(net=net, regularizer_rate=20, base_criterion=BCELoss())
@@ -378,8 +375,10 @@ def debug(
     ground_truth_list = None
     confounder_mask_list = None
 
+    print(len(iter(test_loader_confunder)))
     # loop over the examples
-    for _, inputs in tqdm.tqdm(enumerate(iter(debug_train_loader)), desc=title):
+    for _, inputs in tqdm.tqdm(enumerate(iter(test_loader_confunder)), desc=title):
+        print(_)
         (
             test_el,
             superclass,
@@ -529,7 +528,7 @@ def debug(
     # test set
     test_loss, test_accuracy, test_score = test_step(
         net=net,
-        test_loader=iter(debug_test_loader),
+        test_loader=iter(test_loader_confunder),
         cost_function=cost_function,
         title="Test",
         test=dataloaders["test"],
@@ -729,7 +728,6 @@ def main(args: Namespace) -> None:
         net=net,
         dataloaders=dataloaders,
         optimizer=optimizer,
-        set_wandb=args.wandb,
         title="debug",
         **vars(args)
     )

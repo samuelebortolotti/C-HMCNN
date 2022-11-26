@@ -382,6 +382,7 @@ def debug(
 
         # set the network to eval mode
         net.eval()
+        continue
 
         # loop over the batch
         for i in range(test_el.shape[0]):
@@ -518,6 +519,7 @@ def debug(
         title="Test",
         test=dataloaders["test"],
         device=device,
+        debug_mode=True
     )
 
     print("Netowrk resumed, performances:")
@@ -681,22 +683,22 @@ def main(args: Namespace) -> None:
     cost_function = torch.nn.BCELoss()
 
     #  # test set
-    test_loss, test_accuracy, test_score = test_step(
-        net=net,
-        test_loader=iter(test_loader),
-        cost_function=cost_function,
-        title="Test",
-        test=dataloaders["test"],
-        device=args.device,
-    )
-
-    print("Network resumed, performances:")
-
-    print(
-        "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
-            test_loss, test_accuracy, test_score
-        )
-    )
+    #  test_loss, test_accuracy, test_score = test_step(
+    #      net=net,
+    #      test_loader=iter(test_loader),
+    #      cost_function=cost_function,
+    #      title="Test",
+    #      test=dataloaders["test"],
+    #      device=args.device,
+    #  )
+    #
+    #  print("Network resumed, performances:")
+    #
+    #  print(
+    #      "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
+    #          test_loss, test_accuracy, test_score
+    #      )
+    #  )
 
     print("-----------------------------------------------------")
 

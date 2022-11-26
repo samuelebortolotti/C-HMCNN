@@ -28,6 +28,7 @@ def test_step(
     title: str,
     test: dotdict,
     device: str = "gpu",
+    debug_mode: bool = False,
 ) -> Tuple[float, float, float]:
     r"""Test function for the network.
     It computes the accuracy together with the area under the precision-recall-curve as a metric
@@ -55,9 +56,12 @@ def test_step(
     # disable gradient computation (we are only testing, we do not want our model to be modified in this step!)
     with torch.no_grad():
         # iterate over the test set
-        for batch_idx, (inputs, targets) in tqdm.tqdm(
-            enumerate(test_loader), desc=title
-        ):
+        for batch_idx, items in tqdm.tqdm(enumerate(test_loader), desc=title):
+            if debug_mode:
+                (inputs, _, _, targets, _, _, _, _, _) = items
+            else:
+                (inputs, targets) = items
+
             # load data into device
             inputs = inputs.to(device)
             targets = targets.to(device)

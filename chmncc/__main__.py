@@ -488,7 +488,6 @@ def c_hmcnn(
         single_el = torch.unsqueeze(test_el[i], 0)
         # set the gradients as required
         single_el.requires_grad = True
-        print(single_el.shape)
         # get the predictions
         preds = net(single_el.float())
         # output gradients

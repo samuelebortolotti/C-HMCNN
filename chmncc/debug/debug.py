@@ -584,7 +584,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--debug-folder", "-df", type=str, default="debug", help="Debug folder"
     )
     parser.add_argument(
-        "--model-folder", "-df", type=str, default="models", help="Folder where to save the model"
+        "--model-folder", "-mf", type=str, default="models", help="Folder where to save the model"
     )
     parser.add_argument(
         "--test-batch-size", "-tbs", type=int, default=128, help="Test batch size"

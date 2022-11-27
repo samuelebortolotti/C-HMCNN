@@ -363,11 +363,15 @@ def debug(
         "test_dataset_with_labels_and_confunders_pos_only_confounders"
     ]
 
+    train_size = int(0.8 * len(test_set_confunder))
+    test_size = len(test_set_confunder) - train_size
+    debug_train_dataset, debug_test_dataset = torch.utils.data.random_split(test_set_confunder, [train_size, test_size])
+
     debug_train_loader = torch.utils.data.DataLoader(
-        test_set_confunder, batch_size=batch_size
+        debug_train_dataset, batch_size=batch_size
     )
     debug_test_loader = torch.utils.data.DataLoader(
-        test_set_confunder, batch_size=test_batch_size
+        debug_test_dataset, batch_size=test_batch_size
     )
 
     # switch between integrated gradients or input gradients
@@ -381,6 +385,26 @@ def debug(
     samples_list = None
     ground_truth_list = None
     confounder_mask_list = None
+
+    # define the cost function
+    cost_function = torch.nn.BCELoss()
+
+    # test set in debug mode
+    test_loss, test_accuracy, test_score = test_step(
+        net=net,
+        test_loader=iter(debug_test_loader),
+        cost_function=cost_function,
+        title="Test",
+        test=dataloaders["test"],
+        device=device,
+        debug_mode=True,
+    )
+
+    print(
+        "\n\t [DEBUG SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
+            test_loss, test_accuracy, test_score
+        )
+    )
 
     # loop over the examples
     for _, inputs in tqdm.tqdm(enumerate(iter(debug_train_loader)), desc=title):
@@ -535,9 +559,6 @@ def debug(
 
     print("Testing...")
 
-    # define the cost function
-    cost_function = torch.nn.BCELoss()
-
     # test set in debug mode
     test_loss, test_accuracy, test_score = test_step(
         net=net,
@@ -550,7 +571,7 @@ def debug(
     )
 
     print(
-        "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
+        "\n\t [DEBUG SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
             test_loss, test_accuracy, test_score
         )
     )
@@ -721,7 +742,7 @@ def main(args: Namespace) -> None:
     print("Network resumed, performances:")
 
     print(
-        "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
+        "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
             test_loss, test_accuracy, test_score
         )
     )
@@ -760,7 +781,7 @@ def main(args: Namespace) -> None:
     )
 
     print(
-        "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
+        "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
             test_loss, test_accuracy, test_score
         )
     )

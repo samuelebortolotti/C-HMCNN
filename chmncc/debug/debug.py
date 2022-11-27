@@ -352,6 +352,7 @@ def debug(
     title: str,
     debug_train_loader: torch.utils.data.DataLoader,
     debug_test_loader: torch.utils.data.DataLoader,
+    test_loader: torch.utils.data.DataLoader,
     reviseLoss: Union[RRRLoss, IGRRRLoss],
     **kwargs: Any
 ):
@@ -373,6 +374,7 @@ def debug(
         test_batch_size [int] size of the batch in the test settings
         debug_train_loader [torch.utils.data.DataLoader]: dataloader for the debug
         debug_test_loader [torch.utils.data.DataLoader]: dataloader for the test
+        test_loader [torch.utils.data.DataLoader]: dataloader for final testing
         reviseLoss: Union[RRRLoss, IGRRRLoss]: loss for feeding the network some feedbacks
         **kwargs [Any]: kwargs
     """
@@ -566,6 +568,32 @@ def debug(
                 "debug_test/loss": test_loss,
                 "debug_test/accuracy": test_accuracy,
                 "debug_test/score": test_score,
+            }
+        )
+
+    # test set
+    test_loss, test_accuracy, test_score = test_step(
+        net=net,
+        test_loader=iter(test_loader),
+        cost_function=cost_function,
+        title="Test",
+        test=dataloaders["test"],
+        device=device,
+    )
+
+    print(
+        "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
+            test_loss, test_accuracy, test_score
+        )
+    )
+
+    # log on wandb if and only if the module is loaded
+    if set_wandb:
+        wandb.log(
+            {
+                "test/loss": test_loss,
+                "test/accuracy": test_accuracy,
+                "test/score": test_score,
             }
         )
 
@@ -824,6 +852,7 @@ def main(args: Namespace) -> None:
             title="debug",
             debug_train_loader=debug_train_loader,
             debug_test_loader=debug_test_loader,
+            test_loader=test_loader,
             reviseLoss=reviseLoss,
             **vars(args)
         )

@@ -20,8 +20,8 @@ DATASET_FLAGS :=
 # ======= EXPERIMENT ===============
 EXPERIMENT := experiment 
 EXP_NAME := "chmncc"
-EPOCHS := 0
-EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 128 --test-batch-size 10 --device cpu --project chmncc --network resnet
+EPOCHS := 50
+EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 128 --test-batch-size 10 --device cuda --project chmncc --network resnet
 
 # ======= VISUALIZE ================
 VISUALIZE:= visualize
@@ -29,7 +29,7 @@ VISUALIZE_FLAGS := --only-confunders true
 
 # ======= DEBUG ===================
 DEBUG:= debug
-DEBUG_FLAGS := --integrated-gradients
+DEBUG_FLAGS := --learning-rate 0.001 --batch-size 128 --test-batch-size 128 --device "cuda" --network "resnet" --integrated-gradients --iterations 5 
 
 # ======= DOC ======================
 AUTHORS := --author "Eleonora Giunchiglia, Thomas Lukasiewicz, Samuele Bortolotti" 

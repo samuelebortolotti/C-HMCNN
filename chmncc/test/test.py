@@ -2,9 +2,8 @@ import torch
 import torch.nn as nn
 from typing import Tuple
 import tqdm
-import torch.nn.functional as F
 from chmncc.utils import dotdict
-from sklearn.metrics import average_precision_score, f1_score
+from sklearn.metrics import average_precision_score
 
 
 def tr_image(img: torch.Tensor) -> torch.Tensor:
@@ -40,6 +39,7 @@ def test_step(
         title [str]: title of the experiment
         test [dotdict] test set dictionary
         device [str] = "gpu": device on which to run the experiment
+        debug_mode [bool] = False: whether the test is done on the debug dataloader
 
     Returns:
         cumulative_loss [float] loss on the test set [not used to train!]
@@ -58,8 +58,10 @@ def test_step(
         # iterate over the test set
         for batch_idx, items in tqdm.tqdm(enumerate(test_loader), desc=title):
             if debug_mode:
+                # debug dataloader
                 (inputs, _, _, targets, _, _, _, _, _) = items
             else:
+                # test dataloader
                 (inputs, targets) = items
 
             # load data into device

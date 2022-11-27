@@ -5,11 +5,9 @@ import os
 import torch.nn as nn
 from torch.nn.modules.loss import BCELoss
 from chmncc.networks import ResNet18, LeNet5
-from chmncc.config import confunders, hierarchy
-from chmncc.utils.utils import dotdict, load_best_weights
-from torch.utils.data.sampler import SubsetRandomSampler
+from chmncc.config import hierarchy
+from chmncc.utils.utils import load_best_weights
 from chmncc.dataset import (
-    dataloaders,
     load_cifar_dataloaders,
     get_named_label_predictions,
 )
@@ -19,7 +17,6 @@ from chmncc.explanations import compute_integrated_gradient, output_gradients
 from chmncc.loss import RRRLoss, IGRRRLoss
 from chmncc.revise import revise_step
 from chmncc.optimizers import get_adam_optimizer
-from chmncc.utils import dotdict
 from typing import Dict, Any, Tuple
 import tqdm
 import matplotlib.pyplot as plt
@@ -64,8 +61,9 @@ def save_test_sample(
     dataloaders: Dict[str, Any],
     superclass: str,
     subclass: str,
+    integrated_gradients: bool,
 ) -> bool:
-    """Save the test sample only if it presents a confunder.
+    """Save the test sample.
     Then it returns whether the sample contains a confunder or if the sample has been
     guessed correctly.
 
@@ -77,6 +75,7 @@ def save_test_sample(
         dataloaders [Dict[str, Any]]: dictionary depicting the dataloaders of the data
         superclass [str]: superclass string
         subclass [str]: subclass string
+        integrated_gradients [bool]: whether to use integrated gradients
 
     Returns:
         correct_guess [bool]: whether the model has guessed correctly
@@ -107,7 +106,6 @@ def save_test_sample(
     children_predictions = list(filter(lambda x: x in children, named_prediction))
 
     # check whether it is confunded
-    confunded = False
     correct_guess = False
 
     # set the guess as correct if it is
@@ -122,6 +120,7 @@ def save_test_sample(
     prediction_text = "Predicted: {}\nbecause of: {}".format(
         parent_predictions, children_predictions
     )
+
     # get figure
     fig = plt.figure()
     plt.imshow(single_el_show)
@@ -133,22 +132,23 @@ def save_test_sample(
     plt.tight_layout()
     # show the figure
     fig.savefig(
-        "{}/{}_original{}.png".format(
+        "{}/{}_original_{}_{}.png".format(
             debug_folder,
             idx,
-            "_confunded" if confunded else "",
+            "integrated_gradients" if integrated_gradients else "",
+            "correct" if correct_guess else "",
         ),
         dpi=fig.dpi,
     )
     # close the figure
     plt.close()
 
-    # whether the image is confunded or not
+    # whether the prediction was right
     return correct_guess
 
 
 def save_i_gradient(
-    single_el: torch.Tensor, net: nn.Module, debug_folder: str, idx: int
+    single_el: torch.Tensor, net: nn.Module, debug_folder: str, idx: int, integrated_gradients: bool, correct_guess: bool
 ) -> torch.Tensor:
     """Computes the integrated graditents and saves them in an image
 
@@ -157,6 +157,8 @@ def save_i_gradient(
         net [nn.Module]: neural network
         debug_folder [str]: string depicting the folder path
         idx [int]: index of the image
+        integrated_gradients [bool]: whether the method uses integrated gradients or input gradients
+        correct_guess [bool]: whether the guess was correct
     Returns:
         integrated_gradient [torch.Tensor]: integrated_gradient
     """
@@ -181,7 +183,10 @@ def save_i_gradient(
     plt.title("Integrated Gradient with respect to the input")
     # show the figure
     fig.savefig(
-        "{}/{}_i_gradient.png".format(debug_folder, idx),
+        "{}/{}_gradient_{}_{}.png".format(debug_folder, idx,
+            "integrated" if integrated_gradients else "input",
+            "correct" if correct_guess else "",
+        ),
         dpi=fig.dpi,
     )
     plt.close()
@@ -191,7 +196,7 @@ def save_i_gradient(
 
 
 def save_input_gradient(
-    single_el: torch.Tensor, net: nn.Module, debug_folder: str, idx: int, device: str
+    single_el: torch.Tensor, net: nn.Module, debug_folder: str, idx: int, integrated_gradients: bool, correct_guess: bool
 ) -> torch.Tensor:
     """Computes the input graditents and saves them in an image
 
@@ -200,7 +205,8 @@ def save_input_gradient(
         net [nn.Module]: neural network
         debug_folder [str]: string depicting the folder path
         idx [int]: index of the image
-        device [str]: device where to perform the computations
+        integrated_gradients [bool]: whether the method uses integrated gradients or input gradients
+        correct_guess [bool]: whether the guess was correct
     Returns:
         gradient [torch.Tensor]: integrated_gradient
     """
@@ -223,7 +229,10 @@ def save_input_gradient(
     plt.title("Input Gradient with respect to the input")
     # show the figure
     fig.savefig(
-        "{}/{}_i_gradient.png".format(debug_folder, idx),
+        "{}/{}_gradient_{}_{}.png".format(debug_folder, idx,
+            "integrated" if integrated_gradients else "input",
+            "correct" if correct_guess else "",
+                                      ),
         dpi=fig.dpi,
     )
     plt.close()
@@ -241,17 +250,13 @@ def debug_iter(
     confunder_pos2_x: int,
     confunder_pos2_y: int,
     confunder_shape: str,
+    integrated_gradients: bool, correct_guess: bool
 ) -> torch.Tensor:
-    """Debug iteration
+    """Debug iteration:
         - remove the confunder from the integrated gradient
         - saves the figure (integrated gradient without confunder)
-        - revise the network (gives the feedback to the network)
 
     Args:
-        net [nn.Module]: neural network
-        sample_test [torch.Tensor]: sample element tensor
-        ground_truth [torch.Tensor]: ground truth label of the tensor
-        preds [torch.Tensor]: prediction of the network given the input
         debug_folder [str]: string depicting the folder path
         idx [int]: index of the image
         gradient [torch.Tensor]: integrated gradient tensor
@@ -260,6 +265,11 @@ def debug_iter(
         confuder_pos2_x [int]: x of the ending point
         confuder_pos2_y [int]: y of the ending point
         confunder_shape [Dict[str, Any]]: confunder information
+        integrated_gradients [bool]: whether the method uses integrated gradients or input gradients
+        correct_guess [bool]: whether the guess was correct
+
+    Returns:
+        confounder_mask [torch.Tensor]: tensor highlighting the area where the confounder is present with ones. It is zero elsewhere
     """
     # confounder mask
     confounder_mask = np.zeros_like(gradient.cpu().data.numpy())
@@ -299,7 +309,10 @@ def debug_iter(
     plt.title("Gradient user modified: no confunder")
     # show the figure
     fig.savefig(
-        "{}/{}_i_gradient_no_confunder.png".format(debug_folder, idx),
+        "{}/{}_gradient_no_confunder_{}_{}.png".format(debug_folder, idx,
+            "integrated" if integrated_gradients else "input",
+            "correct" if correct_guess else ""
+                                                       ),
         dpi=fig.dpi,
     )
     plt.close()
@@ -329,7 +342,12 @@ def debug(
         dataloaders [Dict[str, Any]]: dataloaders
         debug_folder [str]: debug_folder
         device [str]: device
-        integrated gradients [bool]: whether to use integrated gradients or not
+        set_wandb [bool]: set wandb up
+        integrated gradients [bool]: whether to use integrated gradients or input gradients
+        optimizer [torch.optim.Optimizer]: optimizer to employ
+        title [str]: title of the tqdm
+        batch_size [int]: size of the batch
+        test_batch_size [int] size of the batch in the test settings
         **kwargs [Any]: kwargs
     """
 
@@ -339,7 +357,8 @@ def debug(
     if set_wandb:
         wandb.watch(net)
 
-    # load the human readable labels dataloader and the confunders position for debug and test (contains only confounders)
+    # load the human readable labels dataloader and the confunders position for debug and test
+    # (contains only confounders)
     test_set_confunder = dataloaders[
         "test_dataset_with_labels_and_confunders_pos_only_confounders"
     ]
@@ -351,6 +370,7 @@ def debug(
         test_set_confunder, batch_size=test_batch_size
     )
 
+    # switch between integrated gradients or input gradients
     if not integrated_gradients:
         reviseLoss = RRRLoss(net=net, regularizer_rate=20, base_criterion=BCELoss())
     else:
@@ -362,10 +382,9 @@ def debug(
     ground_truth_list = None
     confounder_mask_list = None
 
-    print(len(iter(debug_train_loader)))
     # loop over the examples
     for _, inputs in tqdm.tqdm(enumerate(iter(debug_train_loader)), desc=title):
-        print(_)
+        # extract the information
         (
             test_el,
             superclass,
@@ -387,7 +406,7 @@ def debug(
             single_el, preds = prepare_test_sample(
                 net=net, sample_batch=test_el, idx=i, device=device
             )
-            # save the test sample only if it is the right one
+            # save the test sample
             correct_guess = save_test_sample(
                 test_sample=single_el,  # single torch image element
                 prediction=preds,  # torch prediction
@@ -396,6 +415,7 @@ def debug(
                 dataloaders=dataloaders,  # dictionary of dataloaders
                 superclass=superclass[i],  # ith superclass string
                 subclass=subclass[i],  # ith subclass string
+                integrated_gradients=integrated_gradients # integrated gradients
             )
 
             # machine understands, keep looping
@@ -409,13 +429,15 @@ def debug(
             # get the example label
             label = torch.unsqueeze(hierarchical_label[i], 0)
 
-            # save the integrated gradients
+            # save the integrated gradients or the input gradients
             if integrated_gradients:
                 gradient = save_i_gradient(
                     single_el=single_el,
                     net=net,
                     debug_folder=debug_folder,
                     idx=i,
+                    integrated_gradients=integrated_gradients,
+                    correct_guess=correct_guess
                 )
             else:
                 gradient = save_input_gradient(
@@ -423,10 +445,11 @@ def debug(
                     net=net,
                     debug_folder=debug_folder,
                     idx=i,
-                    device=device,
+                    integrated_gradients=integrated_gradients,
+                    correct_guess=correct_guess
                 )
 
-            # debug iteration
+            # debug iteration to get the counfounder mask
             confounder_mask = debug_iter(
                 debug_folder=debug_folder,
                 idx=i,
@@ -436,9 +459,13 @@ def debug(
                 confunder_pos2_x=confunder_pos2_x[i],
                 confunder_pos2_y=confunder_pos2_y[i],
                 confunder_shape=confunder_shape[i],
+                integrated_gradients=integrated_gradients,
+                correct_guess=correct_guess
             )
+            # unsqueeze the mask
             confounder_mask = torch.unsqueeze(confounder_mask, 0)
 
+            # save the samples list/ground_truth list or confounder mask in a torch tensor
             if (
                 samples_list == None
                 or ground_truth_list == None
@@ -454,7 +481,8 @@ def debug(
                     (confounder_mask_list, confounder_mask), 0
                 )
 
-        # check whether the model can be trained in this way
+        # check whether the model can be trained in this way (batch norm does not allow 1 element samples)
+        # hence I expect to have at least two example to train the model
         if (
             samples_list == None
             or len(samples_list) == 1
@@ -463,9 +491,10 @@ def debug(
             or confounder_mask_list == None
             or len(confounder_mask_list) == 1
         ):
-            print("Not enough examples to train the model")
+            print("Not enough examples to train the model: {}".format(len(samples_list)))
             continue
 
+        # revise the network -> feed the fedback within the network
         loss, right_answer_loss, right_reason_loss, accuracy = revise_step(
             net=net,
             training_samples=samples_list,
@@ -477,16 +506,13 @@ def debug(
             revive_function=reviseLoss,
             device=device,
         )
+
         print(
-            "Loss",
-            loss,
-            "RAL",
-            right_answer_loss,
-            "RRL",
-            right_reason_loss,
-            "ACC",
-            accuracy,
+            "\n\t Debug full loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%".format(
+                loss, right_answer_loss, right_reason_loss, accuracy
+            )
         )
+
         # log on wandb if and only if the module is loaded
         if set_wandb:
             wandb.log(
@@ -512,7 +538,7 @@ def debug(
     # define the cost function
     cost_function = torch.nn.BCELoss()
 
-    # test set
+    # test set in debug mode
     test_loss, test_accuracy, test_score = test_step(
         net=net,
         test_loader=iter(debug_test_loader),
@@ -522,8 +548,6 @@ def debug(
         device=device,
         debug_mode=True,
     )
-
-    print("Netowrk resumed, performances:")
 
     print(
         "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
@@ -558,6 +582,9 @@ def configure_subparsers(subparsers: Subparser) -> None:
     )
     parser.add_argument(
         "--debug-folder", "-df", type=str, default="debug", help="Debug folder"
+    )
+    parser.add_argument(
+        "--model-folder", "-df", type=str, default="models", help="Folder where to save the model"
     )
     parser.add_argument(
         "--test-batch-size", "-tbs", type=int, default=128, help="Test batch size"
@@ -627,8 +654,6 @@ def main(args: Namespace) -> None:
         device=args.device,
         csv_path="./dataset/train.csv",
         test_csv_path="./dataset/test_reduced.csv",
-        test_debug_csv_path="./dataset/test_debug.csv",
-        test_debug_test_csv_path="./dataset/test_debug_test.csv",
         val_csv_path="./dataset/val.csv",
         cifar_metadata="./dataset/pickle_files/meta",
         batch_size=args.batch_size,
@@ -749,6 +774,9 @@ def main(args: Namespace) -> None:
                 "debug_test/score": test_score,
             }
         )
+
+    # save the model state of the debugged network
+    torch.save(net.state_dict(), os.path.join(args.model_folder, "debug_{}_{}.pth".format(args.network, "integrated_gradients" if args.integrated_gradients else "input_gradients")))
 
     # close wandb
     if args.wandb:

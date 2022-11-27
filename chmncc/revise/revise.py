@@ -1,14 +1,10 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from chmncc.utils import dotdict
-import numpy as np
 from typing import Tuple
-import tqdm
 from chmncc.utils import get_constr_out
 from typing import Union
 from chmncc.loss import RRRLoss, IGRRRLoss
-from sklearn.metrics import average_precision_score
 
 
 def revise_step(
@@ -27,21 +23,21 @@ def revise_step(
 
     Args:
         net [nn.Module] network on device
-        train_loader [torch.utils.data.DataLoader] training data loader
-        train [dotdict] training set dictionary
-        R [torch.Tensor] adjency matrix
-        optimizer [torch.Tensor] adjency matrix
-        cost_function [torch.nn.modules.loss.BCELoss] Binary Cross Entropy loss
-        title [str] title of the experiment
+        training_samples [torch.Tensor]: training samples stacked tensor
+        ground_truths [torch.Tensor]: groundtruths samples stacked tensor
+        confounder_mask [torch.Tensor]: confounder masks stacked tensor
+        train [dotdict]: training set dictionary
+        R [torch.Tensor]: adjency matrix
+        optimizer [torch.optim.Optimizer]: optimizer
+        cost_function [Union[IGRRRLoss, RRRLoss]] RRR loss flavour
         device [str]: on which device to run the experiment [default: cuda]
 
     Returns:
-        cumulative loss [float]
-        accuracy [float] in percentange
-        au prc [float]
+        loss [float]
+        right_answer_loss [float]: error considering the training loss
+        right_reason_loss [float]: error considering the penalty on the wrong focus of the model
+        accuracy [float]: accuracy of the model in percentage
     """
-    cumulative_accuracy = 0.0
-
     # set the network to training mode
     net.train()
 
@@ -78,7 +74,7 @@ def revise_step(
     predicted = constr_output.data > 0.5
 
     # compute training accuracy
-    cumulative_accuracy += (predicted == ground_truth.byte()).sum().item()
+    accuracy = (predicted == ground_truth.byte()).sum().item()
 
     # for calculating loss, acc per epoch
     right_answer_loss = right_answer_loss.item()
@@ -93,5 +89,5 @@ def revise_step(
         loss.item(),
         right_answer_loss,
         right_reason_loss,
-        100 * cumulative_accuracy / (ground_truth.shape[0] * ground_truth.shape[1]),
+        100 * accuracy / (ground_truth.shape[0] * ground_truth.shape[1]),
     )

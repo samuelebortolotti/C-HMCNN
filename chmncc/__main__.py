@@ -265,8 +265,6 @@ def c_hmcnn(
             device=device,
             csv_path="./dataset/train.csv",
             test_csv_path="./dataset/test_reduced.csv",
-            test_debug_csv_path="./dataset/test_debug.csv",
-            test_debug_test_csv_path="./dataset/test_debug_test.csv",
             val_csv_path="./dataset/val.csv",
             cifar_metadata="./dataset/pickle_files/meta",
             batch_size=batch_size,

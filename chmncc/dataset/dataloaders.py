@@ -86,8 +86,6 @@ def load_cifar_dataloaders(
     img_depth: int,
     csv_path: str,
     test_csv_path: str,
-    test_debug_csv_path: str,
-    test_debug_test_csv_path: str,
     val_csv_path: str,
     cifar_metadata: str,
     device: str,
@@ -123,6 +121,9 @@ def load_cifar_dataloaders(
         test_csv_path [str]: path of the test images
         val_csv_path: [str]: validation path of images
         cifar_metadata [str]: cifar metadata
+        device [str]: device
+        batch_size [int] = 128
+        test_batch_size [int] = 256
         mean [List[float]]: mean
         stdev [List[float]]: stdev
         additional_transformations Optional[List[Any]]: additional train, val and test transform

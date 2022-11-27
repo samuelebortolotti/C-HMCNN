@@ -1,5 +1,6 @@
 from argparse import _SubParsersAction as Subparser
 from argparse import Namespace
+from numpy.lib.function_base import iterable
 import torch
 import os
 import torch.nn as nn
@@ -17,7 +18,7 @@ from chmncc.explanations import compute_integrated_gradient, output_gradients
 from chmncc.loss import RRRLoss, IGRRRLoss
 from chmncc.revise import revise_step
 from chmncc.optimizers import get_adam_optimizer
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Union
 import tqdm
 import matplotlib.pyplot as plt
 import numpy as np
@@ -62,6 +63,7 @@ def save_test_sample(
     superclass: str,
     subclass: str,
     integrated_gradients: bool,
+    iteration: int
 ) -> bool:
     """Save the test sample.
     Then it returns whether the sample contains a confunder or if the sample has been
@@ -76,6 +78,7 @@ def save_test_sample(
         superclass [str]: superclass string
         subclass [str]: subclass string
         integrated_gradients [bool]: whether to use integrated gradients
+        iteration [int]: debug iteration
 
     Returns:
         correct_guess [bool]: whether the model has guessed correctly
@@ -132,11 +135,12 @@ def save_test_sample(
     plt.tight_layout()
     # show the figure
     fig.savefig(
-        "{}/{}_original_{}_{}.png".format(
+        "{}/iter_{}_{}_original_{}{}.png".format(
             debug_folder,
+            iteration,
             idx,
             "integrated_gradients" if integrated_gradients else "",
-            "correct" if correct_guess else "",
+            "_correct" if correct_guess else "",
         ),
         dpi=fig.dpi,
     )
@@ -148,7 +152,7 @@ def save_test_sample(
 
 
 def save_i_gradient(
-    single_el: torch.Tensor, net: nn.Module, debug_folder: str, idx: int, integrated_gradients: bool, correct_guess: bool
+    single_el: torch.Tensor, net: nn.Module, debug_folder: str, idx: int, integrated_gradients: bool, correct_guess: bool, iteration: int
 ) -> torch.Tensor:
     """Computes the integrated graditents and saves them in an image
 
@@ -159,6 +163,7 @@ def save_i_gradient(
         idx [int]: index of the image
         integrated_gradients [bool]: whether the method uses integrated gradients or input gradients
         correct_guess [bool]: whether the guess was correct
+        iteration [int]: debug iteration
     Returns:
         integrated_gradient [torch.Tensor]: integrated_gradient
     """
@@ -183,9 +188,12 @@ def save_i_gradient(
     plt.title("Integrated Gradient with respect to the input")
     # show the figure
     fig.savefig(
-        "{}/{}_gradient_{}_{}.png".format(debug_folder, idx,
+        "{}/iter_{}_{}_gradient_{}{}.png".format(
+            debug_folder,
+            iteration,
+            idx,
             "integrated" if integrated_gradients else "input",
-            "correct" if correct_guess else "",
+            "_correct" if correct_guess else "",
         ),
         dpi=fig.dpi,
     )
@@ -196,7 +204,7 @@ def save_i_gradient(
 
 
 def save_input_gradient(
-    single_el: torch.Tensor, net: nn.Module, debug_folder: str, idx: int, integrated_gradients: bool, correct_guess: bool
+    single_el: torch.Tensor, net: nn.Module, debug_folder: str, idx: int, integrated_gradients: bool, correct_guess: bool, iteration: int
 ) -> torch.Tensor:
     """Computes the input graditents and saves them in an image
 
@@ -207,6 +215,7 @@ def save_input_gradient(
         idx [int]: index of the image
         integrated_gradients [bool]: whether the method uses integrated gradients or input gradients
         correct_guess [bool]: whether the guess was correct
+        iteration [int]: debug iteration
     Returns:
         gradient [torch.Tensor]: integrated_gradient
     """
@@ -229,10 +238,13 @@ def save_input_gradient(
     plt.title("Input Gradient with respect to the input")
     # show the figure
     fig.savefig(
-        "{}/{}_gradient_{}_{}.png".format(debug_folder, idx,
+        "{}/iter_{}_{}_gradient_{}{}.png".format(
+            debug_folder,
+            iteration,
+            idx,
             "integrated" if integrated_gradients else "input",
-            "correct" if correct_guess else "",
-                                      ),
+            "_correct" if correct_guess else "",
+        ),
         dpi=fig.dpi,
     )
     plt.close()
@@ -250,7 +262,9 @@ def debug_iter(
     confunder_pos2_x: int,
     confunder_pos2_y: int,
     confunder_shape: str,
-    integrated_gradients: bool, correct_guess: bool
+    integrated_gradients: bool,
+    correct_guess: bool,
+    iteration: int
 ) -> torch.Tensor:
     """Debug iteration:
         - remove the confunder from the integrated gradient
@@ -267,6 +281,7 @@ def debug_iter(
         confunder_shape [Dict[str, Any]]: confunder information
         integrated_gradients [bool]: whether the method uses integrated gradients or input gradients
         correct_guess [bool]: whether the guess was correct
+        iteration [int]: debug iteration
 
     Returns:
         confounder_mask [torch.Tensor]: tensor highlighting the area where the confounder is present with ones. It is zero elsewhere
@@ -309,10 +324,13 @@ def debug_iter(
     plt.title("Gradient user modified: no confunder")
     # show the figure
     fig.savefig(
-        "{}/{}_gradient_no_confunder_{}_{}.png".format(debug_folder, idx,
+        "{}/iter_{}_{}_gradient_no_confunder_{}{}.png".format(
+            debug_folder,
+            iteration,
+            idx,
             "integrated" if integrated_gradients else "input",
-            "correct" if correct_guess else ""
-                                                       ),
+            "_correct" if correct_guess else ""
+        ),
         dpi=fig.dpi,
     )
     plt.close()
@@ -325,13 +343,16 @@ def debug(
     net: nn.Module,
     dataloaders: Dict[str, Any],
     debug_folder: str,
+    iteration: int,
+    cost_function: torch.nn.BCELoss,
     device: str,
     set_wandb: bool,
     integrated_gradients: bool,
     optimizer: torch.optim.Optimizer,
     title: str,
-    batch_size: int,
-    test_batch_size: int,
+    debug_train_loader: torch.utils.data.DataLoader,
+    debug_test_loader: torch.utils.data.DataLoader,
+    reviseLoss: Union[RRRLoss, IGRRRLoss],
     **kwargs: Any
 ):
     """Method which performs the debug step, by detecting the confunded images first;
@@ -341,6 +362,8 @@ def debug(
         net [nn.Module]: neural network
         dataloaders [Dict[str, Any]]: dataloaders
         debug_folder [str]: debug_folder
+        iteration [int]: index of the iteration
+        cost_function [torch.nn.BCELoss]: criterion for the classification loss
         device [str]: device
         set_wandb [bool]: set wandb up
         integrated gradients [bool]: whether to use integrated gradients or input gradients
@@ -348,63 +371,20 @@ def debug(
         title [str]: title of the tqdm
         batch_size [int]: size of the batch
         test_batch_size [int] size of the batch in the test settings
+        debug_train_loader [torch.utils.data.DataLoader]: dataloader for the debug
+        debug_test_loader [torch.utils.data.DataLoader]: dataloader for the test
+        reviseLoss: Union[RRRLoss, IGRRRLoss]: loss for feeding the network some feedbacks
         **kwargs [Any]: kwargs
     """
 
-    print("#> Debug...")
+    print("-----------------------------------------------------")
 
-    # log on wandb if and only if the module is loaded
-    if set_wandb:
-        wandb.watch(net)
-
-    # load the human readable labels dataloader and the confunders position for debug and test
-    # (contains only confounders)
-    test_set_confunder = dataloaders[
-        "test_dataset_with_labels_and_confunders_pos_only_confounders"
-    ]
-
-    train_size = int(0.8 * len(test_set_confunder))
-    test_size = len(test_set_confunder) - train_size
-    debug_train_dataset, debug_test_dataset = torch.utils.data.random_split(test_set_confunder, [train_size, test_size])
-
-    debug_train_loader = torch.utils.data.DataLoader(
-        debug_train_dataset, batch_size=batch_size
-    )
-    debug_test_loader = torch.utils.data.DataLoader(
-        debug_test_dataset, batch_size=test_batch_size
-    )
-
-    # switch between integrated gradients or input gradients
-    if not integrated_gradients:
-        reviseLoss = RRRLoss(net=net, regularizer_rate=20, base_criterion=BCELoss())
-    else:
-        # integrated gradients RRRLoss
-        reviseLoss = IGRRRLoss(net=net, regularizer_rate=20, base_criterion=BCELoss())
+    print("Begin iteration number: {}".format(iteration))
 
     # empty elements
     samples_list = None
     ground_truth_list = None
     confounder_mask_list = None
-
-    # define the cost function
-    cost_function = torch.nn.BCELoss()
-
-    # test set in debug mode
-    test_loss, test_accuracy, test_score = test_step(
-        net=net,
-        test_loader=iter(debug_test_loader),
-        cost_function=cost_function,
-        title="Test",
-        test=dataloaders["test"],
-        device=device,
-        debug_mode=True,
-    )
-
-    print(
-        "\n\t [DEBUG SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
-            test_loss, test_accuracy, test_score
-        )
-    )
 
     # loop over the examples
     for _, inputs in tqdm.tqdm(enumerate(iter(debug_train_loader)), desc=title):
@@ -439,7 +419,8 @@ def debug(
                 dataloaders=dataloaders,  # dictionary of dataloaders
                 superclass=superclass[i],  # ith superclass string
                 subclass=subclass[i],  # ith subclass string
-                integrated_gradients=integrated_gradients # integrated gradients
+                integrated_gradients=integrated_gradients, # integrated gradients
+                iteration=iteration
             )
 
             # machine understands, keep looping
@@ -461,7 +442,8 @@ def debug(
                     debug_folder=debug_folder,
                     idx=i,
                     integrated_gradients=integrated_gradients,
-                    correct_guess=correct_guess
+                    correct_guess=correct_guess,
+                    iteration=iteration
                 )
             else:
                 gradient = save_input_gradient(
@@ -470,7 +452,8 @@ def debug(
                     debug_folder=debug_folder,
                     idx=i,
                     integrated_gradients=integrated_gradients,
-                    correct_guess=correct_guess
+                    correct_guess=correct_guess,
+                    iteration=iteration
                 )
 
             # debug iteration to get the counfounder mask
@@ -484,7 +467,8 @@ def debug(
                 confunder_pos2_y=confunder_pos2_y[i],
                 confunder_shape=confunder_shape[i],
                 integrated_gradients=integrated_gradients,
-                correct_guess=correct_guess
+                correct_guess=correct_guess,
+                iteration=iteration
             )
             # unsqueeze the mask
             confounder_mask = torch.unsqueeze(confounder_mask, 0)
@@ -553,7 +537,7 @@ def debug(
         ground_truth_list = None
         confounder_mask_list = None
 
-    print("Done with debug")
+    print("Done with debug iteration number: {}".format(iteration))
 
     print("-----------------------------------------------------")
 
@@ -576,6 +560,15 @@ def debug(
         )
     )
 
+    if set_wandb:
+        wandb.log(
+            {
+                "debug_test/loss": test_loss,
+                "debug_test/accuracy": test_accuracy,
+                "debug_test/score": test_score,
+            }
+        )
+
 
 def configure_subparsers(subparsers: Subparser) -> None:
     """Configure a new subparser for running the debug of the network
@@ -597,6 +590,9 @@ def configure_subparsers(subparsers: Subparser) -> None:
         type=str,
         default="models",
         help="Path where to load the best.pth file",
+    )
+    parser.add_argument(
+        "--iterations", "-it", type=int, default=30, help="Debug Epocs"
     )
     parser.add_argument(
         "--batch-size", "-bs", type=int, default=128, help="Train batch size"
@@ -729,7 +725,7 @@ def main(args: Namespace) -> None:
     # define the cost function
     cost_function = torch.nn.BCELoss()
 
-    #  # test set
+    # test set
     test_loss, test_accuracy, test_score = test_step(
         net=net,
         test_loader=iter(test_loader),
@@ -747,9 +743,66 @@ def main(args: Namespace) -> None:
         )
     )
 
+    # log on wandb if and only if the module is loaded
+    if args.wandb:
+        wandb.log(
+            {
+                "test/loss": test_loss,
+                "test/accuracy": test_accuracy,
+                "test/score": test_score,
+            }
+        )
+
     print("-----------------------------------------------------")
 
+    print("#> Debug...")
+
     # log on wandb if and only if the module is loaded
+    if args.wandb:
+        wandb.watch(net)
+
+    # load the human readable labels dataloader and the confunders position for debug and test
+    # (contains only confounders)
+    test_set_confunder = dataloaders[
+        "test_dataset_with_labels_and_confunders_pos_only_confounders"
+    ]
+
+    # split in train and test
+    train_size = int(0.8 * len(test_set_confunder))
+    test_size = len(test_set_confunder) - train_size
+    debug_train_dataset, debug_test_dataset = torch.utils.data.random_split(test_set_confunder, [train_size, test_size])
+
+    debug_train_loader = torch.utils.data.DataLoader(
+        debug_train_dataset, batch_size=args.batch_size
+    )
+    debug_test_loader = torch.utils.data.DataLoader(
+        debug_test_dataset, batch_size=args.test_batch_size
+    )
+
+    # switch between integrated gradients or input gradients
+    if not args.integrated_gradients:
+        reviseLoss = RRRLoss(net=net, regularizer_rate=20, base_criterion=BCELoss())
+    else:
+        # integrated gradients RRRLoss
+        reviseLoss = IGRRRLoss(net=net, regularizer_rate=20, base_criterion=BCELoss())
+
+    # test set in debug mode
+    test_loss, test_accuracy, test_score = test_step(
+        net=net,
+        test_loader=iter(debug_test_loader),
+        cost_function=cost_function,
+        title="Test",
+        test=dataloaders["test"],
+        device=args.device,
+        debug_mode=True,
+    )
+
+    print(
+        "\n\t [DEBUG SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
+            test_loss, test_accuracy, test_score
+        )
+    )
+
     if args.wandb:
         wandb.log(
             {
@@ -759,14 +812,21 @@ def main(args: Namespace) -> None:
             }
         )
 
-    # launch the debug
-    debug(
-        net=net,
-        dataloaders=dataloaders,
-        optimizer=optimizer,
-        title="debug",
-        **vars(args)
-    )
+
+    # launch the debug a given number of iterations
+    for idx in tqdm.tqdm(range(args.iterations), desc="Debug iterations"):
+        debug(
+            net=net,
+            dataloaders=dataloaders,
+            iteration=idx,
+            cost_function = torch.nn.BCELoss(),
+            optimizer=optimizer,
+            title="debug",
+            debug_train_loader=debug_train_loader,
+            debug_test_loader=debug_test_loader,
+            reviseLoss=reviseLoss,
+            **vars(args)
+        )
 
     print("After debugging...")
 
@@ -790,9 +850,9 @@ def main(args: Namespace) -> None:
     if args.wandb:
         wandb.log(
             {
-                "debug_test/loss": test_loss,
-                "debug_test/accuracy": test_accuracy,
-                "debug_test/score": test_score,
+                "test/loss": test_loss,
+                "test/accuracy": test_accuracy,
+                "test/score": test_score,
             }
         )
 

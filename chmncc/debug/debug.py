@@ -415,6 +415,8 @@ def debug(
             confunder_shape,
         ) = inputs
 
+        print(test_el.shape)
+
         # set the network to eval mode
         net.eval()
 
@@ -537,6 +539,60 @@ def debug(
         samples_list = None
         ground_truth_list = None
         confounder_mask_list = None
+
+        print("Testing...")
+
+        # test set in debug mode
+        test_loss, test_accuracy, test_score = test_step(
+            net=net,
+            test_loader=iter(debug_test_loader),
+            cost_function=cost_function,
+            title="Test",
+            test=dataloaders["test"],
+            device=device,
+            debug_mode=True,
+        )
+
+        print(
+            "\n\t [DEBUG SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
+                test_loss, test_accuracy, test_score
+            )
+        )
+
+        if set_wandb:
+            wandb.log(
+                {
+                    "debug_test/loss": test_loss,
+                    "debug_test/accuracy": test_accuracy,
+                    "debug_test/score": test_score,
+                }
+            )
+
+        # test set
+        test_loss, test_accuracy, test_score = test_step(
+            net=net,
+            test_loader=iter(test_loader),
+            cost_function=cost_function,
+            title="Test",
+            test=dataloaders["test"],
+            device=device,
+        )
+
+        print(
+            "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
+                test_loss, test_accuracy, test_score
+            )
+        )
+
+        # log on wandb if and only if the module is loaded
+        if set_wandb:
+            wandb.log(
+                {
+                    "test/loss": test_loss,
+                    "test/accuracy": test_accuracy,
+                    "test/score": test_score,
+                }
+            )
 
         # breaking if the number of iterations are fully satisfied
         if idx >= iterations:

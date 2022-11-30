@@ -63,7 +63,7 @@ def save_test_sample(
     superclass: str,
     subclass: str,
     integrated_gradients: bool,
-    iteration: int
+    iteration: int,
 ) -> bool:
     """Save the test sample.
     Then it returns whether the sample contains a confunder or if the sample has been
@@ -152,7 +152,13 @@ def save_test_sample(
 
 
 def save_i_gradient(
-    single_el: torch.Tensor, net: nn.Module, debug_folder: str, idx: int, integrated_gradients: bool, correct_guess: bool, iteration: int
+    single_el: torch.Tensor,
+    net: nn.Module,
+    debug_folder: str,
+    idx: int,
+    integrated_gradients: bool,
+    correct_guess: bool,
+    iteration: int,
 ) -> torch.Tensor:
     """Computes the integrated graditents and saves them in an image
 
@@ -204,7 +210,13 @@ def save_i_gradient(
 
 
 def save_input_gradient(
-    single_el: torch.Tensor, net: nn.Module, debug_folder: str, idx: int, integrated_gradients: bool, correct_guess: bool, iteration: int
+    single_el: torch.Tensor,
+    net: nn.Module,
+    debug_folder: str,
+    idx: int,
+    integrated_gradients: bool,
+    correct_guess: bool,
+    iteration: int,
 ) -> torch.Tensor:
     """Computes the input graditents and saves them in an image
 
@@ -264,7 +276,7 @@ def debug_iter(
     confunder_shape: str,
     integrated_gradients: bool,
     correct_guess: bool,
-    iteration: int
+    iteration: int,
 ) -> torch.Tensor:
     """Debug iteration:
         - remove the confunder from the integrated gradient
@@ -329,7 +341,7 @@ def debug_iter(
             iteration,
             idx,
             "integrated" if integrated_gradients else "input",
-            "_correct" if correct_guess else ""
+            "_correct" if correct_guess else "",
         ),
         dpi=fig.dpi,
     )
@@ -343,7 +355,7 @@ def debug(
     net: nn.Module,
     dataloaders: Dict[str, Any],
     debug_folder: str,
-    iteration: int,
+    iterations: int,
     cost_function: torch.nn.BCELoss,
     device: str,
     set_wandb: bool,
@@ -363,7 +375,7 @@ def debug(
         net [nn.Module]: neural network
         dataloaders [Dict[str, Any]]: dataloaders
         debug_folder [str]: debug_folder
-        iteration [int]: index of the iteration
+        iterations [int]: number of the iterations
         cost_function [torch.nn.BCELoss]: criterion for the classification loss
         device [str]: device
         set_wandb [bool]: set wandb up
@@ -381,7 +393,7 @@ def debug(
 
     print("-----------------------------------------------------")
 
-    print("Begin iteration number: {}".format(iteration))
+    print("Have to run for iteration number: {}".format(iterations))
 
     # empty elements
     samples_list = None
@@ -389,7 +401,7 @@ def debug(
     confounder_mask_list = None
 
     # loop over the examples
-    for _, inputs in tqdm.tqdm(enumerate(iter(debug_train_loader)), desc=title):
+    for idx, inputs in tqdm.tqdm(enumerate(iter(debug_train_loader)), desc=title):
         # extract the information
         (
             test_el,
@@ -421,8 +433,8 @@ def debug(
                 dataloaders=dataloaders,  # dictionary of dataloaders
                 superclass=superclass[i],  # ith superclass string
                 subclass=subclass[i],  # ith subclass string
-                integrated_gradients=integrated_gradients, # integrated gradients
-                iteration=iteration
+                integrated_gradients=integrated_gradients,  # integrated gradients
+                iteration=idx,
             )
 
             # machine understands, keep looping
@@ -445,7 +457,7 @@ def debug(
                     idx=i,
                     integrated_gradients=integrated_gradients,
                     correct_guess=correct_guess,
-                    iteration=iteration
+                    iteration=idx,
                 )
             else:
                 gradient = save_input_gradient(
@@ -455,7 +467,7 @@ def debug(
                     idx=i,
                     integrated_gradients=integrated_gradients,
                     correct_guess=correct_guess,
-                    iteration=iteration
+                    iteration=idx,
                 )
 
             # debug iteration to get the counfounder mask
@@ -470,7 +482,7 @@ def debug(
                 confunder_shape=confunder_shape[i],
                 integrated_gradients=integrated_gradients,
                 correct_guess=correct_guess,
-                iteration=iteration
+                iteration=idx,
             )
             # unsqueeze the mask
             confounder_mask = torch.unsqueeze(confounder_mask, 0)
@@ -490,19 +502,6 @@ def debug(
                 confounder_mask_list = torch.cat(
                     (confounder_mask_list, confounder_mask), 0
                 )
-
-        # check whether the model can be trained in this way (batch norm does not allow 1 element samples)
-        # hence I expect to have at least two example to train the model
-        if (
-            samples_list == None
-            or len(samples_list) == 1
-            or ground_truth_list == None
-            or len(ground_truth_list) == 1
-            or confounder_mask_list == None
-            or len(confounder_mask_list) == 1
-        ):
-            print("Not enough examples to train the model: {}".format(len(samples_list)))
-            continue
 
         # revise the network -> feed the fedback within the network
         loss, right_answer_loss, right_reason_loss, accuracy = revise_step(
@@ -539,7 +538,12 @@ def debug(
         ground_truth_list = None
         confounder_mask_list = None
 
-    print("Done with debug iteration number: {}".format(iteration))
+        # breaking if the number of iterations are fully satisfied
+        if idx >= iterations:
+            print("Done with all the needed iterations")
+            break
+
+    print("Done with debug for iteration number: {}".format(iterations))
 
     print("-----------------------------------------------------")
 
@@ -619,9 +623,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         default="models",
         help="Path where to load the best.pth file",
     )
-    parser.add_argument(
-        "--iterations", "-it", type=int, default=30, help="Debug Epocs"
-    )
+    parser.add_argument("--iterations", "-it", type=int, default=30, help="Debug Epocs")
     parser.add_argument(
         "--batch-size", "-bs", type=int, default=128, help="Train batch size"
     )
@@ -629,10 +631,17 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--debug-folder", "-df", type=str, default="debug", help="Debug folder"
     )
     parser.add_argument(
-        "--model-folder", "-mf", type=str, default="models", help="Folder where to save the model"
+        "--model-folder",
+        "-mf",
+        type=str,
+        default="models",
+        help="Folder where to save the model",
     )
     parser.add_argument(
         "--test-batch-size", "-tbs", type=int, default=128, help="Test batch size"
+    )
+    parser.add_argument(
+        "--debug-batch-size", "-dbs", type=int, default=10, help="Debug batch size"
     )
     parser.add_argument(
         "--learning-rate", type=float, default=0.001, help="learning rate"
@@ -798,10 +807,12 @@ def main(args: Namespace) -> None:
     # split in train and test
     train_size = int(0.8 * len(test_set_confunder))
     test_size = len(test_set_confunder) - train_size
-    debug_train_dataset, debug_test_dataset = torch.utils.data.random_split(test_set_confunder, [train_size, test_size])
+    debug_train_dataset, debug_test_dataset = torch.utils.data.random_split(
+        test_set_confunder, [train_size, test_size]
+    )
 
     debug_train_loader = torch.utils.data.DataLoader(
-        debug_train_dataset, batch_size=args.batch_size
+        debug_train_dataset, batch_size=args.debug_batch_size
     )
     debug_test_loader = torch.utils.data.DataLoader(
         debug_test_dataset, batch_size=args.test_batch_size
@@ -840,22 +851,19 @@ def main(args: Namespace) -> None:
             }
         )
 
-
     # launch the debug a given number of iterations
-    for idx in tqdm.tqdm(range(args.iterations), desc="Debug iterations"):
-        debug(
-            net=net,
-            dataloaders=dataloaders,
-            iteration=idx,
-            cost_function = torch.nn.BCELoss(),
-            optimizer=optimizer,
-            title="debug",
-            debug_train_loader=debug_train_loader,
-            debug_test_loader=debug_test_loader,
-            test_loader=test_loader,
-            reviseLoss=reviseLoss,
-            **vars(args)
-        )
+    debug(
+        net=net,
+        dataloaders=dataloaders,
+        cost_function=torch.nn.BCELoss(),
+        optimizer=optimizer,
+        title="debug",
+        debug_train_loader=debug_train_loader,
+        debug_test_loader=debug_test_loader,
+        test_loader=test_loader,
+        reviseLoss=reviseLoss,
+        **vars(args)
+    )
 
     print("After debugging...")
 
@@ -886,7 +894,18 @@ def main(args: Namespace) -> None:
         )
 
     # save the model state of the debugged network
-    torch.save(net.state_dict(), os.path.join(args.model_folder, "debug_{}_{}.pth".format(args.network, "integrated_gradients" if args.integrated_gradients else "input_gradients")))
+    torch.save(
+        net.state_dict(),
+        os.path.join(
+            args.model_folder,
+            "debug_{}_{}.pth".format(
+                args.network,
+                "integrated_gradients"
+                if args.integrated_gradients
+                else "input_gradients",
+            ),
+        ),
+    )
 
     # close wandb
     if args.wandb:

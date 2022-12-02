@@ -600,6 +600,34 @@ def debug(
 
     print("Done with debug for iteration number: {}".format(iterations))
 
+    print("----------------------------------------".format(iterations))
+
+    # test set in debug mode
+    test_loss, test_accuracy, test_score = test_step(
+        net=net,
+        test_loader=iter(debug_test_loader),
+        cost_function=cost_function,
+        title="Test",
+        test=dataloaders["test"],
+        device=device,
+        debug_mode=True,
+    )
+
+    print(
+        "\n\t [DEBUG SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
+            test_loss, test_accuracy, test_score
+        )
+    )
+
+    if set_wandb:
+        wandb.log(
+            {
+                "debug_test/post_loss": test_loss,
+                "debug_test/post_accuracy": test_accuracy,
+                "debug_test/post_score": test_score,
+            }
+        )
+
 
 def configure_subparsers(subparsers: Subparser) -> None:
     """Configure a new subparser for running the debug of the network

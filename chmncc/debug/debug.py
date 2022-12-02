@@ -415,8 +415,6 @@ def debug(
             confunder_shape,
         ) = inputs
 
-        print(test_el.shape)
-
         # set the network to eval mode
         net.eval()
 
@@ -438,14 +436,6 @@ def debug(
                 integrated_gradients=integrated_gradients,  # integrated gradients
                 iteration=idx,
             )
-
-            # machine understands, keep looping
-            if correct_guess:
-                print(
-                    "The machine start to understand something: {}-th sample is a correct guess!".format(
-                        i
-                    )
-                )
 
             # get the example label
             label = torch.unsqueeze(hierarchical_label[i], 0)
@@ -471,6 +461,15 @@ def debug(
                     correct_guess=correct_guess,
                     iteration=idx,
                 )
+
+            # machine understands, keep looping
+            if correct_guess:
+                print(
+                    "The machine start to understand something: {}-th sample is a correct guess!".format(
+                        i
+                    )
+                )
+                continue
 
             # debug iteration to get the counfounder mask
             confounder_mask = debug_iter(
@@ -600,62 +599,6 @@ def debug(
             break
 
     print("Done with debug for iteration number: {}".format(iterations))
-
-    print("-----------------------------------------------------")
-
-    print("Testing...")
-
-    # test set in debug mode
-    test_loss, test_accuracy, test_score = test_step(
-        net=net,
-        test_loader=iter(debug_test_loader),
-        cost_function=cost_function,
-        title="Test",
-        test=dataloaders["test"],
-        device=device,
-        debug_mode=True,
-    )
-
-    print(
-        "\n\t [DEBUG SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
-            test_loss, test_accuracy, test_score
-        )
-    )
-
-    if set_wandb:
-        wandb.log(
-            {
-                "debug_test/loss": test_loss,
-                "debug_test/accuracy": test_accuracy,
-                "debug_test/score": test_score,
-            }
-        )
-
-    # test set
-    test_loss, test_accuracy, test_score = test_step(
-        net=net,
-        test_loader=iter(test_loader),
-        cost_function=cost_function,
-        title="Test",
-        test=dataloaders["test"],
-        device=device,
-    )
-
-    print(
-        "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
-            test_loss, test_accuracy, test_score
-        )
-    )
-
-    # log on wandb if and only if the module is loaded
-    if set_wandb:
-        wandb.log(
-            {
-                "test/loss": test_loss,
-                "test/accuracy": test_accuracy,
-                "test/score": test_score,
-            }
-        )
 
 
 def configure_subparsers(subparsers: Subparser) -> None:
@@ -840,9 +783,9 @@ def main(args: Namespace) -> None:
     if args.wandb:
         wandb.log(
             {
-                "test/loss": test_loss,
-                "test/accuracy": test_accuracy,
-                "test/score": test_score,
+                "test/pre_exp_loss": test_loss,
+                "test/pre_exp_accuracy": test_accuracy,
+                "test/pre_exp_score": test_score,
             }
         )
 
@@ -875,11 +818,12 @@ def main(args: Namespace) -> None:
     )
 
     # switch between integrated gradients or input gradients
+    # TODO: prev = 20
     if not args.integrated_gradients:
-        reviseLoss = RRRLoss(net=net, regularizer_rate=20, base_criterion=BCELoss())
+        reviseLoss = RRRLoss(net=net, regularizer_rate=1, base_criterion=BCELoss())
     else:
         # integrated gradients RRRLoss
-        reviseLoss = IGRRRLoss(net=net, regularizer_rate=20, base_criterion=BCELoss())
+        reviseLoss = IGRRRLoss(net=net, regularizer_rate=1, base_criterion=BCELoss())
 
     # test set in debug mode
     test_loss, test_accuracy, test_score = test_step(
@@ -901,9 +845,9 @@ def main(args: Namespace) -> None:
     if args.wandb:
         wandb.log(
             {
-                "debug_test/loss": test_loss,
-                "debug_test/accuracy": test_accuracy,
-                "debug_test/score": test_score,
+                "debug_test/pre_loss": test_loss,
+                "debug_test/pre_accuracy": test_accuracy,
+                "debug_test/pre_score": test_score,
             }
         )
 
@@ -943,9 +887,9 @@ def main(args: Namespace) -> None:
     if args.wandb:
         wandb.log(
             {
-                "test/loss": test_loss,
-                "test/accuracy": test_accuracy,
-                "test/score": test_score,
+                "test/post_loss": test_loss,
+                "test/post_accuracy": test_accuracy,
+                "test/post_score": test_score,
             }
         )
 

@@ -600,7 +600,9 @@ def debug(
 
     print("Done with debug for iteration number: {}".format(iterations))
 
-    print("----------------------------------------".format(iterations))
+    print("-----------------------------------------------------")
+
+    print("Testing...")
 
     # test set in debug mode
     test_loss, test_accuracy, test_score = test_step(

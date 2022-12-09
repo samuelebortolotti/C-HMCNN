@@ -1,10 +1,12 @@
 import torch
+import tqdm
 import torch.nn as nn
 from chmncc.utils import dotdict
 from typing import Tuple
 from chmncc.utils import get_constr_out
 from typing import Union
 from chmncc.loss import RRRLoss, IGRRRLoss
+from sklearn.metrics import average_precision_score
 
 
 def revise_step(
@@ -12,19 +14,22 @@ def revise_step(
     training_samples: torch.Tensor,
     ground_truths: torch.Tensor,
     confunder_masks: torch.Tensor,
+    confounded_flag: torch.Tensor,
     train: dotdict,
     R: torch.Tensor,
     optimizer: torch.optim.Optimizer,
     revive_function: Union[IGRRRLoss, RRRLoss],
+    title: str,
     device: str = "cuda",
-) -> Tuple[float, float, float, float]:
+    have_to_train: bool = True,
+) -> Tuple[float, float, float, float, float]:
     """Revise step of the network. It integrates the user feedback and revise the network by the means
     of the RRRLoss.
 
     Args:
         net [nn.Module] network on device
         training_samples [torch.Tensor]: training samples stacked tensor
-        ground_truths [torch.Tensor]: groundtruths samples stacked tensor
+        ground_trutconfunder_maskshs [torch.Tensor]: groundtruths samples stacked tensor
         confounder_mask [torch.Tensor]: confounder masks stacked tensor
         train [dotdict]: training set dictionary
         R [torch.Tensor]: adjency matrix
@@ -38,56 +43,104 @@ def revise_step(
         right_reason_loss [float]: error considering the penalty on the wrong focus of the model
         accuracy [float]: accuracy of the model in percentage
     """
+    total_train = 0.0
+    comulative_loss = 0.0
+    cumulative_accuracy = 0.0
+    cumulative_right_answer_loss = 0.0
+    cumulative_right_reason_loss = 0.0
+
     # set the network to training mode
     net.train()
 
-    # load data into device
-    sample = training_samples.to(device)
-    # ground_truth element
-    ground_truth = ground_truths.to(device)
-    # confounder mask
-    confounder_mask = confunder_masks.to(device)
+    # iterate over the training set
+    for batch_idx, inputs in tqdm.tqdm(
+        enumerate(
+            zip(training_samples, ground_truths, confunder_masks, confounded_flag)
+        ),
+        desc=title,
+    ):
+        # continue
+        if training_samples.shape[0] == 1:
+            print("Skipping, cannot process 1 element")
+            continue
 
-    # gradients reset
-    optimizer.zero_grad()
+        # get items
+        (sample, ground_truth, confounder_mask, confounded) = inputs
 
-    # output
-    outputs = net(sample.float())
+        # load data into device
+        sample = sample.to(device)
+        # ground_truth element
+        ground_truth = ground_truth.to(device)
+        # confounder mask
+        confounder_mask = confounder_mask.to(device)
+        # confounded
+        confounded = confounded.to(device)
 
-    # general prediction loss computation
-    # MCLoss (their loss)
-    constr_output = get_constr_out(outputs, R)
-    train_output = ground_truth * outputs.double()
-    train_output = get_constr_out(train_output, R)
-    train_output = (
-        1 - ground_truth
-    ) * constr_output.double() + ground_truth * train_output
+        # gradients reset
+        optimizer.zero_grad()
 
-    # get the loss masking the prediction on the root -> confunder
-    loss, right_answer_loss, right_reason_loss = revive_function(
-        X=sample,
-        y=ground_truth[:, train.to_eval],
-        expl=confounder_mask,
-        logits=train_output[:, train.to_eval],
+        # output
+        outputs = net(sample.float())
+
+        # general prediction loss computation
+        # MCLoss (their loss)
+        constr_output = get_constr_out(outputs, R)
+        train_output = ground_truth * outputs.double()
+        train_output = get_constr_out(train_output, R)
+        train_output = (
+            1 - ground_truth
+        ) * constr_output.double() + ground_truth * train_output
+
+        # get the loss masking the prediction on the root -> confunder
+        loss, right_answer_loss, right_reason_loss = revive_function(
+            X=sample,
+            y=ground_truth[:, train.to_eval],
+            expl=confounder_mask,
+            logits=train_output[:, train.to_eval],
+        )
+
+        predicted = constr_output.data > 0.5
+
+        # fetch prediction and loss value
+        total_train += ground_truth.shape[0] * ground_truth.shape[1]
+
+        # compute training accuracy
+        cumulative_accuracy += (predicted == ground_truth.byte()).sum().item()
+
+        # for calculating loss, acc per epoch
+        comulative_loss += loss.item()
+        cumulative_right_answer_loss += right_answer_loss.item()
+        cumulative_right_reason_loss += right_reason_loss.item()
+
+        if have_to_train:
+            # backward pass
+            loss.backward()
+            # optimizer
+            optimizer.step()
+
+        # compute the au(prc)
+        predicted = predicted.to("cpu")
+        cpu_constrained_output = train_output.to("cpu")
+        ground_truth = ground_truth.to("cpu")
+
+        if batch_idx == 0:
+            predicted_train = predicted
+            constr_train = cpu_constrained_output
+            y_test = ground_truth
+        else:
+            predicted_train = torch.cat((predicted_train, predicted), dim=0)
+            constr_train = torch.cat((constr_train, cpu_constrained_output), dim=0)
+            y_test = torch.cat((y_test, ground_truth), dim=0)
+
+    # average precision score
+    score = average_precision_score(
+        y_test[:, train.to_eval], constr_train.data[:, train.to_eval], average="micro"
     )
 
-    predicted = constr_output.data > 0.5
-
-    # compute training accuracy
-    accuracy = (predicted == ground_truth.byte()).sum().item()
-
-    # for calculating loss, acc per epoch
-    right_answer_loss = right_answer_loss.item()
-    right_reason_loss = right_reason_loss.item()
-
-    # backward pass
-    loss.backward()
-    # optimizer
-    optimizer.step()
-
     return (
-        loss.item(),
-        right_answer_loss,
-        right_reason_loss,
-        100 * accuracy / (ground_truth.shape[0] * ground_truth.shape[1]),
+        comulative_loss / len(training_samples),
+        cumulative_right_answer_loss / len(training_samples),
+        cumulative_right_reason_loss / len(training_samples),
+        cumulative_accuracy / total_train * 100,
+        score,
     )

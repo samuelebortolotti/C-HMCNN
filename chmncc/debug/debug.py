@@ -38,7 +38,6 @@ class LoadDebugDataset(Dataset):
     ):
         """Init param"""
         self.train_set = train_set
-        self.device = device
 
     def __len__(self) -> int:
         """Returns the total amount of data.
@@ -63,7 +62,7 @@ class LoadDebugDataset(Dataset):
 
         # parepare the train example and the explainations in the right shape
         single_el = prepare_single_test_sample(
-            sample_batch=train_sample, device=self.device
+            sample_batch=train_sample
         )
 
         # debug iteration to get the counfounder mask, without printing the image ofc
@@ -93,8 +92,6 @@ def prepare_single_test_sample(sample_batch: torch.Tensor, device: str) -> torch
     single_el = sample_batch
     # requires grad
     single_el.requires_grad = True
-    # move the element to device
-    single_el = single_el.to(device)
     # returns element and predictions
     return single_el
 
@@ -367,18 +364,12 @@ def debug(
 
     debug_train = LoadDebugDataset(
         dataloaders["train_dataset_with_labels_and_confunders_position"],
-        device=device,
-        integrated_gradients=integrated_gradients,
     )
     only_conf_train = LoadDebugDataset(
         dataloaders["train_dataset_with_labels_and_confunders_position_only_conf"],
-        integrated_gradients=integrated_gradients,
-        device=device,
     )
     no_conf_train = LoadDebugDataset(
         dataloaders["train_dataset_with_labels_and_confunders_position_no_conf"],
-        integrated_gradients=integrated_gradients,
-        device=device,
     )
 
     debug_loader = torch.utils.data.DataLoader(

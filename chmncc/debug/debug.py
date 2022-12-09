@@ -923,9 +923,9 @@ def main(args: Namespace) -> None:
     if args.wandb:
         wandb.log(
             {
-                "test/pre_exp_loss": test_loss,
-                "test/pre_exp_accuracy": test_accuracy,
-                "test/pre_exp_score": test_score,
+                "test/loss": test_loss,
+                "test/accuracy": test_accuracy,
+                "test/score": test_score,
             }
         )
 
@@ -979,9 +979,9 @@ def main(args: Namespace) -> None:
     if args.wandb:
         wandb.log(
             {
-                "test/post_loss": test_loss,
-                "test/post_accuracy": test_accuracy,
-                "test/post_score": test_score,
+                "test/loss": test_loss,
+                "test/accuracy": test_accuracy,
+                "test/score": test_score,
             }
         )
 

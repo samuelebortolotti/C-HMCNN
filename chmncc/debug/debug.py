@@ -34,7 +34,6 @@ class LoadDebugDataset(Dataset):
     def __init__(
         self,
         train_set: LoadDataset,
-        device: str,
     ):
         """Init param"""
         self.train_set = train_set
@@ -50,8 +49,8 @@ class LoadDebugDataset(Dataset):
         """Returns the data"""
         (
             train_sample,
-            _,
-            _,
+            superclass,
+            subclass,
             hierarchical_label,
             confunder_pos1_x,
             confunder_pos1_y,
@@ -61,9 +60,7 @@ class LoadDebugDataset(Dataset):
         ) = self.train_set[idx]
 
         # parepare the train example and the explainations in the right shape
-        single_el = prepare_single_test_sample(
-            sample_batch=train_sample
-        )
+        single_el = prepare_single_test_sample(sample_batch=train_sample)
 
         # debug iteration to get the counfounder mask, without printing the image ofc
         confounder_mask, confounded = compute_mask(
@@ -75,29 +72,20 @@ class LoadDebugDataset(Dataset):
             confunder_shape=confunder_shape,
         )
         single_el.requires_grad = False
+
         # returns
-        return (single_el, hierarchical_label, confounder_mask, confounded)
+        return (
+            single_el,
+            hierarchical_label,
+            confounder_mask,
+            confounded,
+            superclass,
+            subclass,
+        )
 
 
-def prepare_single_test_sample(sample_batch: torch.Tensor, device: str) -> torch.Tensor:
-    """Extract one element from the batch and sets gradients together with an additive element in the
-    size in order to make it compliant with the rest of the algorithm.
-    Args:
-        sample_batch [torch.Tensor]: batch of Test samples
-        device [str]: device
-    Returns:
-        element [torch.Tensor]: single element
-    """
-    # get the single element batch
-    single_el = sample_batch
-    # requires grad
-    single_el.requires_grad = True
-    # returns element and predictions
-    return single_el
-
-
-def save_test_sample(
-    test_sample: torch.Tensor,
+def save_sample(
+    train_sample: torch.Tensor,
     prediction: torch.Tensor,
     idx: int,
     debug_folder: str,
@@ -105,10 +93,8 @@ def save_test_sample(
     superclass: str,
     subclass: str,
     integrated_gradients: bool,
-    iteration: int,
-    dry: bool,
 ) -> bool:
-    """Save the test sample and tell whether the machine got the prediction right.
+    """Save the test sample.
     Then it returns whether the sample contains a confunder or if the sample has been
     guessed correctly.
 
@@ -122,13 +108,13 @@ def save_test_sample(
         subclass [str]: subclass string
         integrated_gradients [bool]: whether to use integrated gradients
         iteration [int]: debug iteration
-        dry [bool]: whether to save the image
 
     Returns:
         correct_guess [bool]: whether the model has guessed correctly
     """
     # prepare the element in order to show it
-    single_el_show = test_sample[0].clone().cpu().data.numpy()
+    single_el_show = train_sample.squeeze(0).clone().cpu().data.numpy()
+    print(single_el_show.shape)
     single_el_show = single_el_show.transpose(1, 2, 0)
 
     # normalize
@@ -163,37 +149,169 @@ def save_test_sample(
         ):
             correct_guess = True
 
-    # get figure
-    if not dry:
-        # plot the title
-        prediction_text = "Predicted: {}\nbecause of: {}".format(
-            parent_predictions, children_predictions
-        )
+    # plot the title
+    prediction_text = "Predicted: {}\nbecause of: {}".format(
+        parent_predictions, children_predictions
+    )
 
-        fig = plt.figure()
-        plt.imshow(single_el_show)
-        plt.title(
-            "Groundtruth superclass: {} \nGroundtruth subclass: {}\n\n{}".format(
-                superclass, subclass, prediction_text
-            )
+    # get figure
+    fig = plt.figure()
+    plt.imshow(single_el_show)
+    plt.title(
+        "Groundtruth superclass: {} \nGroundtruth subclass: {}\n\n{}".format(
+            superclass, subclass, prediction_text
         )
-        plt.tight_layout()
-        # show the figure
-        fig.savefig(
-            "{}/iter_{}_{}_original_{}{}.png".format(
-                debug_folder,
-                iteration,
-                idx,
-                "integrated_gradients" if integrated_gradients else "",
-                "_correct" if correct_guess else "",
-            ),
-            dpi=fig.dpi,
-        )
-        # close the figure
-        plt.close()
+    )
+    plt.tight_layout()
+    # show the figure
+    fig.savefig(
+        "{}/iter_{}_original_{}{}.png".format(
+            debug_folder,
+            idx,
+            "integrated_gradients" if integrated_gradients else "",
+            "_correct" if correct_guess else "",
+        ),
+        dpi=fig.dpi,
+    )
+    # close the figure
+    plt.close()
 
     # whether the prediction was right
     return correct_guess
+
+
+def visualize_sample(
+    single_el,
+    debug_folder,
+    idx,
+    integrated_gradients,
+    confounder_mask,
+    superclass,
+    subclass,
+    dataloaders,
+    device,
+    net,
+):
+    print("debug", debug_folder)
+    net.eval()
+    single_el = torch.unsqueeze(single_el, 0)
+    # set the gradients as required
+    single_el.requires_grad = True
+    # move the element to device
+    single_el = single_el.to(device)
+    # get the predictions
+    preds = net(single_el.float())
+    # gradient to show
+    correct_guess = save_sample(
+        train_sample=single_el,
+        prediction=preds,
+        idx=idx,
+        debug_folder=debug_folder,
+        dataloaders=dataloaders,
+        superclass=superclass,
+        subclass=subclass,
+        integrated_gradients=integrated_gradients,
+    )
+    gradient = compute_gradients(
+        single_el=single_el,
+        net=net,
+        integrated_gradients=integrated_gradients,
+        dry=False,
+        debug_folder=debug_folder,
+        idx=idx,
+        correct_guess=correct_guess,
+    )
+    show_gradient(
+        gradient=gradient,
+        confounder_mask=confounder_mask,
+        debug_folder=debug_folder,
+        idx=idx,
+        correct_guess=correct_guess,
+        integrated_gradients=integrated_gradients,
+    )
+    show_masked_gradient(
+        confounder_mask=confounder_mask,
+        gradient=gradient,
+        debug_folder=debug_folder,
+        idx=idx,
+        integrated_gradients=integrated_gradients,
+        correct_guess=correct_guess,
+    )
+
+
+def show_masked_gradient(
+    confounder_mask, gradient, debug_folder, idx, integrated_gradients, correct_guess
+):
+    # gradient to show
+    gradient_to_show = gradient.clone().cpu().data.numpy()
+    gradient_to_show = np.where(confounder_mask < 0.5, gradient_to_show, 0)
+    gradient_to_show = np.fabs(gradient_to_show)
+    # normalize the value
+    gradient_to_show = gradient_to_show / np.max(gradient_to_show)
+
+    # show the picture
+    fig = plt.figure()
+    plt.imshow(gradient_to_show, cmap="gray")
+    plt.title("Gradient user modified: no confunder")
+    # show the figure
+    fig.savefig(
+        "{}/iter_{}_gradient_no_confunder_{}{}.png".format(
+            debug_folder,
+            idx,
+            "integrated" if integrated_gradients else "input",
+            "_correct" if correct_guess else "",
+        ),
+        dpi=fig.dpi,
+    )
+    plt.close()
+
+
+def show_gradient(
+    gradient: torch.Tensor,
+    confounder_mask: torch.Tensor,
+    debug_folder: str,
+    idx: int,
+    correct_guess: bool,
+    integrated_gradients: bool,
+) -> None:
+    gradient_to_show = gradient.clone().cpu().data.numpy()
+    gradient_to_show = np.where(confounder_mask < 0.5, gradient_to_show, 0)
+    gradient_to_show = np.fabs(gradient_to_show)
+    # normalize the value
+    gradient_to_show = gradient_to_show / np.max(gradient_to_show)
+
+    # show the picture
+    fig = plt.figure()
+    plt.imshow(gradient_to_show, cmap="gray")
+    plt.title("Gradient user modified: no confunder")
+    # show the figure
+    fig.savefig(
+        "{}/iter_{}_gradient_no_confunder_{}{}.png".format(
+            debug_folder,
+            idx,
+            "integrated" if integrated_gradients else "input",
+            "_correct" if correct_guess else "",
+        ),
+        dpi=fig.dpi,
+    )
+    plt.close()
+
+
+def prepare_single_test_sample(sample_batch: torch.Tensor) -> torch.Tensor:
+    """Extract one element from the batch and sets gradients together with an additive element in the
+    size in order to make it compliant with the rest of the algorithm.
+    Args:
+        sample_batch [torch.Tensor]: batch of Test samples
+        device [str]: device
+    Returns:
+        element [torch.Tensor]: single element
+    """
+    # get the single element batch
+    single_el = sample_batch
+    # requires grad
+    single_el.requires_grad = True
+    # returns element and predictions
+    return single_el
 
 
 def compute_gradients(
@@ -202,7 +320,6 @@ def compute_gradients(
     integrated_gradients: bool,
     dry: bool,
     debug_folder: str,
-    iteration: int,
     idx: int,
     correct_guess: bool = False,
 ) -> torch.Tensor:
@@ -250,9 +367,8 @@ def compute_gradients(
         )
         # show the figure
         fig.savefig(
-            "{}/iter_{}_{}_gradient_{}{}.png".format(
+            "{}/iter_{}_gradient_{}{}.png".format(
                 debug_folder,
-                iteration,
                 idx,
                 "integrated" if integrated_gradients else "input",
                 "_correct" if correct_guess else "",
@@ -333,6 +449,7 @@ def debug(
     optimizer: torch.optim.Optimizer,
     debug_test_loader: torch.utils.data.DataLoader,
     test_loader: torch.utils.data.DataLoader,
+    debug_folder: str,
     batch_size: int,
     reviseLoss: Union[RRRLoss, IGRRRLoss],
     **kwargs: Any
@@ -359,28 +476,59 @@ def debug(
         reviseLoss: Union[RRRLoss, IGRRRLoss]: loss for feeding the network some feedbacks
         **kwargs [Any]: kwargs
     """
-
     print("Have to run for {} debug iterations...".format(iterations))
 
     debug_train = LoadDebugDataset(
         dataloaders["train_dataset_with_labels_and_confunders_position"],
     )
-    only_conf_train = LoadDebugDataset(
-        dataloaders["train_dataset_with_labels_and_confunders_position_only_conf"],
+
+    test_debug = LoadDebugDataset(
+        dataloaders["test_dataset_with_labels_and_confunders_pos"],
     )
-    no_conf_train = LoadDebugDataset(
-        dataloaders["train_dataset_with_labels_and_confunders_position_no_conf"],
-    )
+    #  only_conf_train = LoadDebugDataset(
+    #      dataloaders["train_dataset_with_labels_and_confunders_position_only_conf"],
+    #  )
+    #  no_conf_train = LoadDebugDataset(
+    #      dataloaders["train_dataset_with_labels_and_confunders_position_no_conf"],
+    #  )
 
     debug_loader = torch.utils.data.DataLoader(
         debug_train, batch_size=batch_size, shuffle=True, num_workers=4
     )
-    debug_conf_loader = torch.utils.data.DataLoader(
-        only_conf_train, batch_size=batch_size, shuffle=False, num_workers=4
+    test_debug = torch.utils.data.DataLoader(
+        test_debug, batch_size=batch_size, shuffle=True, num_workers=4
     )
-    debug_no_conf_loader = torch.utils.data.DataLoader(
-        no_conf_train, batch_size=batch_size, shuffle=False, num_workers=4
-    )
+    #  debug_conf_loader = torch.utils.data.DataLoader(
+    #      only_conf_train, batch_size=batch_size, shuffle=False, num_workers=4
+    #  )
+    #  debug_no_conf_loader = torch.utils.data.DataLoader(
+    #      no_conf_train, batch_size=batch_size, shuffle=False, num_workers=4
+    #  )
+
+    for _, inputs in tqdm.tqdm(
+        enumerate(debug_loader),
+        desc="Save",
+    ):
+        # get items
+        (sample, _, confounder_mask, confounded, superclass, subclass) = inputs
+        counter = 0
+        for i in range(sample.shape[0]):
+            if confounded[i]:
+                visualize_sample(
+                    sample[i],
+                    debug_folder,
+                    counter,
+                    integrated_gradients,
+                    confounder_mask[i],
+                    superclass[i],
+                    subclass[i],
+                    dataloaders,
+                    device,
+                    net,
+                )
+                counter += 1
+                if counter == 30:
+                    break
 
     # running for the requested iterations
     for it in range(iterations):
@@ -428,85 +576,85 @@ def debug(
                 }
             )
 
-        (
-            conf_loss,
-            conf_right_answer_loss,
-            conf_right_reason_loss,
-            conf_accuracy,
-            conf_score,
-        ) = revise_step(
-            net=net,
-            debug_loader=iter(debug_conf_loader),
-            R=dataloaders["train_R"],
-            train=dataloaders["train"],
-            optimizer=optimizer,
-            revive_function=reviseLoss,
-            device=device,
-            title="Train with RRR [confounded]",
-            have_to_train=False,
-        )
-
-        print(
-            "\n\t Debug confounded samples loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, Score {:.5f}".format(
-                conf_loss,
-                conf_right_answer_loss,
-                conf_right_reason_loss,
-                conf_accuracy,
-                conf_score,
-            )
-        )
-
-        # log on wandb if and only if the module is loaded
-        if set_wandb:
-            wandb.log(
-                {
-                    "debug/conf_rrr_loss": conf_loss,
-                    "debug/conf_right_anwer_loss": conf_right_answer_loss,
-                    "debug/conf_right_reason_loss": conf_right_reason_loss,
-                    "debug/conf_accuracy": conf_accuracy,
-                    "debug/conf_score": conf_score,
-                }
-            )
-
-        (
-            not_conf_loss,
-            not_conf_right_answer_loss,
-            not_conf_right_reason_loss,
-            not_conf_accuracy,
-            not_conf_score,
-        ) = revise_step(
-            net=net,
-            debug_loader=iter(debug_no_conf_loader),
-            R=dataloaders["train_R"],
-            train=dataloaders["train"],
-            optimizer=optimizer,
-            revive_function=reviseLoss,
-            device=device,
-            title="Test with RRR [not confounded]",
-            have_to_train=False,
-        )
-
-        print(
-            "\n\t Debug not confounded samples loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, Score {:.5f}".format(
-                not_conf_loss,
-                not_conf_right_answer_loss,
-                not_conf_right_reason_loss,
-                not_conf_accuracy,
-                not_conf_score,
-            )
-        )
-
-        # log on wandb if and only if the module is loaded
-        if set_wandb:
-            wandb.log(
-                {
-                    "debug/not_conf_rrr_loss": not_conf_loss,
-                    "debug/not_conf_right_anwer_loss": not_conf_right_answer_loss,
-                    "debug/not_conf_right_reason_loss": not_conf_right_reason_loss,
-                    "debug/not_conf_accuracy": not_conf_accuracy,
-                    "debug/not_conf_score": not_conf_score,
-                }
-            )
+        #  (
+        #      conf_loss,
+        #      conf_right_answer_loss,
+        #      conf_right_reason_loss,
+        #      conf_accuracy,
+        #      conf_score,
+        #  ) = revise_step(
+        #      net=net,
+        #      debug_loader=iter(debug_conf_loader),
+        #      R=dataloaders["train_R"],
+        #      train=dataloaders["train"],
+        #      optimizer=optimizer,
+        #      revive_function=reviseLoss,
+        #      device=device,
+        #      title="Train with RRR [confounded]",
+        #      have_to_train=False,
+        #  )
+        #
+        #  print(
+        #      "\n\t Debug confounded samples loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, Score {:.5f}".format(
+        #          conf_loss,
+        #          conf_right_answer_loss,
+        #          conf_right_reason_loss,
+        #          conf_accuracy,
+        #          conf_score,
+        #      )
+        #  )
+        #
+        #  # log on wandb if and only if the module is loaded
+        #  if set_wandb:
+        #      wandb.log(
+        #          {
+        #              "debug/conf_rrr_loss": conf_loss,
+        #              "debug/conf_right_anwer_loss": conf_right_answer_loss,
+        #              "debug/conf_right_reason_loss": conf_right_reason_loss,
+        #              "debug/conf_accuracy": conf_accuracy,
+        #              "debug/conf_score": conf_score,
+        #          }
+        #      )
+        #
+        #  (
+        #      not_conf_loss,
+        #      not_conf_right_answer_loss,
+        #      not_conf_right_reason_loss,
+        #      not_conf_accuracy,
+        #      not_conf_score,
+        #  ) = revise_step(
+        #      net=net,
+        #      debug_loader=iter(debug_no_conf_loader),
+        #      R=dataloaders["train_R"],
+        #      train=dataloaders["train"],
+        #      optimizer=optimizer,
+        #      revive_function=reviseLoss,
+        #      device=device,
+        #      title="Test with RRR [not confounded]",
+        #      have_to_train=False,
+        #  )
+        #
+        #  print(
+        #      "\n\t Debug not confounded samples loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, Score {:.5f}".format(
+        #          not_conf_loss,
+        #          not_conf_right_answer_loss,
+        #          not_conf_right_reason_loss,
+        #          not_conf_accuracy,
+        #          not_conf_score,
+        #      )
+        #  )
+        #
+        #  # log on wandb if and only if the module is loaded
+        #  if set_wandb:
+        #      wandb.log(
+        #          {
+        #              "debug/not_conf_rrr_loss": not_conf_loss,
+        #              "debug/not_conf_right_anwer_loss": not_conf_right_answer_loss,
+        #              "debug/not_conf_right_reason_loss": not_conf_right_reason_loss,
+        #              "debug/not_conf_accuracy": not_conf_accuracy,
+        #              "debug/not_conf_score": not_conf_score,
+        #          }
+        #      )
 
         print("Testing...")
 
@@ -565,6 +713,33 @@ def debug(
         print("Done with debug for iteration number: {}".format(iterations))
 
         print("-----------------------------------------------------")
+
+    for _, inputs in tqdm.tqdm(
+        enumerate(test_debug),
+        desc="Save",
+    ):
+        # get items
+        print(len(inputs))
+        print(inputs)
+        (sample, _, confounder_mask, confounded, superclass, subclass) = inputs
+        counter = 100
+        for i in range(sample.shape[0]):
+            if confounded[i]:
+                visualize_sample(
+                    sample[i],
+                    debug_folder,
+                    counter,
+                    integrated_gradients,
+                    confounder_mask[i],
+                    superclass[i],
+                    subclass[i],
+                    dataloaders,
+                    device,
+                    net,
+                )
+                counter += 1
+                if counter == 200:
+                    break
 
 
 def configure_subparsers(subparsers: Subparser) -> None:
@@ -726,7 +901,7 @@ def main(args: Namespace) -> None:
     # define the cost function
     cost_function = torch.nn.BCELoss()
 
-    # test set
+    #  # test set
     test_loss, test_accuracy, test_score = test_step(
         net=net,
         test_loader=iter(test_loader),

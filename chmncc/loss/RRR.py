@@ -70,6 +70,7 @@ class RRRLoss(nn.Module):
         )[0]
         self.net.train()
         gradXes = torch.sum(gradXes, dim=1)
+        print(expl.shape, gradXes.shape)
         # when the feature is 0 -> relevant, since if it is 1 we are adding a penality
         A_gradX = torch.mul(expl, gradXes) ** 2
 

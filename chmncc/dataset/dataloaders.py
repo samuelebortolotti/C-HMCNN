@@ -215,7 +215,7 @@ def load_cifar_dataloaders(
         name_labels=True,
         confund=confunder,
         train=True,
-        only_confounders=True,
+        only_confounders=False,
         no_confounders=True,
     )
 
@@ -225,6 +225,18 @@ def load_cifar_dataloaders(
         csv_path=test_csv_path,
         cifar_metafile=cifar_metadata,
         transform=transform_test,
+        confund=confunder,
+        train=False,
+    )
+
+    test_dataset_with_labels_and_confunders_pos = LoadDataset(
+        image_size=img_size,
+        image_depth=img_depth,
+        csv_path=test_csv_path,
+        cifar_metafile=cifar_metadata,
+        transform=transform_test,
+        confunders_position=True,
+        name_labels=True,
         confund=confunder,
         train=False,
     )
@@ -260,6 +272,13 @@ def load_cifar_dataloaders(
 
     test_loader = torch.utils.data.DataLoader(
         test_dataset, batch_size=test_batch_size, shuffle=False, num_workers=4
+    )
+
+    test_loader_with_labels_and_confunders_position = torch.utils.data.DataLoader(
+        test_dataset_with_labels_and_confunders_pos,
+        batch_size=test_batch_size,
+        shuffle=False,
+        num_workers=4,
     )
 
     train_loader_with_labels_name_confunders_pos = torch.utils.data.DataLoader(
@@ -326,6 +345,8 @@ def load_cifar_dataloaders(
         "train_dataset_with_labels_and_confunders_position": train_dataset_with_labels_and_confunders_position,
         "train_dataset_with_labels_and_confunders_position_only_conf": train_dataset_with_labels_and_confunders_position_only_conf,
         "train_dataset_with_labels_and_confunders_position_no_conf": train_dataset_with_labels_and_confunders_position_no_conf,
+        "test_dataset_with_labels_and_confunders_pos": test_dataset_with_labels_and_confunders_pos,
+        "test_loader_with_labels_and_confunders_position": test_loader_with_labels_and_confunders_position,
         "test_set": test_dataset,
         "test": test,
         "val_set": val_dataset,

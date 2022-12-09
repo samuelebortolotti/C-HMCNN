@@ -58,11 +58,7 @@ def revise_step(
         desc=title,
     ):
         # get items
-        (sample, ground_truth, confounder_mask, confounded) = inputs
-        print(sample.shape)
-        print(ground_truth.shape)
-        print(confounder_mask.shape)
-        print(confounded.shape)
+        (sample, ground_truth, confounder_mask, confounded, _, _) = inputs
 
         # load data into device
         sample = sample.to(device)
@@ -130,9 +126,6 @@ def revise_step(
             predicted_train = torch.cat((predicted_train, predicted), dim=0)
             constr_train = torch.cat((constr_train, cpu_constrained_output), dim=0)
             y_test = torch.cat((y_test, ground_truth), dim=0)
-
-        if batch_idx == 2:
-            break
 
     # average precision score
     score = average_precision_score(

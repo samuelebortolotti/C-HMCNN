@@ -11,10 +11,7 @@ from sklearn.metrics import average_precision_score
 
 def revise_step(
     net: nn.Module,
-    training_samples: torch.Tensor,
-    ground_truths: torch.Tensor,
-    confunder_masks: torch.Tensor,
-    confounded_flag: torch.Tensor,
+    debug_loader: torch.utils.data.DataLoader,
     train: dotdict,
     R: torch.Tensor,
     optimizer: torch.optim.Optimizer,
@@ -50,25 +47,26 @@ def revise_step(
     cumulative_right_reason_loss = 0.0
 
     # set the network to training mode
-    net.train()
+    if have_to_train:
+        net.train()
+    else:
+        net.eval()
 
     # iterate over the training set
     for batch_idx, inputs in tqdm.tqdm(
-        enumerate(
-            zip(training_samples, ground_truths, confunder_masks, confounded_flag)
-        ),
+        enumerate(debug_loader),
         desc=title,
     ):
-        # continue
-        if training_samples.shape[0] == 1:
-            print("Skipping, cannot process 1 element")
-            continue
-
         # get items
         (sample, ground_truth, confounder_mask, confounded) = inputs
+        print(sample.shape)
+        print(ground_truth.shape)
+        print(confounder_mask.shape)
+        print(confounded.shape)
 
         # load data into device
         sample = sample.to(device)
+        sample.requires_grad = True
         # ground_truth element
         ground_truth = ground_truth.to(device)
         # confounder mask
@@ -77,7 +75,8 @@ def revise_step(
         confounded = confounded.to(device)
 
         # gradients reset
-        optimizer.zero_grad()
+        if have_to_train:
+            optimizer.zero_grad()
 
         # output
         outputs = net(sample.float())
@@ -132,15 +131,18 @@ def revise_step(
             constr_train = torch.cat((constr_train, cpu_constrained_output), dim=0)
             y_test = torch.cat((y_test, ground_truth), dim=0)
 
+        if batch_idx == 2:
+            break
+
     # average precision score
     score = average_precision_score(
         y_test[:, train.to_eval], constr_train.data[:, train.to_eval], average="micro"
     )
 
     return (
-        comulative_loss / len(training_samples),
-        cumulative_right_answer_loss / len(training_samples),
-        cumulative_right_reason_loss / len(training_samples),
+        comulative_loss / len(debug_loader),
+        cumulative_right_answer_loss / len(debug_loader),
+        cumulative_right_reason_loss / len(debug_loader),
         cumulative_accuracy / total_train * 100,
         score,
     )

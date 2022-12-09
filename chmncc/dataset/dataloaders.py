@@ -189,7 +189,34 @@ def load_cifar_dataloaders(
         confunders_position=True,
         name_labels=True,
         confund=confunder,
-        train=False,
+        train=True,
+    )
+
+    train_dataset_with_labels_and_confunders_position_only_conf = LoadDataset(
+        image_size=img_size,
+        image_depth=img_depth,
+        csv_path=csv_path,
+        cifar_metafile=cifar_metadata,
+        transform=transform_test,
+        confunders_position=True,
+        name_labels=True,
+        confund=confunder,
+        train=True,
+        only_confounders=True,
+    )
+
+    train_dataset_with_labels_and_confunders_position_no_conf = LoadDataset(
+        image_size=img_size,
+        image_depth=img_depth,
+        csv_path=csv_path,
+        cifar_metafile=cifar_metadata,
+        transform=transform_test,
+        confunders_position=True,
+        name_labels=True,
+        confund=confunder,
+        train=True,
+        only_confounders=True,
+        no_confounders=True,
     )
 
     test_dataset = LoadDataset(
@@ -296,6 +323,9 @@ def load_cifar_dataloaders(
         "test_loader": test_loader,
         "test_loader_with_labels_name": test_loader_with_labels_names,
         "train_loader_debug_mode": train_loader_with_labels_name_confunders_pos,
+        "train_dataset_with_labels_and_confunders_position": train_dataset_with_labels_and_confunders_position,
+        "train_dataset_with_labels_and_confunders_position_only_conf": train_dataset_with_labels_and_confunders_position_only_conf,
+        "train_dataset_with_labels_and_confunders_position_no_conf": train_dataset_with_labels_and_confunders_position_no_conf,
         "test_set": test_dataset,
         "test": test,
         "val_set": val_dataset,

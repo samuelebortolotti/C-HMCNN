@@ -36,6 +36,7 @@ class LoadDataset(Dataset):
         only_confounders: bool = False,
         confund: bool = True,
         train: bool = True,
+        no_confounders: bool = False,
     ):
         """Init param
 
@@ -92,6 +93,25 @@ class LoadDataset(Dataset):
             self.data_list = self._confounders_only(
                 self.data_list, "train" if self.train else "test"
             )
+        elif no_confounders:
+            self.data_list = self._no_confounders(
+                self.data_list, "train" if self.train else "test"
+            )
+
+    def _no_confounders(
+        self, confounders_list: List[Tuple[str, str, str]], phase: str
+    ) -> List[Tuple[str, str, str]]:
+        filtered = []
+        for image, superclass, subclass in confounders_list:
+            # check if the sample is confunded
+            superclass = superclass.strip()
+            subclass = subclass.strip()
+            if superclass in confunders:
+                for tmp_index in range(len(confunders[superclass][phase])):
+                    if confunders[superclass][phase][tmp_index]["subclass"] == subclass:
+                        continue
+            filtered.append((image, superclass, subclass))
+        return filtered
 
     def _confounders_only(
         self, confounders_list: List[Tuple[str, str, str]], phase: str

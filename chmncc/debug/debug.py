@@ -438,6 +438,7 @@ def compute_mask(
 
 def save_some_confounded_samples(net: nn.Module, start_from: int, number: int, loader: torch.utils.data.DataLoader, device: str, dataloaders: Dict[str, Any], folder: str, integrated_gradients: bool):
     counter = start_from
+    done = False
     for _, inputs in tqdm.tqdm(
         enumerate(loader),
         desc="Save",
@@ -446,6 +447,7 @@ def save_some_confounded_samples(net: nn.Module, start_from: int, number: int, l
         (sample, _, confounder_mask, confounded, superclass, subclass) = inputs
         for i in range(sample.shape[0]):
             if confounded[i]:
+                print("Confounded", counter, number)
                 visualize_sample(
                     sample[i],
                     folder,
@@ -460,7 +462,10 @@ def save_some_confounded_samples(net: nn.Module, start_from: int, number: int, l
                 )
                 counter += 1
                 if counter == number:
+                    done = True
                     break
+        if done:
+            break
 
 
 def debug(

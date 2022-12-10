@@ -192,6 +192,18 @@ def load_cifar_dataloaders(
         train=True,
     )
 
+    val_dataset_with_labels_and_confunders_position = LoadDataset(
+        image_size=img_size,
+        image_depth=img_depth,
+        csv_path=val_csv_path,
+        cifar_metafile=cifar_metadata,
+        transform=transform_test,
+        confunders_position=True,
+        name_labels=True,
+        confund=confunder,
+        train=True,
+    )
+
     train_dataset_with_labels_and_confunders_position_only_conf = LoadDataset(
         image_size=img_size,
         image_depth=img_depth,
@@ -274,13 +286,6 @@ def load_cifar_dataloaders(
         test_dataset, batch_size=test_batch_size, shuffle=False, num_workers=4
     )
 
-    test_loader_with_labels_and_confunders_position = torch.utils.data.DataLoader(
-        test_dataset_with_labels_and_confunders_pos,
-        batch_size=test_batch_size,
-        shuffle=False,
-        num_workers=4,
-    )
-
     train_loader_with_labels_name_confunders_pos = torch.utils.data.DataLoader(
         train_dataset_with_labels_and_confunders_position,
         batch_size=batch_size,
@@ -343,10 +348,10 @@ def load_cifar_dataloaders(
         "test_loader_with_labels_name": test_loader_with_labels_names,
         "train_loader_debug_mode": train_loader_with_labels_name_confunders_pos,
         "train_dataset_with_labels_and_confunders_position": train_dataset_with_labels_and_confunders_position,
+        "val_dataset_with_labels_and_confunders_position": val_dataset_with_labels_and_confunders_position,
         "train_dataset_with_labels_and_confunders_position_only_conf": train_dataset_with_labels_and_confunders_position_only_conf,
         "train_dataset_with_labels_and_confunders_position_no_conf": train_dataset_with_labels_and_confunders_position_no_conf,
         "test_dataset_with_labels_and_confunders_pos": test_dataset_with_labels_and_confunders_pos,
-        "test_loader_with_labels_and_confunders_position": test_loader_with_labels_and_confunders_position,
         "test_set": test_dataset,
         "test": test,
         "val_set": val_dataset,

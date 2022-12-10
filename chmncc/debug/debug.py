@@ -114,7 +114,6 @@ def save_sample(
     """
     # prepare the element in order to show it
     single_el_show = train_sample.squeeze(0).clone().cpu().data.numpy()
-    print(single_el_show.shape)
     single_el_show = single_el_show.transpose(1, 2, 0)
 
     # normalize
@@ -192,8 +191,8 @@ def visualize_sample(
     device,
     net,
 ):
-    print("debug", debug_folder)
     net.eval()
+
     single_el = torch.unsqueeze(single_el, 0)
     # set the gradients as required
     single_el.requires_grad = True
@@ -437,6 +436,32 @@ def compute_mask(
     # return the confounder mask
     return confounder_mask, confounded
 
+def save_some_confounded_samples(net: nn.Module, start_from: int, number: int, loader: torch.utils.data.DataLoader, device: str, dataloaders: Dict[str, Any], folder: str, integrated_gradients: bool):
+    counter = start_from
+    for _, inputs in tqdm.tqdm(
+        enumerate(loader),
+        desc="Save",
+    ):
+        # get items
+        (sample, _, confounder_mask, confounded, superclass, subclass) = inputs
+        for i in range(sample.shape[0]):
+            if confounded[i]:
+                visualize_sample(
+                    sample[i],
+                    folder,
+                    counter,
+                    integrated_gradients,
+                    confounder_mask[i],
+                    superclass[i],
+                    subclass[i],
+                    dataloaders,
+                    device,
+                    net,
+                )
+                counter += 1
+                if counter == number:
+                    break
+
 
 def debug(
     net: nn.Module,
@@ -451,6 +476,7 @@ def debug(
     test_loader: torch.utils.data.DataLoader,
     debug_folder: str,
     batch_size: int,
+    test_batch_size: int,
     reviseLoss: Union[RRRLoss, IGRRRLoss],
     **kwargs: Any
 ):
@@ -478,57 +504,38 @@ def debug(
     """
     print("Have to run for {} debug iterations...".format(iterations))
 
+    # Load debug loaders
     debug_train = LoadDebugDataset(
         dataloaders["train_dataset_with_labels_and_confunders_position"],
     )
-
+    debug_val = LoadDebugDataset(
+        dataloaders["val_dataset_with_labels_and_confunders_position"]
+    )
     test_debug = LoadDebugDataset(
         dataloaders["test_dataset_with_labels_and_confunders_pos"],
     )
-    #  only_conf_train = LoadDebugDataset(
-    #      dataloaders["train_dataset_with_labels_and_confunders_position_only_conf"],
-    #  )
-    #  no_conf_train = LoadDebugDataset(
-    #      dataloaders["train_dataset_with_labels_and_confunders_position_no_conf"],
-    #  )
 
     debug_loader = torch.utils.data.DataLoader(
         debug_train, batch_size=batch_size, shuffle=True, num_workers=4
     )
-    test_debug = torch.utils.data.DataLoader(
-        test_debug, batch_size=batch_size, shuffle=True, num_workers=4
+    debug_val_loader = torch.utils.data.DataLoader(
+        debug_val, batch_size=batch_size, shuffle=False, num_workers=4
     )
-    #  debug_conf_loader = torch.utils.data.DataLoader(
-    #      only_conf_train, batch_size=batch_size, shuffle=False, num_workers=4
-    #  )
-    #  debug_no_conf_loader = torch.utils.data.DataLoader(
-    #      no_conf_train, batch_size=batch_size, shuffle=False, num_workers=4
-    #  )
+    test_debug = torch.utils.data.DataLoader(
+        test_debug, batch_size=test_batch_size, shuffle=False, num_workers=4
+    )
 
-    for _, inputs in tqdm.tqdm(
-        enumerate(debug_loader),
-        desc="Save",
-    ):
-        # get items
-        (sample, _, confounder_mask, confounded, superclass, subclass) = inputs
-        counter = 0
-        for i in range(sample.shape[0]):
-            if confounded[i]:
-                visualize_sample(
-                    sample[i],
-                    debug_folder,
-                    counter,
-                    integrated_gradients,
-                    confounder_mask[i],
-                    superclass[i],
-                    subclass[i],
-                    dataloaders,
-                    device,
-                    net,
-                )
-                counter += 1
-                if counter == 30:
-                    break
+    # save some training samples
+    save_some_confounded_samples(
+        net=net,
+        start_from=0,
+        number=10,
+        dataloaders=dataloaders,
+        device=device,
+        folder=debug_folder,
+        integrated_gradients=integrated_gradients,
+        loader=debug_loader,
+    )
 
     # running for the requested iterations
     for it in range(iterations):
@@ -543,6 +550,7 @@ def debug(
             total_right_reason_loss,
             total_accuracy,
             total_score,
+            right_reason_loss_confounded,
         ) = revise_step(
             net=net,
             debug_loader=iter(debug_loader),
@@ -555,12 +563,13 @@ def debug(
         )
 
         print(
-            "\n\t Debug full loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, Score {:.5f}".format(
+            "\n\t Debug full loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, Score {:.5f}, Right Reason Loss on Confounded {:.5f}".format(
                 total_loss,
                 total_right_answer_loss,
                 total_right_reason_loss,
                 total_accuracy,
                 total_score,
+                right_reason_loss_confounded,
             )
         )
 
@@ -568,93 +577,56 @@ def debug(
         if set_wandb:
             wandb.log(
                 {
-                    "debug/full_rrr_loss": total_loss,
-                    "debug/full_right_anwer_loss": total_right_answer_loss,
-                    "debug/full_right_reason_loss": total_right_reason_loss,
-                    "debug/full_accuracy": total_accuracy,
-                    "debug/full_score": total_score,
+                    "train/rrr_loss": total_loss,
+                    "train/right_anwer_loss": total_right_answer_loss,
+                    "train/right_reason_loss": total_right_reason_loss,
+                    "train/accuracy": total_accuracy,
+                    "train/score": total_score,
                 }
             )
 
-        #  (
-        #      conf_loss,
-        #      conf_right_answer_loss,
-        #      conf_right_reason_loss,
-        #      conf_accuracy,
-        #      conf_score,
-        #  ) = revise_step(
-        #      net=net,
-        #      debug_loader=iter(debug_conf_loader),
-        #      R=dataloaders["train_R"],
-        #      train=dataloaders["train"],
-        #      optimizer=optimizer,
-        #      revive_function=reviseLoss,
-        #      device=device,
-        #      title="Train with RRR [confounded]",
-        #      have_to_train=False,
-        #  )
-        #
-        #  print(
-        #      "\n\t Debug confounded samples loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, Score {:.5f}".format(
-        #          conf_loss,
-        #          conf_right_answer_loss,
-        #          conf_right_reason_loss,
-        #          conf_accuracy,
-        #          conf_score,
-        #      )
-        #  )
-        #
-        #  # log on wandb if and only if the module is loaded
-        #  if set_wandb:
-        #      wandb.log(
-        #          {
-        #              "debug/conf_rrr_loss": conf_loss,
-        #              "debug/conf_right_anwer_loss": conf_right_answer_loss,
-        #              "debug/conf_right_reason_loss": conf_right_reason_loss,
-        #              "debug/conf_accuracy": conf_accuracy,
-        #              "debug/conf_score": conf_score,
-        #          }
-        #      )
-        #
-        #  (
-        #      not_conf_loss,
-        #      not_conf_right_answer_loss,
-        #      not_conf_right_reason_loss,
-        #      not_conf_accuracy,
-        #      not_conf_score,
-        #  ) = revise_step(
-        #      net=net,
-        #      debug_loader=iter(debug_no_conf_loader),
-        #      R=dataloaders["train_R"],
-        #      train=dataloaders["train"],
-        #      optimizer=optimizer,
-        #      revive_function=reviseLoss,
-        #      device=device,
-        #      title="Test with RRR [not confounded]",
-        #      have_to_train=False,
-        #  )
-        #
-        #  print(
-        #      "\n\t Debug not confounded samples loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, Score {:.5f}".format(
-        #          not_conf_loss,
-        #          not_conf_right_answer_loss,
-        #          not_conf_right_reason_loss,
-        #          not_conf_accuracy,
-        #          not_conf_score,
-        #      )
-        #  )
-        #
-        #  # log on wandb if and only if the module is loaded
-        #  if set_wandb:
-        #      wandb.log(
-        #          {
-        #              "debug/not_conf_rrr_loss": not_conf_loss,
-        #              "debug/not_conf_right_anwer_loss": not_conf_right_answer_loss,
-        #              "debug/not_conf_right_reason_loss": not_conf_right_reason_loss,
-        #              "debug/not_conf_accuracy": not_conf_accuracy,
-        #              "debug/not_conf_score": not_conf_score,
-        #          }
-        #      )
+        (
+            val_loss,
+            val_right_answer_loss,
+            val_right_reason_loss,
+            val_accuracy,
+            val_score,
+            val_right_reason_loss_confounded,
+        ) = revise_step(
+            net=net,
+            debug_loader=iter(debug_val_loader),
+            R=dataloaders["train_R"],
+            train=dataloaders["train"],
+            optimizer=optimizer,
+            revive_function=reviseLoss,
+            device=device,
+            title="Debug with RRR",
+            have_to_train = False
+        )
+
+        print(
+            "\n\t Debug validation loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, Score {:.5f}, Right Reason Loss on Confounded {:.5f}".format(
+                val_loss,
+                val_right_answer_loss,
+                val_right_reason_loss,
+                val_accuracy,
+                val_score,
+                val_right_reason_loss_confounded,
+            )
+        )
+
+        # log on wandb if and only if the module is loaded
+        if set_wandb:
+            wandb.log(
+                {
+                    "val/rrr_loss": total_loss,
+                    "val/right_anwer_loss": total_right_answer_loss,
+                    "val/right_reason_loss": total_right_reason_loss,
+                    "val/rrr_accuracy": total_accuracy,
+                    "val/rrr_score": total_score,
+                }
+            )
+
 
         print("Testing...")
 
@@ -714,32 +686,17 @@ def debug(
 
         print("-----------------------------------------------------")
 
-    for _, inputs in tqdm.tqdm(
-        enumerate(test_debug),
-        desc="Save",
-    ):
-        # get items
-        print(len(inputs))
-        print(inputs)
-        (sample, _, confounder_mask, confounded, superclass, subclass) = inputs
-        counter = 100
-        for i in range(sample.shape[0]):
-            if confounded[i]:
-                visualize_sample(
-                    sample[i],
-                    debug_folder,
-                    counter,
-                    integrated_gradients,
-                    confounder_mask[i],
-                    superclass[i],
-                    subclass[i],
-                    dataloaders,
-                    device,
-                    net,
-                )
-                counter += 1
-                if counter == 200:
-                    break
+    # save some test confounded examples
+    save_some_confounded_samples(
+        net=net,
+        start_from=100,
+        number=110,
+        dataloaders=dataloaders,
+        device=device,
+        folder=debug_folder,
+        integrated_gradients=integrated_gradients,
+        loader=test_debug,
+    )
 
 
 def configure_subparsers(subparsers: Subparser) -> None:

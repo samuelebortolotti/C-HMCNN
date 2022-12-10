@@ -19,7 +19,7 @@ def revise_step(
     title: str,
     device: str = "cuda",
     have_to_train: bool = True,
-) -> Tuple[float, float, float, float, float]:
+) -> Tuple[float, float, float, float, float, float]:
     """Revise step of the network. It integrates the user feedback and revise the network by the means
     of the RRRLoss.
 
@@ -45,6 +45,7 @@ def revise_step(
     cumulative_accuracy = 0.0
     cumulative_right_answer_loss = 0.0
     cumulative_right_reason_loss = 0.0
+    confounded_samples = 0.0
 
     # set the network to training mode
     if have_to_train:
@@ -94,6 +95,9 @@ def revise_step(
             logits=train_output[:, train.to_eval],
         )
 
+        # compute the amount of confounded samples
+        confounded_samples += confounded.sum().item()
+
         predicted = constr_output.data > 0.5
 
         # fetch prediction and loss value
@@ -132,10 +136,15 @@ def revise_step(
         y_test[:, train.to_eval], constr_train.data[:, train.to_eval], average="micro"
     )
 
+    # confounded samples
+    if confounded_samples:
+        confounded_samples = 1
+
     return (
         comulative_loss / len(debug_loader),
         cumulative_right_answer_loss / len(debug_loader),
         cumulative_right_reason_loss / len(debug_loader),
         cumulative_accuracy / total_train * 100,
         score,
+        cumulative_right_reason_loss / confounded_samples,
     )

@@ -17,6 +17,7 @@ def revise_step(
     optimizer: torch.optim.Optimizer,
     revive_function: Union[IGRRRLoss, RRRLoss],
     title: str,
+    batches_treshold: float,
     device: str = "cuda",
     have_to_train: bool = True,
 ) -> Tuple[float, float, float, float, float, float]:
@@ -25,20 +26,23 @@ def revise_step(
 
     Args:
         net [nn.Module] network on device
-        training_samples [torch.Tensor]: training samples stacked tensor
-        ground_trutconfunder_maskshs [torch.Tensor]: groundtruths samples stacked tensor
-        confounder_mask [torch.Tensor]: confounder masks stacked tensor
+        debug_loader [torch.utils.data.DataLoader]: debug loader
         train [dotdict]: training set dictionary
         R [torch.Tensor]: adjency matrix
         optimizer [torch.optim.Optimizer]: optimizer
-        cost_function [Union[IGRRRLoss, RRRLoss]] RRR loss flavour
+        revive_function [Union[IGRRRLoss, RRRLoss]]: revive function (RRR loss)
+        title [str]: title for tqdm
+        batches_treshold [float]: threshold for the batches
         device [str]: on which device to run the experiment [default: cuda]
+        have_to_train [bool]: whether to train or not the model
 
     Returns:
         loss [float]
         right_answer_loss [float]: error considering the training loss
         right_reason_loss [float]: error considering the penalty on the wrong focus of the model
         accuracy [float]: accuracy of the model in percentage
+        score [float]: area under the precision/recall curve
+        right_reason_loss_confounded [float]: cumulative right_reason_loss divided over the number of confounded samples
     """
     total_train = 0.0
     comulative_loss = 0.0
@@ -130,6 +134,10 @@ def revise_step(
             predicted_train = torch.cat((predicted_train, predicted), dim=0)
             constr_train = torch.cat((constr_train, cpu_constrained_output), dim=0)
             y_test = torch.cat((y_test, ground_truth), dim=0)
+
+        # break if the number of training batches is more then the threshold
+        if batch_idx >= batches_treshold:
+            break
 
     # average precision score
     score = average_precision_score(

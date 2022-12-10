@@ -18,7 +18,7 @@ def compute_integrated_gradient(
     mean_grad = 0
     n = 100
 
-    for i in tqdm.tqdm(range(1, n + 1)):
+    for i in tqdm.tqdm(range(1, n + 1), desc="Computing the integrated gradient"):
         x = batch_blank + i / n * (batch_x - batch_blank)
         #  x.requires_grad = True
         y = model(x)

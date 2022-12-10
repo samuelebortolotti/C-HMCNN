@@ -29,13 +29,16 @@ from torch.utils.data import Dataset
 
 
 class LoadDebugDataset(Dataset):
-    """Loads the data from a pre-existing DataLoader (it should return the position of the confounder as well as the labels)"""
+    """Loads the data from a pre-existing DataLoader
+    (it should return the position of the confounder as well as the labels)
+    In particular, this class aims to wrap the cifar dataloader with labels and confunder position
+    and returns, a part from the label, the confounder mask which is useful for the RRR loss"""
 
     def __init__(
         self,
         train_set: LoadDataset,
     ):
-        """Init param"""
+        """Init param: it saves the training set"""
         self.train_set = train_set
 
     def __len__(self) -> int:
@@ -45,8 +48,18 @@ class LoadDebugDataset(Dataset):
         """
         return len(self.train_set)
 
-    def __getitem__(self, idx: int):
-        """Returns the data"""
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, bool, str, str]:
+        """Returns the data, specifically:
+        - element: train sample
+        - hierarchical_label: hierarchical label
+        - confounder_mask: mask for the RRR loss
+        - counfounded: whether the sample is confounded or not
+        - superclass: superclass in string
+        - subclass: subclass in string
+
+        Note that: the confounder mask is all zero for non-confounded examples
+        """
+        # get the data from the training_set
         (
             train_sample,
             superclass,
@@ -60,9 +73,9 @@ class LoadDebugDataset(Dataset):
         ) = self.train_set[idx]
 
         # parepare the train example and the explainations in the right shape
-        single_el = prepare_single_test_sample(sample_batch=train_sample)
+        single_el = prepare_single_test_sample(single_el=train_sample)
 
-        # debug iteration to get the counfounder mask, without printing the image ofc
+        # compute the confounder mask
         confounder_mask, confounded = compute_mask(
             shape=(train_sample.shape[1], train_sample.shape[2]),
             confunder_pos1_x=confunder_pos1_x,
@@ -71,9 +84,11 @@ class LoadDebugDataset(Dataset):
             confunder_pos2_y=confunder_pos2_y,
             confunder_shape=confunder_shape,
         )
+
+        # restore the requires grad flag
         single_el.requires_grad = False
 
-        # returns
+        # returns the data
         return (
             single_el,
             hierarchical_label,
@@ -99,7 +114,7 @@ def save_sample(
     guessed correctly.
 
     Args:
-        test_sample [torch.Tensor]: test sample depicting the image
+        train_sample [torch.Tensor]: train sample depicting the image
         prediction [torch.Tensor]: prediction of the network on top of the test function
         idx [int]: index of the element of the batch to consider
         debug_folder [str]: string depicting the folder where to save the figures
@@ -107,7 +122,6 @@ def save_sample(
         superclass [str]: superclass string
         subclass [str]: subclass string
         integrated_gradients [bool]: whether to use integrated gradients
-        iteration [int]: debug iteration
 
     Returns:
         correct_guess [bool]: whether the model has guessed correctly
@@ -180,27 +194,47 @@ def save_sample(
 
 
 def visualize_sample(
-    single_el,
-    debug_folder,
-    idx,
-    integrated_gradients,
-    confounder_mask,
-    superclass,
-    subclass,
-    dataloaders,
-    device,
-    net,
-):
+    single_el: torch.Tensor,
+    debug_folder: str,
+    idx: int,
+    integrated_gradients: bool,
+    confounder_mask: torch.Tensor,
+    superclass: str,
+    subclass: str,
+    dataloaders: Dict[str, Any],
+    device: str,
+    net: nn.Module,
+) -> None:
+    """Save the samples information, including the sample itself, the gradients and the masked gradients
+
+    Args:
+        single_el [torch.Tensor]: sample to show
+        debug_folder [str]: folder where to store the data
+        idx [int]: idex of the element to save
+        integrated_gradients [bool]: whether to use integrated gradiends
+        confounder_mask [torch.Tensor]: confounder mask
+        superclass [str]: superclass of the sample
+        subclass [str]: subclass of the sample
+        dataloaders [Dict[str, Any]]: dataloaders
+        device [str]: device
+        net [nn.Module]: network
+    """
+    # set the network to eval mode
     net.eval()
 
+    # unsqueeze the element
     single_el = torch.unsqueeze(single_el, 0)
+
     # set the gradients as required
     single_el.requires_grad = True
+
     # move the element to device
     single_el = single_el.to(device)
+
     # get the predictions
     preds = net(single_el.float())
-    # gradient to show
+
+    # save the sample and whether the sample has been correctly guessed
     correct_guess = save_sample(
         train_sample=single_el,
         prediction=preds,
@@ -211,15 +245,15 @@ def visualize_sample(
         subclass=subclass,
         integrated_gradients=integrated_gradients,
     )
+
+    # compute the gradient, whether input or integrated
     gradient = compute_gradients(
         single_el=single_el,
         net=net,
         integrated_gradients=integrated_gradients,
-        dry=False,
-        debug_folder=debug_folder,
-        idx=idx,
-        correct_guess=correct_guess,
     )
+
+    # show the gradient
     show_gradient(
         gradient=gradient,
         confounder_mask=confounder_mask,
@@ -228,6 +262,8 @@ def visualize_sample(
         correct_guess=correct_guess,
         integrated_gradients=integrated_gradients,
     )
+
+    # show the masked gradient
     show_masked_gradient(
         confounder_mask=confounder_mask,
         gradient=gradient,
@@ -239,8 +275,27 @@ def visualize_sample(
 
 
 def show_masked_gradient(
-    confounder_mask, gradient, debug_folder, idx, integrated_gradients, correct_guess
-):
+    confounder_mask: torch.Tensor,
+    gradient: torch.Tensor,
+    debug_folder: str,
+    idx: int,
+    integrated_gradients: bool,
+    correct_guess: bool
+) -> None:
+    """Save the maked gradient
+
+    Args:
+        single_el [torch.Tensor]: sample to show
+        debug_folder [str]: folder where to store the data
+        idx [int]: idex of the element to save
+        integrated_gradients [bool]: whether to use integrated gradiends
+        confounder_mask [torch.Tensor]: confounder mask
+        superclass [str]: superclass of the sample
+        subclass [str]: subclass of the sample
+        dataloaders [Dict[str, Any]]: dataloaders
+        device [str]: device
+        net [nn.Module]: network
+    """
     # gradient to show
     gradient_to_show = gradient.clone().cpu().data.numpy()
     gradient_to_show = np.where(confounder_mask < 0.5, gradient_to_show, 0)
@@ -273,9 +328,21 @@ def show_gradient(
     correct_guess: bool,
     integrated_gradients: bool,
 ) -> None:
+    """Save the gradient
+
+    Args:
+        gradient [torch.Tensor]: gradient to show
+        confounder_mask [torch.Tensor]: confounder mask
+        debug_folder [str]: folder where to store the data
+        idx [int]: idex of the element to save
+        correct_guess [bool]: whether the network got the example right
+        integrated_gradients [bool]: whether to use integrated gradiends
+    """
+    # get the gradient
     gradient_to_show = gradient.clone().cpu().data.numpy()
     gradient_to_show = np.where(confounder_mask < 0.5, gradient_to_show, 0)
     gradient_to_show = np.fabs(gradient_to_show)
+
     # normalize the value
     gradient_to_show = gradient_to_show / np.max(gradient_to_show)
 
@@ -296,17 +363,14 @@ def show_gradient(
     plt.close()
 
 
-def prepare_single_test_sample(sample_batch: torch.Tensor) -> torch.Tensor:
-    """Extract one element from the batch and sets gradients together with an additive element in the
-    size in order to make it compliant with the rest of the algorithm.
+def prepare_single_test_sample(single_el: torch.Tensor) -> torch.Tensor:
+    """Prepare the test sample
+    It sets the gradient as required i order to make it compliant with the rest of the algorithm
     Args:
-        sample_batch [torch.Tensor]: batch of Test samples
-        device [str]: device
+        single_el [torch.Tensor]: sample
     Returns:
         element [torch.Tensor]: single element
     """
-    # get the single element batch
-    single_el = sample_batch
     # requires grad
     single_el.requires_grad = True
     # returns element and predictions
@@ -317,22 +381,13 @@ def compute_gradients(
     single_el: torch.Tensor,
     net: nn.Module,
     integrated_gradients: bool,
-    dry: bool,
-    debug_folder: str,
-    idx: int,
-    correct_guess: bool = False,
 ) -> torch.Tensor:
-    """Computes the integrated graditents or input gradient and optionally saves them in an image
+    """Computes the integrated graditents or input gradient according to what the user specify in the argument
 
     Args:
         single_el [torch.Tensor]: sample depicting the image
         net [nn.Module]: neural network
         integrated_gradients [bool]: whether the method uses integrated gradients or input gradients
-        dry [bool]: whether to not save the images
-        debug_folder [str]: string depicting the folder path
-        iteration [int]: debug iteration
-        idx [int]: index of the image
-        correct_guess [bool]: whether it is a correct guess or not
     Returns:
         integrated_gradient [torch.Tensor]: integrated_gradient
     """
@@ -348,61 +403,30 @@ def compute_gradients(
     # sum over RGB channels
     gradient = torch.sum(gradient, dim=0)
 
-    # permute to show
-    gradient_to_show = gradient.clone()
-    # get the absolute value
-    gradient_to_show = torch.abs(gradient_to_show)
-    # normalize the value
-    gradient_to_show = gradient_to_show / torch.max(gradient_to_show)
-
-    if not dry:
-        # show
-        fig = plt.figure()
-        plt.imshow(gradient_to_show.cpu().data.numpy(), cmap="gray")
-        plt.title(
-            "{} Gradient with respect to the input".format(
-                "Integrated" if integrated_gradients else "Input"
-            )
-        )
-        # show the figure
-        fig.savefig(
-            "{}/iter_{}_gradient_{}{}.png".format(
-                debug_folder,
-                idx,
-                "integrated" if integrated_gradients else "input",
-                "_correct" if correct_guess else "",
-            ),
-            dpi=fig.dpi,
-        )
-        plt.close()
     return gradient
 
 
 def compute_mask(
-    shape: Tuple[int],
+    shape: Tuple[int, int],
     confunder_pos1_x: int,
     confunder_pos1_y: int,
     confunder_pos2_x: int,
     confunder_pos2_y: int,
     confunder_shape: str,
 ) -> Tuple[torch.Tensor, bool]:
-    """Debug iteration, basically a training with the RRR loss
+    """Compute the mask according to the confounder position and confounder shape
 
     Args:
-        debug_folder [str]: string depicting the folder path
-        idx [int]: index of the image
-        gradient [torch.Tensor]: integrated gradient tensor
+        shape [Tuple[int, int]]: shape of the confounder mask
         confuder_pos1_x [int]: x of the starting point
         confuder_pos1_y [int]: y of the starting point
         confuder_pos2_x [int]: x of the ending point
         confuder_pos2_y [int]: y of the ending point
         confunder_shape [Dict[str, Any]]: confunder information
-        integrated_gradients [bool]: whether the method uses integrated gradients or input gradients
-        correct_guess [bool]: whether the guess was correct
-        iteration [int]: debug iteration
 
     Returns:
         confounder_mask [torch.Tensor]: tensor highlighting the area where the confounder is present with ones. It is zero elsewhere
+        confounded [bool]: whether the sample is confounded or not
     """
     # confounder mask
     confounder_mask = np.zeros(shape)
@@ -433,11 +457,37 @@ def compute_mask(
     # binarize the mask and adjust it the right way
     confounder_mask = torch.tensor((confounder_mask > 0.5).astype(np.float_))
 
-    # return the confounder mask
+    # return the confounder mask and whether it s confounded
     return confounder_mask, confounded
 
-def save_some_confounded_samples(net: nn.Module, start_from: int, number: int, loader: torch.utils.data.DataLoader, device: str, dataloaders: Dict[str, Any], folder: str, integrated_gradients: bool):
+def save_some_confounded_samples(
+    net: nn.Module,
+    start_from: int,
+    number: int,
+    loader: torch.utils.data.DataLoader,
+    device: str,
+    dataloaders: Dict[str, Any],
+    folder: str,
+    integrated_gradients: bool
+) -> None:
+    """Save some confounded examples according to the dataloader and the number of examples the user specifies
+
+    Args:
+        net [nn.Module]: neural network
+        start_from [int]: start enumerating the sample from
+        number [int]: stop enumerating the samples when the counter has reached (note that it has to start from start_from)
+        loader [torch.utils.data.DataLoader]: loader where to save the samples
+        device [str]: device
+        dataloaders [Dict[str, Any]: dataloaders
+        folder [str]: folder where to store the sample
+        integrated_gradients [bool]: whether the gradient are integrated or input gradients
+    """
+    # set the networ to evaluation mode
+    net.eval()
+
+    # set the counter
     counter = start_from
+    # set the done flag
     done = False
     for _, inputs in tqdm.tqdm(
         enumerate(loader),
@@ -445,9 +495,11 @@ def save_some_confounded_samples(net: nn.Module, start_from: int, number: int, l
     ):
         # get items
         (sample, _, confounder_mask, confounded, superclass, subclass) = inputs
+        # loop over the batch
         for i in range(sample.shape[0]):
+            # is the element confound?
             if confounded[i]:
-                print("Confounded", counter, number)
+                # visualize it
                 visualize_sample(
                     sample[i],
                     folder,
@@ -460,10 +512,13 @@ def save_some_confounded_samples(net: nn.Module, start_from: int, number: int, l
                     device,
                     net,
                 )
+                # increase the counter
                 counter += 1
+                # stop when done
                 if counter == number:
                     done = True
                     break
+        # stop when done
         if done:
             break
 
@@ -471,6 +526,7 @@ def save_some_confounded_samples(net: nn.Module, start_from: int, number: int, l
 def debug(
     net: nn.Module,
     dataloaders: Dict[str, Any],
+    debug_folder: str,
     iterations: int,
     cost_function: torch.nn.BCELoss,
     device: str,
@@ -479,14 +535,13 @@ def debug(
     optimizer: torch.optim.Optimizer,
     debug_test_loader: torch.utils.data.DataLoader,
     test_loader: torch.utils.data.DataLoader,
-    debug_folder: str,
     batch_size: int,
     test_batch_size: int,
+    batches_treshold: float,
     reviseLoss: Union[RRRLoss, IGRRRLoss],
     **kwargs: Any
-):
-    """Method which performs the debug step, by detecting the confunded images first;
-    then correcting the integrated gradient associated and finally re-training the model with the RRR loss
+) -> None:
+    """Method which performs the debug step by fine-tuning the network employing the right for the right reason loss.
 
     Args:
         net [nn.Module]: neural network
@@ -498,18 +553,16 @@ def debug(
         set_wandb [bool]: set wandb up
         integrated gradients [bool]: whether to use integrated gradients or input gradients
         optimizer [torch.optim.Optimizer]: optimizer to employ
-        title [str]: title of the tqdm
-        batch_size [int]: size of the batch
-        test_batch_size [int] size of the batch in the test settings
-        debug_train_loader [torch.utils.data.DataLoader]: dataloader for the debug
         debug_test_loader [torch.utils.data.DataLoader]: dataloader for the test
-        test_loader [torch.utils.data.DataLoader]: dataloader for final testing
+        batch_size [int]: size of the batch
+        test_batch_size [int]: size of the batch in the test settings
+        batches_treshold [float]: batches threshold
         reviseLoss: Union[RRRLoss, IGRRRLoss]: loss for feeding the network some feedbacks
         **kwargs [Any]: kwargs
     """
     print("Have to run for {} debug iterations...".format(iterations))
 
-    # Load debug loaders
+    # Load debug dataets
     debug_train = LoadDebugDataset(
         dataloaders["train_dataset_with_labels_and_confunders_position"],
     )
@@ -520,6 +573,7 @@ def debug(
         dataloaders["test_dataset_with_labels_and_confunders_pos"],
     )
 
+    # Dataloaders
     debug_loader = torch.utils.data.DataLoader(
         debug_train, batch_size=batch_size, shuffle=True, num_workers=4
     )
@@ -530,7 +584,7 @@ def debug(
         test_debug, batch_size=test_batch_size, shuffle=False, num_workers=4
     )
 
-    # save some training samples
+    # save some training samples (10 here)
     save_some_confounded_samples(
         net=net,
         start_from=0,
@@ -539,7 +593,7 @@ def debug(
         device=device,
         folder=debug_folder,
         integrated_gradients=integrated_gradients,
-        loader=debug_loader,
+        loader=iter(debug_loader),
     )
 
     # running for the requested iterations
@@ -565,6 +619,7 @@ def debug(
             revive_function=reviseLoss,
             device=device,
             title="Train with RRR",
+            batches_treshold=batches_treshold
         )
 
         print(
@@ -582,14 +637,16 @@ def debug(
         if set_wandb:
             wandb.log(
                 {
-                    "train/rrr_loss": total_loss,
+                    "train/loss": total_loss,
                     "train/right_anwer_loss": total_right_answer_loss,
                     "train/right_reason_loss": total_right_reason_loss,
                     "train/accuracy": total_accuracy,
                     "train/score": total_score,
+                    "train/confounded_samples_only_right_reason": right_reason_loss_confounded,
                 }
             )
 
+        # Validate with RRR feedbacks which are not used for training, but only for testing
         (
             val_loss,
             val_right_answer_loss,
@@ -606,7 +663,8 @@ def debug(
             revive_function=reviseLoss,
             device=device,
             title="Debug with RRR",
-            have_to_train = False
+            have_to_train = False,
+            batches_treshold=batches_treshold
         )
 
         print(
@@ -624,11 +682,12 @@ def debug(
         if set_wandb:
             wandb.log(
                 {
-                    "val/rrr_loss": total_loss,
+                    "val/loss": total_loss,
                     "val/right_anwer_loss": total_right_answer_loss,
                     "val/right_reason_loss": total_right_reason_loss,
-                    "val/rrr_accuracy": total_accuracy,
-                    "val/rrr_score": total_score,
+                    "val/accuracy": total_accuracy,
+                    "val/score": total_score,
+                    "val/confounded_samples_only_right_reason": right_reason_loss_confounded,
                 }
             )
 
@@ -661,7 +720,7 @@ def debug(
                 }
             )
 
-        # validation set
+        # test set
         test_loss, test_accuracy, test_score = test_step(
             net=net,
             test_loader=iter(test_loader),
@@ -700,7 +759,7 @@ def debug(
         device=device,
         folder=debug_folder,
         integrated_gradients=integrated_gradients,
-        loader=test_debug,
+        loader=iter(test_debug),
     )
 
 
@@ -746,7 +805,8 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--learning-rate", type=float, default=0.001, help="learning rate"
     )
     parser.add_argument("--seed", type=int, default=0, help="seed")
-    parser.add_argument("--weight-decay", type=float, default=1e-5, help="weight decy")
+    parser.add_argument("--weight-decay", type=float, default=1e-5, help="weight decay")
+    parser.add_argument("--batches-treshold", type=float, default=float('inf'), help="batches treshold (infinity if not set)")
     parser.add_argument(
         "--integrated-gradients",
         "-igrad",
@@ -863,7 +923,7 @@ def main(args: Namespace) -> None:
     # define the cost function
     cost_function = torch.nn.BCELoss()
 
-    #  # test set
+    # test set
     test_loss, test_accuracy, test_score = test_step(
         net=net,
         test_loader=iter(test_loader),

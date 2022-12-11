@@ -48,7 +48,9 @@ class LoadDebugDataset(Dataset):
         """
         return len(self.train_set)
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, bool, str, str]:
+    def __getitem__(
+        self, idx: int
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, bool, str, str]:
         """Returns the data, specifically:
         - element: train sample
         - hierarchical_label: hierarchical label
@@ -280,7 +282,7 @@ def show_masked_gradient(
     debug_folder: str,
     idx: int,
     integrated_gradients: bool,
-    correct_guess: bool
+    correct_guess: bool,
 ) -> None:
     """Save the maked gradient
 
@@ -460,6 +462,7 @@ def compute_mask(
     # return the confounder mask and whether it s confounded
     return confounder_mask, confounded
 
+
 def save_some_confounded_samples(
     net: nn.Module,
     start_from: int,
@@ -468,7 +471,7 @@ def save_some_confounded_samples(
     device: str,
     dataloaders: Dict[str, Any],
     folder: str,
-    integrated_gradients: bool
+    integrated_gradients: bool,
 ) -> None:
     """Save some confounded examples according to the dataloader and the number of examples the user specifies
 
@@ -619,7 +622,7 @@ def debug(
             revive_function=reviseLoss,
             device=device,
             title="Train with RRR",
-            batches_treshold=batches_treshold
+            batches_treshold=batches_treshold,
         )
 
         print(
@@ -663,8 +666,8 @@ def debug(
             revive_function=reviseLoss,
             device=device,
             title="Debug with RRR",
-            have_to_train = False,
-            batches_treshold=batches_treshold
+            have_to_train=False,
+            batches_treshold=batches_treshold,
         )
 
         print(
@@ -690,7 +693,6 @@ def debug(
                     "val/confounded_samples_only_right_reason": right_reason_loss_confounded,
                 }
             )
-
 
         print("Testing...")
 
@@ -806,7 +808,12 @@ def configure_subparsers(subparsers: Subparser) -> None:
     )
     parser.add_argument("--seed", type=int, default=0, help="seed")
     parser.add_argument("--weight-decay", type=float, default=1e-5, help="weight decay")
-    parser.add_argument("--batches-treshold", type=float, default=float('inf'), help="batches treshold (infinity if not set)")
+    parser.add_argument(
+        "--batches-treshold",
+        type=float,
+        default=float("inf"),
+        help="batches treshold (infinity if not set)",
+    )
     parser.add_argument(
         "--integrated-gradients",
         "-igrad",
@@ -913,7 +920,7 @@ def main(args: Namespace) -> None:
     )
 
     # Test on best weights
-    #  load_best_weights(net, args.weights_path_folder, args.device)
+    load_best_weights(net, args.weights_path_folder, args.device)
 
     # dataloaders
     train_loader = dataloaders["train_loader_debug_mode"]
@@ -924,32 +931,32 @@ def main(args: Namespace) -> None:
     cost_function = torch.nn.BCELoss()
 
     # test set
-    #  test_loss, test_accuracy, test_score = test_step(
-    #      net=net,
-    #      test_loader=iter(test_loader),
-    #      cost_function=cost_function,
-    #      title="Test",
-    #      test=dataloaders["test"],
-    #      device=args.device,
-    #  )
-    #
-    #  print("Network resumed, performances:")
-    #
-    #  print(
-    #      "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
-    #          test_loss, test_accuracy, test_score
-    #      )
-    #  )
-    #
-    #  # log on wandb if and only if the module is loaded
-    #  if args.wandb:
-    #      wandb.log(
-    #          {
-    #              "test/loss": test_loss,
-    #              "test/accuracy": test_accuracy,
-    #              "test/score": test_score,
-    #          }
-    #      )
+    test_loss, test_accuracy, test_score = test_step(
+        net=net,
+        test_loader=iter(test_loader),
+        cost_function=cost_function,
+        title="Test",
+        test=dataloaders["test"],
+        device=args.device,
+    )
+
+    print("Network resumed, performances:")
+
+    print(
+        "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
+            test_loss, test_accuracy, test_score
+        )
+    )
+
+    # log on wandb if and only if the module is loaded
+    if args.wandb:
+        wandb.log(
+            {
+                "test/loss": test_loss,
+                "test/accuracy": test_accuracy,
+                "test/score": test_score,
+            }
+        )
 
     print("-----------------------------------------------------")
 

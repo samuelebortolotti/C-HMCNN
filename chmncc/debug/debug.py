@@ -352,7 +352,7 @@ def show_gradient(
     plt.title("Gradient user modified: no confunder")
     # show the figure
     fig.savefig(
-        "{}/iter_{}_gradient_no_confunder_{}{}.png".format(
+        "{}/iter_{}_gradient_confunder_{}{}.png".format(
             debug_folder,
             idx,
             "integrated" if integrated_gradients else "input",
@@ -585,16 +585,16 @@ def debug(
     )
 
     # save some training samples (10 here)
-    save_some_confounded_samples(
-        net=net,
-        start_from=0,
-        number=10,
-        dataloaders=dataloaders,
-        device=device,
-        folder=debug_folder,
-        integrated_gradients=integrated_gradients,
-        loader=iter(debug_loader),
-    )
+    #  save_some_confounded_samples(
+    #      net=net,
+    #      start_from=0,
+    #      number=10,
+    #      dataloaders=dataloaders,
+    #      device=device,
+    #      folder=debug_folder,
+    #      integrated_gradients=integrated_gradients,
+    #      loader=iter(debug_loader),
+    #  )
 
     # running for the requested iterations
     for it in range(iterations):
@@ -754,7 +754,7 @@ def debug(
     save_some_confounded_samples(
         net=net,
         start_from=100,
-        number=110,
+        number=200,
         dataloaders=dataloaders,
         device=device,
         folder=debug_folder,
@@ -913,7 +913,7 @@ def main(args: Namespace) -> None:
     )
 
     # Test on best weights
-    load_best_weights(net, args.weights_path_folder, args.device)
+    #  load_best_weights(net, args.weights_path_folder, args.device)
 
     # dataloaders
     train_loader = dataloaders["train_loader_debug_mode"]
@@ -924,32 +924,32 @@ def main(args: Namespace) -> None:
     cost_function = torch.nn.BCELoss()
 
     # test set
-    test_loss, test_accuracy, test_score = test_step(
-        net=net,
-        test_loader=iter(test_loader),
-        cost_function=cost_function,
-        title="Test",
-        test=dataloaders["test"],
-        device=args.device,
-    )
-
-    print("Network resumed, performances:")
-
-    print(
-        "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
-            test_loss, test_accuracy, test_score
-        )
-    )
-
-    # log on wandb if and only if the module is loaded
-    if args.wandb:
-        wandb.log(
-            {
-                "test/loss": test_loss,
-                "test/accuracy": test_accuracy,
-                "test/score": test_score,
-            }
-        )
+    #  test_loss, test_accuracy, test_score = test_step(
+    #      net=net,
+    #      test_loader=iter(test_loader),
+    #      cost_function=cost_function,
+    #      title="Test",
+    #      test=dataloaders["test"],
+    #      device=args.device,
+    #  )
+    #
+    #  print("Network resumed, performances:")
+    #
+    #  print(
+    #      "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
+    #          test_loss, test_accuracy, test_score
+    #      )
+    #  )
+    #
+    #  # log on wandb if and only if the module is loaded
+    #  if args.wandb:
+    #      wandb.log(
+    #          {
+    #              "test/loss": test_loss,
+    #              "test/accuracy": test_accuracy,
+    #              "test/score": test_score,
+    #          }
+    #      )
 
     print("-----------------------------------------------------")
 

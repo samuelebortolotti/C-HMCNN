@@ -97,6 +97,7 @@ def revise_step(
             y=ground_truth[:, train.to_eval],
             expl=confounder_mask,
             logits=train_output[:, train.to_eval],
+            confounded=confounded,
         )
 
         # compute the amount of confounded samples

@@ -40,7 +40,7 @@ class RRRLoss(nn.Module):
         self.weight = weight
         self.rr_clipping = rr_clipping
 
-    def forward(self, X, y, expl, logits):
+    def forward(self, X, y, expl, logits, confounded):
         """
         Returns (loss, right_answer_loss, right_reason_loss)
         Args:
@@ -58,19 +58,47 @@ class RRRLoss(nn.Module):
 
         # integrated gradients
         gradXes = None
+        #  tmp_gradXes = None
 
         self.net.eval()
-        # sum each axes contribution
-        gradXes = torch.autograd.grad(
-            log_prob_ys,
-            X,
-            torch.ones_like(log_prob_ys),
-            create_graph=True,
-            allow_unused=True,
-        )[0]
+        if ((confounded.byte() == 1).sum()).item():
+            gradXes = torch.autograd.grad(
+                log_prob_ys,
+                X,
+                torch.ones_like(log_prob_ys),
+                create_graph=True,
+                allow_unused=True,
+            )[0]
+        else:
+            gradXes = torch.zeros_like(X)
+
+        #  for index, conf in enumerate(confounded):
+        #      if conf:
+        #          has_to_die = True
+        #          sample = X[index, :]
+        #          sample.requires_grad = True
+        #          tmp_gradXes = torch.autograd.grad(
+        #              log_prob_ys,
+        #              sample,  # X[index, :],
+        #              torch.ones_like(log_prob_ys),
+        #              create_graph=True,
+        #              allow_unused=True,
+        #          )[0]
+        #          print("tmp_gradXes, ", X[index, :], tmp_gradXes, type(tmp_gradXes))
+        #      else:
+        #          tmp_gradXes = torch.zeros_like(X[index, :])
+        #
+        #      if gradXes is None:
+        #          gradXes = torch.unsqueeze(tmp_gradXes, dim=0)
+        #      else:
+        #          gradXes = torch.cat(
+        #              (gradXes, tmp_gradXes.unsqueeze(0)),
+        #              dim=0,
+        #          )
+
         self.net.train()
+        # sum each axes contribution
         gradXes = torch.sum(gradXes, dim=1)
-        print(expl.shape, gradXes.shape)
         # when the feature is 0 -> relevant, since if it is 1 we are adding a penality
         A_gradX = torch.mul(expl, gradXes) ** 2
 
@@ -124,7 +152,7 @@ class IGRRRLoss(RRRLoss):
         """
         super().__init__(net, regularizer_rate, base_criterion, weight, rr_clipping)
 
-    def forward(self, X, y, expl, logits):
+    def forward(self, X, y, expl, logits, confounded):
         """
         This one uses the integrated_gradients
         Returns (loss, right_answer_loss, right_reason_loss)
@@ -145,13 +173,20 @@ class IGRRRLoss(RRRLoss):
         gradXes = None
 
         self.net.eval()
+        tmp_gradXes = None
         for i in range(X.shape[0]):
             x_sample = torch.unsqueeze(X[i], 0)
+
+            if confounded[i]:
+                tmp_gradXes = compute_integrated_gradient(
+                    x_sample, torch.zeros_like(x_sample), self.net
+                )
+            else:
+                tmp_gradXes = torch.squeeze(torch.zeros_like(x_sample))
+
             if gradXes is None:
                 gradXes = torch.unsqueeze(
-                    compute_integrated_gradient(
-                        x_sample, torch.zeros_like(x_sample), self.net
-                    ),
+                    tmp_gradXes,
                     0,
                 )
             else:
@@ -159,9 +194,7 @@ class IGRRRLoss(RRRLoss):
                     (
                         gradXes,
                         torch.unsqueeze(
-                            compute_integrated_gradient(
-                                x_sample, torch.zeros_like(x_sample), self.net
-                            ),
+                            tmp_gradXes,
                             0,
                         ),
                     ),

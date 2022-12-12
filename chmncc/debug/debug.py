@@ -258,7 +258,6 @@ def visualize_sample(
     # show the gradient
     show_gradient(
         gradient=gradient,
-        confounder_mask=confounder_mask,
         debug_folder=debug_folder,
         idx=idx,
         correct_guess=correct_guess,
@@ -324,7 +323,6 @@ def show_masked_gradient(
 
 def show_gradient(
     gradient: torch.Tensor,
-    confounder_mask: torch.Tensor,
     debug_folder: str,
     idx: int,
     correct_guess: bool,
@@ -342,7 +340,6 @@ def show_gradient(
     """
     # get the gradient
     gradient_to_show = gradient.clone().cpu().data.numpy()
-    gradient_to_show = np.where(confounder_mask < 0.5, gradient_to_show, 0)
     gradient_to_show = np.fabs(gradient_to_show)
 
     # normalize the value

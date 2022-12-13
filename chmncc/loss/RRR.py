@@ -48,6 +48,7 @@ class RRRLoss(nn.Module):
             y: ground-truth labels.
             expl: explanation annotations masks (ones penalize regions) [is basically the annotation matrix]
             logits: model output logits.
+            confounded: whether the sampleis confounded
         """
         # the normal training loss
         right_answer_loss = self.base_criterion(logits, y)
@@ -61,6 +62,8 @@ class RRRLoss(nn.Module):
         #  tmp_gradXes = None
 
         self.net.eval()
+        # if the example is not confunded from the beginning, then I can simply avoid computing the
+        # right reason loss!
         if ((confounded.byte() == 1).sum()).item():
             gradXes = torch.autograd.grad(
                 log_prob_ys,
@@ -71,30 +74,6 @@ class RRRLoss(nn.Module):
             )[0]
         else:
             gradXes = torch.zeros_like(X)
-
-        #  for index, conf in enumerate(confounded):
-        #      if conf:
-        #          has_to_die = True
-        #          sample = X[index, :]
-        #          sample.requires_grad = True
-        #          tmp_gradXes = torch.autograd.grad(
-        #              log_prob_ys,
-        #              sample,  # X[index, :],
-        #              torch.ones_like(log_prob_ys),
-        #              create_graph=True,
-        #              allow_unused=True,
-        #          )[0]
-        #          print("tmp_gradXes, ", X[index, :], tmp_gradXes, type(tmp_gradXes))
-        #      else:
-        #          tmp_gradXes = torch.zeros_like(X[index, :])
-        #
-        #      if gradXes is None:
-        #          gradXes = torch.unsqueeze(tmp_gradXes, dim=0)
-        #      else:
-        #          gradXes = torch.cat(
-        #              (gradXes, tmp_gradXes.unsqueeze(0)),
-        #              dim=0,
-        #          )
 
         self.net.train()
         # sum each axes contribution
@@ -161,6 +140,7 @@ class IGRRRLoss(RRRLoss):
             y: ground-truth labels.
             expl: explanation annotations masks (ones penalize regions) [is basically the annotation matrix]
             logits: model output logits.
+            confounded: whether the sampleis confounded
         """
         # the normal training loss
         right_answer_loss = self.base_criterion(logits, y)
@@ -174,9 +154,13 @@ class IGRRRLoss(RRRLoss):
 
         self.net.eval()
         tmp_gradXes = None
+        # loop through all the elements of the batch
         for i in range(X.shape[0]):
+            # get the element as the same shape of the batch
             x_sample = torch.unsqueeze(X[i], 0)
 
+            # if the example is confounded then I compute the gradient, otherwise it is not
+            # needed
             if confounded[i]:
                 tmp_gradXes = compute_integrated_gradient(
                     x_sample, torch.zeros_like(x_sample), self.net
@@ -184,6 +168,7 @@ class IGRRRLoss(RRRLoss):
             else:
                 tmp_gradXes = torch.squeeze(torch.zeros_like(x_sample))
 
+            # concatenate all the data I collect
             if gradXes is None:
                 gradXes = torch.unsqueeze(
                     tmp_gradXes,

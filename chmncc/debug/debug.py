@@ -22,6 +22,7 @@ from chmncc.optimizers import get_adam_optimizer
 from typing import Dict, Any, Tuple, Union, List
 import tqdm
 import matplotlib.pyplot as plt
+import matplotlib
 import numpy as np
 import cv2
 from torchsummary import summary
@@ -51,13 +52,14 @@ class LoadDebugDataset(Dataset):
     def __getitem__(
         self, idx: int
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, bool, str, str]:
-        """Returns the data, specifically:
-        - element: train sample
-        - hierarchical_label: hierarchical label
-        - confounder_mask: mask for the RRR loss
-        - counfounded: whether the sample is confounded or not
-        - superclass: superclass in string
-        - subclass: subclass in string
+        """
+        Returns the data, specifically:
+            element: train sample
+            hierarchical_label: hierarchical label
+            confounder_mask: mask for the RRR loss
+            counfounded: whether the sample is confounded or not
+            superclass: superclass in string
+            subclass: subclass in string
 
         Note that: the confounder mask is all zero for non-confounded examples
         """
@@ -180,10 +182,10 @@ def save_sample(
     plt.tight_layout()
     # show the figure
     fig.savefig(
-        "{}/iter_{}_original_{}{}.png".format(
+        "{}/iter_{}_original{}{}.png".format(
             debug_folder,
             idx,
-            "integrated_gradients" if integrated_gradients else "",
+            "_integrated_gradients" if integrated_gradients else "_input_gradients",
             "_correct" if correct_guess else "",
         ),
         dpi=fig.dpi,
@@ -300,14 +302,28 @@ def show_masked_gradient(
     # gradient to show
     gradient_to_show = gradient.clone().cpu().data.numpy()
     gradient_to_show = np.where(confounder_mask < 0.5, gradient_to_show, 0)
-    gradient_to_show = np.fabs(gradient_to_show)
+    gradient_to_show_absolute_values = np.fabs(gradient_to_show)
     # normalize the value
-    gradient_to_show = gradient_to_show / np.max(gradient_to_show)
+    gradient_to_show = gradient_to_show_absolute_values / np.max(
+        gradient_to_show_absolute_values
+    )
+
+    # compute the color normalization
+    norm = matplotlib.colors.Normalize(
+        vmin=0, vmax=np.max(gradient_to_show_absolute_values)
+    )
 
     # show the picture
     fig = plt.figure()
     plt.imshow(gradient_to_show, cmap="gray")
-    plt.title("Gradient user modified: no confunder")
+    plt.title(
+        "{} gradient no confunder".format(
+            "Integrated" if integrated_gradients else "Input"
+        )
+    )
+    plt.colorbar(
+        matplotlib.cm.ScalarMappable(norm=norm, cmap="gray"), label="Gradient magnitude"
+    )
     # show the figure
     fig.savefig(
         "{}/iter_{}_gradient_no_confunder_{}{}.png".format(
@@ -340,15 +356,26 @@ def show_gradient(
     """
     # get the gradient
     gradient_to_show = gradient.clone().cpu().data.numpy()
-    gradient_to_show = np.fabs(gradient_to_show)
+    gradient_to_show_absolute_values = np.fabs(gradient_to_show)
 
     # normalize the value
-    gradient_to_show = gradient_to_show / np.max(gradient_to_show)
+    gradient_to_show = gradient_to_show_absolute_values / np.max(
+        gradient_to_show_absolute_values
+    )
+
+    # norm color
+    norm = matplotlib.colors.Normalize(
+        vmin=0, vmax=np.max(gradient_to_show_absolute_values)
+    )
 
     # show the picture
     fig = plt.figure()
+    plt.colorbar(
+        matplotlib.cm.ScalarMappable(norm=norm, cmap="gray"), label="Gradient magnitude"
+    )
     plt.imshow(gradient_to_show, cmap="gray")
-    plt.title("Gradient user modified: no confunder")
+    plt.title("{} gradient".format("Integrated" if integrated_gradients else "Input"))
+
     # show the figure
     fig.savefig(
         "{}/iter_{}_gradient_confunder_{}{}.png".format(
@@ -539,6 +566,8 @@ def debug(
     test_batch_size: int,
     batches_treshold: float,
     reviseLoss: Union[RRRLoss, IGRRRLoss],
+    model_folder: str,
+    network: str,
     **kwargs: Any
 ) -> None:
     """Method which performs the debug step by fine-tuning the network employing the right for the right reason loss.
@@ -585,16 +614,19 @@ def debug(
     )
 
     # save some training samples (10 here)
-    #  save_some_confounded_samples(
-    #      net=net,
-    #      start_from=0,
-    #      number=10,
-    #      dataloaders=dataloaders,
-    #      device=device,
-    #      folder=debug_folder,
-    #      integrated_gradients=integrated_gradients,
-    #      loader=iter(debug_loader),
-    #  )
+    save_some_confounded_samples(
+        net=net,
+        start_from=0,
+        number=10,
+        dataloaders=dataloaders,
+        device=device,
+        folder=debug_folder,
+        integrated_gradients=integrated_gradients,
+        loader=iter(debug_loader),
+    )
+
+    # best test score
+    best_test_score = 0.0
 
     # running for the requested iterations
     for it in range(iterations):
@@ -739,10 +771,28 @@ def debug(
         if set_wandb:
             wandb.log(
                 {
-                    "test/loss": val_loss,
-                    "test/accuracy": val_accuracy,
-                    "test/score": val_score,
+                    "test/loss": test_loss,
+                    "test/accuracy": test_accuracy,
+                    "test/score": test_score,
                 }
+            )
+
+        # save he model if the results are better
+        if best_test_score > test_score:
+            # save the best score
+            best_test_score = test_score
+            # save the model state of the debugged network
+            torch.save(
+                net.state_dict(),
+                os.path.join(
+                    model_folder,
+                    "debug_{}_{}.pth".format(
+                        network,
+                        "integrated_gradients"
+                        if integrated_gradients
+                        else "input_gradients",
+                    ),
+                ),
             )
 
         print("Done with debug for iteration number: {}".format(iterations))
@@ -804,6 +854,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--learning-rate", type=float, default=0.001, help="learning rate"
     )
     parser.add_argument("--seed", type=int, default=0, help="seed")
+    parser.add_argument("--rrr-regularization-rate", type=int, default=20, help="RRR regularization rate")
     parser.add_argument("--weight-decay", type=float, default=1e-5, help="weight decay")
     parser.add_argument(
         "--batches-treshold",
@@ -964,10 +1015,10 @@ def main(args: Namespace) -> None:
         wandb.watch(net)
 
     if not args.integrated_gradients:
-        reviseLoss = RRRLoss(net=net, regularizer_rate=20, base_criterion=BCELoss())
+        reviseLoss = RRRLoss(net=net, regularizer_rate=args.rrr_regularization_rate, base_criterion=BCELoss())
     else:
         # integrated gradients RRRLoss
-        reviseLoss = IGRRRLoss(net=net, regularizer_rate=20, base_criterion=BCELoss())
+        reviseLoss = IGRRRLoss(net=net, regularizer_rate=args.rrr_regularization_rate, base_criterion=BCELoss())
 
     # launch the debug a given number of iterations
     debug(
@@ -1016,7 +1067,7 @@ def main(args: Namespace) -> None:
         net.state_dict(),
         os.path.join(
             args.model_folder,
-            "debug_{}_{}.pth".format(
+            "after_training_debug_{}_{}.pth".format(
                 args.network,
                 "integrated_gradients"
                 if args.integrated_gradients

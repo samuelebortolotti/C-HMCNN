@@ -1079,8 +1079,8 @@ def configure_subparsers(subparsers: Subparser) -> None:
     parser.add_argument("--seed", type=int, default=0, help="seed")
     parser.add_argument(
         "--rrr-regularization-rate",
-        type=int,
-        default=20,
+        type=float,
+        default=20.0,
         help="RRR regularization rate",
     )
     parser.add_argument("--weight-decay", type=float, default=1e-5, help="weight decay")

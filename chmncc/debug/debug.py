@@ -24,7 +24,9 @@ import tqdm
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
+import scipy.stats
 import cv2
+from sklearn.linear_model import RidgeClassifier, LinearRegression
 from torchsummary import summary
 from torch.utils.data import Dataset
 
@@ -112,6 +114,7 @@ def save_sample(
     superclass: str,
     subclass: str,
     integrated_gradients: bool,
+    prefix: str,
 ) -> bool:
     """Save the test sample.
     Then it returns whether the sample contains a confunder or if the sample has been
@@ -182,8 +185,9 @@ def save_sample(
     plt.tight_layout()
     # show the figure
     fig.savefig(
-        "{}/iter_{}_original{}{}.png".format(
+        "{}/{}_iter_{}_original{}{}.png".format(
             debug_folder,
+            prefix,
             idx,
             "_integrated_gradients" if integrated_gradients else "_input_gradients",
             "_correct" if correct_guess else "",
@@ -208,6 +212,7 @@ def visualize_sample(
     dataloaders: Dict[str, Any],
     device: str,
     net: nn.Module,
+    prefix: str,
 ) -> None:
     """Save the samples information, including the sample itself, the gradients and the masked gradients
 
@@ -248,6 +253,7 @@ def visualize_sample(
         superclass=superclass,
         subclass=subclass,
         integrated_gradients=integrated_gradients,
+        prefix=prefix,
     )
 
     # compute the gradient, whether input or integrated
@@ -264,6 +270,7 @@ def visualize_sample(
         idx=idx,
         correct_guess=correct_guess,
         integrated_gradients=integrated_gradients,
+        prefix=prefix,
     )
 
     # show the masked gradient
@@ -274,6 +281,7 @@ def visualize_sample(
         idx=idx,
         integrated_gradients=integrated_gradients,
         correct_guess=correct_guess,
+        prefix=prefix,
     )
 
 
@@ -284,6 +292,7 @@ def show_masked_gradient(
     idx: int,
     integrated_gradients: bool,
     correct_guess: bool,
+    prefix: str,
 ) -> None:
     """Save the maked gradient
 
@@ -326,8 +335,9 @@ def show_masked_gradient(
     )
     # show the figure
     fig.savefig(
-        "{}/iter_{}_gradient_no_confunder_{}{}.png".format(
+        "{}/{}_iter_{}_gradient_no_confunder_{}{}.png".format(
             debug_folder,
+            prefix,
             idx,
             "integrated" if integrated_gradients else "input",
             "_correct" if correct_guess else "",
@@ -343,6 +353,7 @@ def show_gradient(
     idx: int,
     correct_guess: bool,
     integrated_gradients: bool,
+    prefix: str,
 ) -> None:
     """Save the gradient
 
@@ -378,8 +389,9 @@ def show_gradient(
 
     # show the figure
     fig.savefig(
-        "{}/iter_{}_gradient_confunder_{}{}.png".format(
+        "{}/{}_iter_{}_gradient_confunder_{}{}.png".format(
             debug_folder,
+            prefix,
             idx,
             "integrated" if integrated_gradients else "input",
             "_correct" if correct_guess else "",
@@ -496,6 +508,7 @@ def save_some_confounded_samples(
     dataloaders: Dict[str, Any],
     folder: str,
     integrated_gradients: bool,
+    prefix: str,
 ) -> None:
     """Save some confounded examples according to the dataloader and the number of examples the user specifies
 
@@ -538,6 +551,7 @@ def save_some_confounded_samples(
                     dataloaders,
                     device,
                     net,
+                    prefix,
                 )
                 # increase the counter
                 counter += 1
@@ -548,6 +562,203 @@ def save_some_confounded_samples(
         # stop when done
         if done:
             break
+
+
+def make_meshgrid(x, y, h=0.1):
+    x_min, x_max = x.min() - 1, x.max() + 1
+    y_min, y_max = y.min() - 1, y.max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+    return xx, yy
+
+
+def plot_contours(ax, clf, xx, yy, **params):
+    Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+    out = ax.contourf(xx, yy, Z, **params)
+    return out
+
+
+def plot_decision_surface(X, Y, clf, x_label, y_label, title, jitter):
+    """Print the decision surface of a trained sklearn classifier"""
+
+    fig, ax = plt.subplots()
+    X0, X1 = X[:, 0], X[:, 1]
+    xx, yy = make_meshgrid(X0, X1)
+
+    colors = ["orange" if y == 1 else "blue" for y in Y]
+
+    if jitter:
+        for i in range(X0.shape[0]):
+            X0[i] += np.random.uniform(low=-0.4, high=0.4)
+
+    plot_contours(ax, clf, xx, yy, cmap=plt.cm.coolwarm, alpha=0.5)
+    ax.scatter(X0, X1, c=colors, s=20)
+    ax.set_ylabel(y_label)
+    ax.set_xlabel(x_label)
+    ax.set_title(title)
+    ax.legend()
+
+    custom = [
+        matplotlib.lines.Line2D(
+            [], [], marker=".", markersize=20, color="orange", linestyle="None"
+        ),
+        matplotlib.lines.Line2D(
+            [], [], marker=".", markersize=20, color="blue", linestyle="None"
+        ),
+    ]
+
+    plt.legend(custom, ["Confounded (1)", "Not confounded (2)"], fontsize=10)
+    #  plt.show()
+    return fig
+
+
+def compute_gradient_confound_correlation(
+    net: nn.Module,
+    sample_dataloader: torch.utils.data.DataLoader,
+    integrated_gradients: bool,
+    sample_each: int,
+    folder_where_to_save: str,
+    figure_prefix_name: str,
+) -> None:
+    # sequence of counfounded samples
+    counfounded_sequence = []
+    gradients_magnitude_sequence = []
+    current_samples_number = [0, 0]
+    have_to_redo = True
+    emergency_escape = 10
+    redone_iter = 0
+
+    # network in evaluation mode
+    net.eval()
+
+    while have_to_redo:
+        # loop over the samples
+        for _, inputs in tqdm.tqdm(
+            enumerate(sample_dataloader),
+            desc="Gradient Magnitude Correlation",
+        ):
+            # get items
+            (sample, _, _, confounded, _, _) = inputs
+            bool_item = True
+            confounder_index = 0
+
+            # loop over the elements
+            for element_idx in range(sample.shape[0]):
+                if confounded[element_idx]:
+                    bool_item = 1.0
+                    confounder_index = 0
+                else:
+                    bool_item = 0.0
+                    confounder_index = 1
+
+                # already got the correct number of samples
+                if current_samples_number[confounder_index] >= sample_each:
+                    continue
+
+                # increase the number of samples
+                current_samples_number[confounder_index] += 1
+
+                # prepare the sample
+                single_el = torch.unsqueeze(sample[element_idx], 0)
+                single_el.requires_grad = True
+                # compute the gradient
+                gradient = compute_gradients(
+                    single_el=single_el,
+                    net=net,
+                    integrated_gradients=integrated_gradients,
+                )
+
+                # append elements
+                gradients_magnitude_sequence.append(
+                    torch.linalg.norm(torch.flatten(gradient), dim=0, ord=2)
+                    .detach()
+                    .numpy()
+                    .item(),
+                )
+                counfounded_sequence.append(bool_item)
+
+            # break if the number of examples is sufficient
+            if sum(current_samples_number) >= 2 * sample_each:
+                have_to_redo = False
+                break
+
+        # increase the redo
+        redone_iter += 1
+
+        if redone_iter >= emergency_escape:
+            print("Escape a probable infinite loop")
+            break
+
+    # compute the correlation
+    corr = scipy.stats.pearsonr(gradients_magnitude_sequence, counfounded_sequence)
+
+    # stacking the gradients with the x position => 0
+    gradients_magnitude_sequence = np.array(gradients_magnitude_sequence).reshape(-1, 1)
+    gradients_magnitude_sequence_filled_x = np.column_stack(
+        (
+            np.zeros(gradients_magnitude_sequence.shape[0]),
+            gradients_magnitude_sequence,
+        )
+    )
+    counfounded_sequence = np.array(counfounded_sequence)
+
+    # use a simple ridge classifier in order to binary separate the two classes
+    rc = RidgeClassifier()
+
+    rc.fit(gradients_magnitude_sequence_filled_x, counfounded_sequence)
+    score = rc.score(gradients_magnitude_sequence_filled_x, counfounded_sequence)
+    fig = plot_decision_surface(
+        gradients_magnitude_sequence_filled_x,
+        counfounded_sequence,
+        rc,
+        "x",
+        "gradient_magnitude",
+        "Score: {}, pearson correlation {:.3f}, p-val {:.3f}\nsignificant with 95% confidence {} #conf {} #not-conf {}".format(
+            score,
+            corr[0],
+            corr[1],
+            corr[1] < 0.05,
+            current_samples_number[1],
+            current_samples_number[0],
+        ),
+        True,
+    )
+    fig.savefig(
+        "{}/{}_{}_gradient_correlation.png".format(
+            folder_where_to_save,
+            "ingegrated" if integrated_gradients else "input",
+            figure_prefix_name,
+        )
+    )
+
+    # print the boxplot
+    confounded_indexes = np.array((counfounded_sequence > 0.5), dtype=bool)
+    fig = plt.figure(figsize=(7, 4))
+    bp_dict = plt.boxplot(
+        [
+            gradients_magnitude_sequence[confounded_indexes].squeeze(),
+            gradients_magnitude_sequence[~confounded_indexes].squeeze(),
+        ]
+    )
+    plt.xticks([1, 2], ["Confounded", "Not Confounded"])
+    for line in bp_dict["medians"]:
+        # get position data for median line
+        x, y = line.get_xydata()[1]  # top of median line
+        # overlay median value
+        plt.text(x, y, "%.5f" % y, horizontalalignment="center")
+
+    fig.suptitle(
+        "Boxplot: #conf {} #not-conf {}".format(
+            current_samples_number[1], current_samples_number[0]
+        )
+    )
+    fig.savefig(
+        "{}/{}_{}_gradient_boxplot.png".format(
+            folder_where_to_save,
+            "ingegrated" if integrated_gradients else "input",
+            figure_prefix_name,
+        )
+    )
 
 
 def debug(
@@ -623,6 +834,12 @@ def debug(
         folder=debug_folder,
         integrated_gradients=integrated_gradients,
         loader=iter(debug_loader),
+        prefix="before",
+    )
+
+    # compute graident confounded correlation
+    compute_gradient_confound_correlation(
+        net, debug_loader, integrated_gradients, 100, debug_folder, "train"
     )
 
     # best test score
@@ -809,6 +1026,12 @@ def debug(
         folder=debug_folder,
         integrated_gradients=integrated_gradients,
         loader=iter(test_debug),
+        prefix="after",
+    )
+
+    # give the correlation
+    compute_gradient_confound_correlation(
+        net, test_debug, integrated_gradients, 100, debug_folder, "end_debug_test"
     )
 
 
@@ -854,7 +1077,12 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--learning-rate", type=float, default=0.001, help="learning rate"
     )
     parser.add_argument("--seed", type=int, default=0, help="seed")
-    parser.add_argument("--rrr-regularization-rate", type=int, default=20, help="RRR regularization rate")
+    parser.add_argument(
+        "--rrr-regularization-rate",
+        type=int,
+        default=20,
+        help="RRR regularization rate",
+    )
     parser.add_argument("--weight-decay", type=float, default=1e-5, help="weight decay")
     parser.add_argument(
         "--batches-treshold",
@@ -1015,10 +1243,18 @@ def main(args: Namespace) -> None:
         wandb.watch(net)
 
     if not args.integrated_gradients:
-        reviseLoss = RRRLoss(net=net, regularizer_rate=args.rrr_regularization_rate, base_criterion=BCELoss())
+        reviseLoss = RRRLoss(
+            net=net,
+            regularizer_rate=args.rrr_regularization_rate,
+            base_criterion=BCELoss(),
+        )
     else:
         # integrated gradients RRRLoss
-        reviseLoss = IGRRRLoss(net=net, regularizer_rate=args.rrr_regularization_rate, base_criterion=BCELoss())
+        reviseLoss = IGRRRLoss(
+            net=net,
+            regularizer_rate=args.rrr_regularization_rate,
+            base_criterion=BCELoss(),
+        )
 
     # launch the debug a given number of iterations
     debug(

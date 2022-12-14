@@ -16,7 +16,7 @@ def compute_integrated_gradient(
         integrated_gradients [torch.Tensor] integrated gradients
     """
     mean_grad = 0
-    n = 100
+    n = 10
 
     for i in tqdm.tqdm(range(1, n + 1), desc="Computing the integrated gradient"):
         x = batch_blank + i / n * (batch_x - batch_blank)

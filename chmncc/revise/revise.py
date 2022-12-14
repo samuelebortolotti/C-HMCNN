@@ -1,6 +1,7 @@
 import torch
 import tqdm
 import torch.nn as nn
+import numpy as np
 from chmncc.utils import dotdict
 from typing import Tuple
 from chmncc.utils import get_constr_out

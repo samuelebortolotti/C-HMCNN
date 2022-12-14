@@ -619,6 +619,7 @@ def compute_gradient_confound_correlation(
     sample_each: int,
     folder_where_to_save: str,
     figure_prefix_name: str,
+    device: str,
 ) -> None:
     # sequence of counfounded samples
     counfounded_sequence = []
@@ -661,12 +662,15 @@ def compute_gradient_confound_correlation(
                 # prepare the sample
                 single_el = torch.unsqueeze(sample[element_idx], 0)
                 single_el.requires_grad = True
+                single_el = single_el.to(device)
                 # compute the gradient
                 gradient = compute_gradients(
                     single_el=single_el,
                     net=net,
                     integrated_gradients=integrated_gradients,
                 )
+
+                gradient = gradient.to("cpu")
 
                 # append elements
                 gradients_magnitude_sequence.append(
@@ -839,7 +843,7 @@ def debug(
 
     # compute graident confounded correlation
     compute_gradient_confound_correlation(
-        net, debug_loader, integrated_gradients, 100, debug_folder, "train"
+        net, debug_loader, integrated_gradients, 100, debug_folder, "train", device
     )
 
     # best test score
@@ -1031,7 +1035,7 @@ def debug(
 
     # give the correlation
     compute_gradient_confound_correlation(
-        net, test_debug, integrated_gradients, 100, debug_folder, "end_debug_test"
+        net, test_debug, integrated_gradients, 100, debug_folder, "end_debug_test", device
     )
 
 

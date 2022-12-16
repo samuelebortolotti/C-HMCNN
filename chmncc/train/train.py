@@ -18,6 +18,7 @@ def training_step(
     cost_function: torch.nn.modules.loss.BCELoss,
     title: str,
     device: str = "cuda",
+    constrained_layer: bool = True,
 ) -> Tuple[float, float, float]:
     """Training step of the network. It works both for our approach and for the one of
     Giunchiglia et al.
@@ -61,11 +62,18 @@ def training_step(
         outputs = net(inputs.float())
 
         # general prediction loss computation
-        # MCLoss (their loss)
-        constr_output = get_constr_out(outputs, R)
-        train_output = label * outputs.double()
-        train_output = get_constr_out(train_output, R)
-        train_output = (1 - label) * constr_output.double() + label * train_output
+        if constrained_layer:
+            # MCLoss (their loss)
+            constr_output = get_constr_out(outputs, R)
+            train_output = label * outputs.double()
+            train_output = get_constr_out(train_output, R)
+            train_output = (1 - label) * constr_output.double() + label * train_output
+        else:
+            # fake the constrained output and training output
+            constr_output = outputs
+            train_output = label * outputs.double()
+            train_output = (1 - label) * constr_output.double() + label * train_output
+
         # get the loss masking the prediction on the root -> confunder
         loss = cost_function(train_output[:, train.to_eval], label[:, train.to_eval])
         cumulative_loss += loss.item()

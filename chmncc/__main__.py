@@ -359,6 +359,7 @@ def c_hmcnn(
             cost_function=cost_function,
             title="Training",
             device=device,
+            constrained_layer=constrained_layer
         )
 
         # save the values in the metrics

@@ -81,7 +81,7 @@ def test_step(
             predicted = outputs.data > 0.5
 
             # loss computation
-            loss = cost_function(outputs, targets)
+            loss = cost_function(outputs.double(), targets)
 
             # fetch prediction and loss value
             cumulative_loss += (

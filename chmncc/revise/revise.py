@@ -94,7 +94,8 @@ def show_gradient_behavior(
 def revise_step(
     epoch_number: int,
     net: nn.Module,
-    debug_loader: torch.utils.data.DataLoader,
+    debug_loader_no_conf: torch.utils.data.DataLoader,
+    debug_loader_only_conf: torch.utils.data.DataLoader,
     train: dotdict,
     R: torch.Tensor,
     optimizer: torch.optim.Optimizer,
@@ -144,13 +145,29 @@ def revise_step(
     else:
         net.eval()
 
+    debug_small, debug_big = (
+        (debug_loader_no_conf, debug_loader_only_conf)
+        if len(debug_loader_no_conf) < len(debug_loader_only_conf)
+        else (debug_loader_only_conf, debug_loader_no_conf)
+    )
+
+    # simple switch
+    switch = True
+
     # iterate over the training set
     for batch_idx, inputs in tqdm.tqdm(
-        enumerate(debug_loader),
+        enumerate(debug_small),
         desc=title,
     ):
-        # get items
-        (sample, ground_truth, confounder_mask, confounded, _, _) = inputs
+
+        if switch:
+            # get items
+            (sample, ground_truth, confounder_mask, confounded, _, _) = inputs
+        else:
+            (sample, ground_truth, confounder_mask, confounded, _, _) = debug_big
+
+        # change switch
+        switch = not switch
 
         # load data into device
         sample = sample.to(device)
@@ -205,7 +222,7 @@ def revise_step(
 
         if have_to_train:
             # backward pass
-            loss.backward(retain_graph=True)
+            loss.backward()
             if gradient_analysis:
                 show_computational_graph(
                     net=net,

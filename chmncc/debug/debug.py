@@ -849,9 +849,6 @@ def debug(
     debug_train = LoadDebugDataset(
         dataloaders["train_dataset_with_labels_and_confunders_position"],
     )
-    debug_val = LoadDebugDataset(
-        dataloaders["val_dataset_with_labels_and_confunders_position"]
-    )
     test_debug = LoadDebugDataset(
         dataloaders["test_dataset_with_labels_and_confunders_pos"],
     )
@@ -860,16 +857,24 @@ def debug(
     debug_loader = torch.utils.data.DataLoader(
         debug_train, batch_size=batch_size, shuffle=True, num_workers=4
     )
-    debug_val_loader = torch.utils.data.DataLoader(
-        debug_val, batch_size=batch_size, shuffle=False, num_workers=4
-    )
     test_debug = torch.utils.data.DataLoader(
         test_debug, batch_size=test_batch_size, shuffle=False, num_workers=4
     )
+
     # test with only confounder
     test_only_confounder = dataloaders[
         "test_loader_with_labels_and_confunders_pos_only"
     ]
+
+    # try add some more
+    debug_test_no_conf = dataloaders['train_dataset_with_labels_and_confunders_position_no_conf']
+    debug_loader_no_conf = torch.utils.data.DataLoader(
+        debug_test_no_conf, batch_size=batch_size, shuffle=True, num_workers=4
+    )
+    debug_test_only_conf = dataloaders['train_dataset_with_labels_and_confunders_position_only_conf']
+    debug_loader_only_conf = torch.utils.data.DataLoader(
+        debug_test_only_conf, batch_size=batch_size, shuffle=True, num_workers=4
+    )
 
     # save some training samples (10 here)
     save_some_confounded_samples(
@@ -909,7 +914,8 @@ def debug(
         ) = revise_step(
             epoch_number=it,
             net=net,
-            debug_loader=iter(debug_loader),
+            debug_loader_no_conf=iter(debug_loader_no_conf),
+            debug_loader_only_conf=iter(debug_loader_only_conf),
             R=dataloaders["train_R"],
             train=dataloaders["train"],
             optimizer=optimizer,
@@ -942,53 +948,6 @@ def debug(
                     "train/accuracy": total_accuracy,
                     "train/score": total_score,
                     "train/confounded_samples_only_right_reason": right_reason_loss_confounded,
-                }
-            )
-
-        # Validate with RRR feedbacks which are not used for training, but only for testing
-        (
-            val_loss,
-            val_right_answer_loss,
-            val_right_reason_loss,
-            val_accuracy,
-            val_score,
-            val_right_reason_loss_confounded,
-        ) = revise_step(
-            epoch_number=it,
-            net=net,
-            debug_loader=iter(debug_val_loader),
-            R=dataloaders["train_R"],
-            train=dataloaders["train"],
-            optimizer=optimizer,
-            revive_function=reviseLoss,
-            device=device,
-            title="Debug with RRR",
-            have_to_train=False,
-            batches_treshold=batches_treshold,
-            folder_where_to_save=debug_folder,
-        )
-
-        print(
-            "\n\t Debug validation loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, Score {:.5f}, Right Reason Loss on Confounded {:.5f}".format(
-                val_loss,
-                val_right_answer_loss,
-                val_right_reason_loss,
-                val_accuracy,
-                val_score,
-                val_right_reason_loss_confounded,
-            )
-        )
-
-        # log on wandb if and only if the module is loaded
-        if set_wandb:
-            wandb.log(
-                {
-                    "val/loss": total_loss,
-                    "val/right_anwer_loss": total_right_answer_loss,
-                    "val/right_reason_loss": total_right_reason_loss,
-                    "val/accuracy": total_accuracy,
-                    "val/score": total_score,
-                    "val/confounded_samples_only_right_reason": right_reason_loss_confounded,
                 }
             )
 

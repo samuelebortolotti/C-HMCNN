@@ -88,6 +88,7 @@ def show_gradient_behavior(
     fig.savefig(
         "{}/{}_gradient_analysis".format(folder_where_to_save, prefix), dpi=fig.dpi
     )
+    plt.close()
 
 
 def revise_step(
@@ -204,13 +205,15 @@ def revise_step(
 
         if have_to_train:
             # backward pass
-            loss.backward()
+            loss.backward(retain_graph=True)
             if gradient_analysis:
                 show_computational_graph(
                     net=net,
                     output=outputs,
                     folder_where_to_save=folder_where_to_save,
                     prefix="{}_{}".format(epoch_number, batch_idx),
+                    show_attrs=True,
+                    show_saved=True,
                 )
                 show_gradient_behavior(
                     net.named_parameters(),

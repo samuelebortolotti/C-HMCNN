@@ -8,6 +8,7 @@ from torch.nn.modules.loss import BCELoss
 from chmncc.dataset.load_cifar import LoadDataset
 from chmncc.networks import ResNet18, LeNet5
 from chmncc.config import hierarchy
+from chmncc.revise.revise import show_computational_graph
 from chmncc.utils.utils import load_best_weights
 from chmncc.dataset import (
     load_cifar_dataloaders,
@@ -624,7 +625,7 @@ def plot_decision_surface(X, Y, clf, x_label, y_label, title, jitter):
     ]
 
     plt.legend(custom, ["Confounded (1)", "Not confounded (2)"], fontsize=10)
-    #  plt.show()
+    plt.close()
     return fig
 
 

@@ -21,6 +21,16 @@ def show_computational_graph(
     show_attrs=False,
     show_saved=False,
 ) -> None:
+    """Shows the computational graph though the network by means of the graphviz library and saves the figure
+
+    Args:
+        net [nn.Module] network
+        output: the output of the network
+        folder_where_to_save: folder where to save the image
+        prefix [str]: prefix of the image path
+        show_attrs [False] show attr option for make_dot
+        show_saved [False] show saved option for make_dot
+    """
     graphviz = make_dot(
         output.mean(),
         params=dict(net.named_parameters()),
@@ -30,7 +40,6 @@ def show_computational_graph(
     graphviz.render(
         filename="{}/{}_computational_graph".format(folder_where_to_save, prefix)
     )
-    exit(1)
 
 
 def show_gradient_behavior(

@@ -268,9 +268,9 @@ def revise_step(
         confounded_samples = 1
 
     return (
-        comulative_loss / len(debug_loader),
-        cumulative_right_answer_loss / len(debug_loader),
-        cumulative_right_reason_loss / len(debug_loader),
+        comulative_loss / len(debug_small),
+        cumulative_right_answer_loss / len(debug_small),
+        cumulative_right_reason_loss / len(debug_small),
         cumulative_accuracy / total_train * 100,
         score,
         cumulative_right_reason_loss / confounded_samples,

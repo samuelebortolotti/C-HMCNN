@@ -25,6 +25,7 @@ class LeNet5(nn.Module):
         Args:
             R [torch.Tensor]: adjacency matrix
             num_out_logits [int]: number of output logits
+            constrained_layer: [bool]: whether to use the constrained output approach from Giunchiglia et al.
         """
         super().__init__()
         self.R = R  # matrix of the hierarchy

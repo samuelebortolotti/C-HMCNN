@@ -226,6 +226,7 @@ def c_hmcnn(
         dataset [str] = "", taken for retrocompatibility with Giunchiglia et al approach
         network [str] = "lenet"
         pretrained [bool] = False
+        constrained_layer [bool] = True
 
     Args:
         exp_name [str]: name of the experiment, basically where to save the logs of the SummaryWriter
@@ -242,6 +243,7 @@ def c_hmcnn(
         dataset [str] = str: dataset name: the dataset is specified -> old approach
         network [str] = "lenet": which arachitecture to employ
         pretrained [bool] = False, whether the network is pretrained [Note: lenet is not pretrained]
+        constrained_layer [bool] = True: whether to use the constrained output layer from Giunchiglia et al.
         \*\*kwargs [Any]: additional key-value arguments
     """
 
@@ -359,7 +361,7 @@ def c_hmcnn(
             cost_function=cost_function,
             title="Training",
             device=device,
-            constrained_layer=constrained_layer
+            constrained_layer=constrained_layer,
         )
 
         # save the values in the metrics
@@ -625,11 +627,6 @@ def c_hmcnn(
                 dpi=fig.dpi,
             )
             plt.close()
-        #  print(
-        #      "Integrated gradient with respect to the input: {}".format(
-        #          i_gradient
-        #      )
-        #  )
     print("Done with the explainations")
 
     # closes the logger

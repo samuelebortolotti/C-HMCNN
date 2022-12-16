@@ -26,6 +26,7 @@ class ResNet18(nn.Module):
             R [torch.Tensor]: adjacency matrix
             num_classes [int]: number of classes [used in the last layer]
             pretrained [bool]: whether to pretrain the model or not
+            constrained_layer: [bool]: whether to use the constrained output approach from Giunchiglia et al.
         """
         super(ResNet18, self).__init__()
         self.R = R  # matrix of the hierarchy

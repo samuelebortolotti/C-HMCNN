@@ -32,6 +32,7 @@ def training_step(
         cost_function [torch.nn.modules.loss.BCELoss] Binary Cross Entropy loss
         title [str] title of the experiment
         device [str]: on which device to run the experiment [default: cuda]
+        constrained_layer [bool]: whether to use the constrained layer training from Giuchiglia et al.
 
     Returns:
         cumulative loss [float]

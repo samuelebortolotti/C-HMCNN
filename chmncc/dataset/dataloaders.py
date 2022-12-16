@@ -132,6 +132,7 @@ def load_cifar_dataloaders(
 
     Returns:
         dataloaders [Dict[str, Any]]: a dictionary containing the dataloaders, for training, validation and test
+        with different options for confounders and not confounders
     """
 
     print("#> Loading dataloader ...")
@@ -253,6 +254,19 @@ def load_cifar_dataloaders(
         train=False,
     )
 
+    test_dataset_with_labels_and_confunders_pos_only = LoadDataset(
+        image_size=img_size,
+        image_depth=img_depth,
+        csv_path=test_csv_path,
+        cifar_metafile=cifar_metadata,
+        transform=transform_test,
+        confunders_position=True,
+        name_labels=True,
+        confund=confunder,
+        train=False,
+        only_confounders=True,
+    )
+
     test_dataset_with_labels = LoadDataset(
         image_size=img_size,
         image_depth=img_depth,
@@ -295,6 +309,13 @@ def load_cifar_dataloaders(
 
     test_loader_with_labels_names = torch.utils.data.DataLoader(
         test_dataset_with_labels,
+        batch_size=test_batch_size,
+        shuffle=False,
+        num_workers=4,
+    )
+
+    test_loader_with_labels_and_confunders_pos_only = torch.utils.data.DataLoader(
+        test_dataset_with_labels_and_confunders_pos_only,
         batch_size=test_batch_size,
         shuffle=False,
         num_workers=4,
@@ -352,6 +373,7 @@ def load_cifar_dataloaders(
         "train_dataset_with_labels_and_confunders_position_only_conf": train_dataset_with_labels_and_confunders_position_only_conf,
         "train_dataset_with_labels_and_confunders_position_no_conf": train_dataset_with_labels_and_confunders_position_no_conf,
         "test_dataset_with_labels_and_confunders_pos": test_dataset_with_labels_and_confunders_pos,
+        "test_loader_with_labels_and_confunders_pos_only": test_loader_with_labels_and_confunders_pos_only,
         "test_set": test_dataset,
         "test": test,
         "val_set": val_dataset,

@@ -8,9 +8,81 @@ from chmncc.utils import get_constr_out
 from typing import Union
 from chmncc.loss import RRRLoss, IGRRRLoss
 from sklearn.metrics import average_precision_score
+from matplotlib.lines import Line2D
+import matplotlib.pyplot as plt
+from torchviz import make_dot
+
+
+def show_computational_graph(
+    net: nn.Module,
+    output,
+    folder_where_to_save: str,
+    prefix: str,
+    show_attrs=False,
+    show_saved=False,
+) -> None:
+    graphviz = make_dot(
+        output.mean(),
+        params=dict(net.named_parameters()),
+        show_attrs=show_attrs,
+        show_saved=show_saved,
+    )
+    graphviz.render(
+        filename="{}/{}_computational_graph".format(folder_where_to_save, prefix)
+    )
+    exit(1)
+
+
+def show_gradient_behavior(
+    named_parameters, folder_where_to_save: str, prefix: str
+) -> None:
+    """Plots the gradients flowing through different layers in the net during training.
+    Can be used for checking for possible gradient vanishing / exploding problems.
+
+    Usage: Plug this function in Trainer class after loss.backwards() as
+    "plot_grad_flow(self.model.named_parameters())" to visualize the gradient flow
+
+    See: https://discuss.pytorch.org/t/check-gradient-flow-in-network/15063/8
+    Credits: @RoshanRane
+
+    Args:
+        - folder_where_to_save [str]: where to save the plots
+        - prefix [str]: image name prefix
+    """
+    ave_grads = []
+    max_grads = []
+    layers = []
+    for n, p in named_parameters:
+        if (p.requires_grad) and ("bias" not in n):
+            layers.append(n)
+            ave_grads.append(p.grad.abs().mean())
+            max_grads.append(p.grad.abs().max())
+    fig = plt.figure()
+    plt.bar(np.arange(len(max_grads)), max_grads, alpha=0.1, lw=1, color="c")
+    plt.bar(np.arange(len(max_grads)), ave_grads, alpha=0.1, lw=1, color="b")
+    plt.hlines(0, 0, len(ave_grads) + 1, lw=2, color="k")
+    plt.xticks(range(0, len(ave_grads), 1), layers, rotation="vertical")
+    plt.xlim(left=0, right=len(ave_grads))
+    plt.ylim(bottom=-0.001, top=0.02)  # zoom in on the lower gradient regions
+    plt.xlabel("Layers")
+    plt.ylabel("average gradient")
+    plt.title("Gradient flow")
+    plt.grid(True)
+    plt.legend(
+        [
+            Line2D([0], [0], color="c", lw=4),
+            Line2D([0], [0], color="b", lw=4),
+            Line2D([0], [0], color="k", lw=4),
+        ],
+        ["max-gradient", "mean-gradient", "zero-gradient"],
+    )
+    fig.savefig(
+        "{}/{}_gradient_analysis".format(folder_where_to_save, prefix), dpi=fig.dpi
+    )
 
 
 def revise_step(
+    epoch_number: int,
     net: nn.Module,
     debug_loader: torch.utils.data.DataLoader,
     train: dotdict,
@@ -19,13 +91,16 @@ def revise_step(
     revive_function: Union[IGRRRLoss, RRRLoss],
     title: str,
     batches_treshold: float,
+    folder_where_to_save: str,
     device: str = "cuda",
     have_to_train: bool = True,
+    gradient_analysis: bool = False,
 ) -> Tuple[float, float, float, float, float, float]:
     """Revise step of the network. It integrates the user feedback and revise the network by the means
     of the RRRLoss.
 
     Args:
+        epoch_number [int]: epoch number
         net [nn.Module] network on device
         debug_loader [torch.utils.data.DataLoader]: debug loader
         train [dotdict]: training set dictionary
@@ -36,6 +111,7 @@ def revise_step(
         batches_treshold [float]: threshold for the batches
         device [str]: on which device to run the experiment [default: cuda]
         have_to_train [bool]: whether to train or not the model
+        gradient_analysis [bool]: whether to analyze the gradients by means of plots
 
     Returns:
         loss [float]
@@ -120,6 +196,18 @@ def revise_step(
         if have_to_train:
             # backward pass
             loss.backward()
+            if gradient_analysis:
+                show_computational_graph(
+                    net=net,
+                    output=outputs,
+                    folder_where_to_save=folder_where_to_save,
+                    prefix="{}_{}".format(epoch_number, batch_idx),
+                )
+                show_gradient_behavior(
+                    net.named_parameters(),
+                    folder_where_to_save,
+                    prefix="{}_{}".format(epoch_number, batch_idx),
+                )
             # optimizer
             optimizer.step()
 

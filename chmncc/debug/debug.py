@@ -129,6 +129,7 @@ def save_sample(
         superclass [str]: superclass string
         subclass [str]: subclass string
         integrated_gradients [bool]: whether to use integrated gradients
+        prefix [str]: prefix for the sample to save
 
     Returns:
         correct_guess [bool]: whether the model has guessed correctly
@@ -227,6 +228,7 @@ def visualize_sample(
         dataloaders [Dict[str, Any]]: dataloaders
         device [str]: device
         net [nn.Module]: network
+        prefix [str]: prefix for the sample to save
     """
     # set the network to eval mode
     net.eval()
@@ -294,19 +296,15 @@ def show_masked_gradient(
     correct_guess: bool,
     prefix: str,
 ) -> None:
-    """Save the maked gradient
+    """Save the masked gradient
 
     Args:
-        single_el [torch.Tensor]: sample to show
-        debug_folder [str]: folder where to store the data
+        confounder_mask [torch.Tensor]: confounder mask
+        gradient [torch.Tensor]: gradient to save, either the input or integrated
+        debug_folder [str]: where to save the sample
         idx [int]: idex of the element to save
         integrated_gradients [bool]: whether to use integrated gradiends
-        confounder_mask [torch.Tensor]: confounder mask
-        superclass [str]: superclass of the sample
-        subclass [str]: subclass of the sample
-        dataloaders [Dict[str, Any]]: dataloaders
-        device [str]: device
-        net [nn.Module]: network
+        correct_guess [bool]: whether the sample has been guessed correctly
     """
     # gradient to show
     gradient_to_show = gradient.clone().cpu().data.numpy()
@@ -358,12 +356,12 @@ def show_gradient(
     """Save the gradient
 
     Args:
-        gradient [torch.Tensor]: gradient to show
-        confounder_mask [torch.Tensor]: confounder mask
-        debug_folder [str]: folder where to store the data
+        gradient [torch.Tensor]: gradient to save, either the input or integrated
+        debug_folder [str]: where to save the sample
         idx [int]: idex of the element to save
-        correct_guess [bool]: whether the network got the example right
+        correct_guess [bool]: whether the sample has been guessed correctly
         integrated_gradients [bool]: whether to use integrated gradiends
+        prefix [str]: prefix to save the pictures with
     """
     # get the gradient
     gradient_to_show = gradient.clone().cpu().data.numpy()
@@ -403,7 +401,7 @@ def show_gradient(
 
 def prepare_single_test_sample(single_el: torch.Tensor) -> torch.Tensor:
     """Prepare the test sample
-    It sets the gradient as required i order to make it compliant with the rest of the algorithm
+    It sets the gradient as required in order to make it compliant with the rest of the algorithm
     Args:
         single_el [torch.Tensor]: sample
     Returns:
@@ -521,6 +519,7 @@ def save_some_confounded_samples(
         dataloaders [Dict[str, Any]: dataloaders
         folder [str]: folder where to store the sample
         integrated_gradients [bool]: whether the gradient are integrated or input gradients
+        prefix [str]: prefix to save the images with
     """
     # set the networ to evaluation mode
     net.eval()
@@ -565,6 +564,12 @@ def save_some_confounded_samples(
 
 
 def make_meshgrid(x, y, h=0.1):
+    """Make the Meshgrid
+
+    taken from:
+    Andrea Passerini's lab notes on sklearn
+    https://disi.unitn.it/~passerini/teaching/2021-2022/MachineLearning/index.html
+    """
     x_min, x_max = x.min() - 1, x.max() + 1
     y_min, y_max = y.min() - 1, y.max() + 1
     xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
@@ -572,6 +577,12 @@ def make_meshgrid(x, y, h=0.1):
 
 
 def plot_contours(ax, clf, xx, yy, **params):
+    """Plot contours of the plot
+
+    taken from:
+    Andrea Passerini's lab notes on sklearn
+    https://disi.unitn.it/~passerini/teaching/2021-2022/MachineLearning/index.html
+    """
     Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
     Z = Z.reshape(xx.shape)
     out = ax.contourf(xx, yy, Z, **params)
@@ -579,7 +590,12 @@ def plot_contours(ax, clf, xx, yy, **params):
 
 
 def plot_decision_surface(X, Y, clf, x_label, y_label, title, jitter):
-    """Print the decision surface of a trained sklearn classifier"""
+    """Print the decision surface of a trained sklearn classifier
+
+    taken from:
+    Andrea Passerini's lab notes on sklearn
+    https://disi.unitn.it/~passerini/teaching/2021-2022/MachineLearning/index.html
+    """
 
     fig, ax = plt.subplots()
     X0, X1 = X[:, 0], X[:, 1]
@@ -621,6 +637,23 @@ def compute_gradient_confound_correlation(
     figure_prefix_name: str,
     device: str,
 ) -> None:
+    """Function which computes the gradient magnitude (computed with the standard L2 norm)
+    and the fact that an example is confounded or not. To do that, it samples randomly
+    a given number of samples of both counfounded and non confounded samples from the given
+    dataloader.
+
+    This, produces:
+    - boxplot
+    - pearson correlation and jittered plot with a standard linear classifier
+
+    Args:
+        net [nn.Module]: neural network
+        sample_dataloader [torch.utils.data.DataLoader]: loader where to sample the samples
+        integrated_gradients [bool]: whether to use integrated graidents or input gradients
+        sample_each [int]: how many samples to sample from each group (confounded and not)
+        folder_where_to_save [str]: where to save the plots produced
+        device [str]: device to use
+    """
     # sequence of counfounded samples
     counfounded_sequence = []
     gradients_magnitude_sequence = []
@@ -745,6 +778,7 @@ def compute_gradient_confound_correlation(
         ]
     )
     plt.xticks([1, 2], ["Confounded", "Not Confounded"])
+
     for line in bp_dict["medians"]:
         # get position data for median line
         x, y = line.get_xydata()[1]  # top of median line
@@ -783,6 +817,7 @@ def debug(
     reviseLoss: Union[RRRLoss, IGRRRLoss],
     model_folder: str,
     network: str,
+    gradient_analysis: bool,
     **kwargs: Any
 ) -> None:
     """Method which performs the debug step by fine-tuning the network employing the right for the right reason loss.
@@ -802,6 +837,9 @@ def debug(
         test_batch_size [int]: size of the batch in the test settings
         batches_treshold [float]: batches threshold
         reviseLoss: Union[RRRLoss, IGRRRLoss]: loss for feeding the network some feedbacks
+        model_folder [str]: folder where to fetch the models weights
+        network [str]: name of the network
+        gradient_analysis [bool]: whether to analyze the gradient behavior
         **kwargs [Any]: kwargs
     """
     print("Have to run for {} debug iterations...".format(iterations))
@@ -827,6 +865,10 @@ def debug(
     test_debug = torch.utils.data.DataLoader(
         test_debug, batch_size=test_batch_size, shuffle=False, num_workers=4
     )
+    # test with only confounder
+    test_only_confounder = dataloaders[
+        "test_loader_with_labels_and_confunders_pos_only"
+    ]
 
     # save some training samples (10 here)
     save_some_confounded_samples(
@@ -864,6 +906,7 @@ def debug(
             total_score,
             right_reason_loss_confounded,
         ) = revise_step(
+            epoch_number=it,
             net=net,
             debug_loader=iter(debug_loader),
             R=dataloaders["train_R"],
@@ -873,6 +916,8 @@ def debug(
             device=device,
             title="Train with RRR",
             batches_treshold=batches_treshold,
+            gradient_analysis=gradient_analysis,
+            folder_where_to_save=debug_folder,
         )
 
         print(
@@ -908,6 +953,7 @@ def debug(
             val_score,
             val_right_reason_loss_confounded,
         ) = revise_step(
+            epoch_number=it,
             net=net,
             debug_loader=iter(debug_val_loader),
             R=dataloaders["train_R"],
@@ -918,6 +964,7 @@ def debug(
             title="Debug with RRR",
             have_to_train=False,
             batches_treshold=batches_treshold,
+            folder_where_to_save=debug_folder,
         )
 
         print(
@@ -988,13 +1035,30 @@ def debug(
             )
         )
 
+        # test set only confounder
+        test_conf_loss, test_conf_accuracy, test_conf_score = test_step(
+            net=net,
+            test_loader=iter(test_only_confounder),
+            cost_function=cost_function,
+            title="Test",
+            test=dataloaders["test"],
+            device=device,
+            debug_mode=True,
+        )
+
+        print(
+            "\n\t [Test set Confounder Only]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve {:.3f}".format(
+                test_conf_loss, test_conf_accuracy, test_conf_score
+            )
+        )
+
         # log on wandb if and only if the module is loaded
         if set_wandb:
             wandb.log(
                 {
-                    "test/loss": test_loss,
-                    "test/accuracy": test_accuracy,
-                    "test/score": test_score,
+                    "test/only_conf_loss": test_conf_loss,
+                    "test/only_conf_accuracy": test_conf_accuracy,
+                    "test/only_conf_score": test_conf_score,
                 }
             )
 
@@ -1035,7 +1099,13 @@ def debug(
 
     # give the correlation
     compute_gradient_confound_correlation(
-        net, test_debug, integrated_gradients, 100, debug_folder, "end_debug_test", device
+        net,
+        test_debug,
+        integrated_gradients,
+        100,
+        debug_folder,
+        "end_debug_test",
+        device,
     )
 
 
@@ -1122,9 +1192,23 @@ def configure_subparsers(subparsers: Subparser) -> None:
     parser.add_argument(
         "--entity", "-e", type=str, default="samu32", help="wandb entity"
     )
+    parser.add_argument(
+        "--gradient-analysis",
+        "-grad-show",
+        dest="gradient_analysis",
+        action="store_true",
+        help="See the gradient behaviour",
+    )
+    parser.add_argument(
+        "--no-gradient-analysis",
+        "-no-grad-show",
+        dest="gradient_analysis",
+        action="store_false",
+        help="Do not see the gradient behaviour",
+    )
     parser.add_argument("--wandb", "-wdb", type=bool, default=False, help="wandb")
     # set the main function to run when blob is called from the command line
-    parser.set_defaults(func=main, integrated_gradients=True)
+    parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False)
 
 
 def main(args: Namespace) -> None:

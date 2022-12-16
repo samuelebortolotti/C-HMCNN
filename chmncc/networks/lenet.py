@@ -16,9 +16,7 @@ class LeNet5(nn.Module):
     """
 
     def __init__(
-        self,
-        R: torch.Tensor,
-        num_out_logits: int = 20,
+        self, R: torch.Tensor, num_out_logits: int = 20, constrained_layer: bool = True
     ) -> None:
         r"""
         Initialize the LeNet5 model
@@ -48,6 +46,9 @@ class LeNet5(nn.Module):
             nn.Sigmoid(),
         )
 
+        # set whether to use the constrained layer or not
+        self.constrained_layer = constrained_layer
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""
         Forward method
@@ -61,7 +62,8 @@ class LeNet5(nn.Module):
         x = self.classifier(x)
 
         # if we are in trainining, no need to enforce the herarchy constraint
-        if self.training:
+        # or if the constrained layer is unwanted
+        if not self.constrained_layer or self.training:
             constrained_out = x
         else:
             constrained_out = get_constr_out(

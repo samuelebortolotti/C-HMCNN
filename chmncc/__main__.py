@@ -173,8 +173,22 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--pretrained", type=bool, default=False, help="load the pretrained model"
     )
     parser.add_argument("--wandb", "-wdb", type=bool, default=False, help="wandb")
+    parser.add_argument(
+        "--constrained-layer",
+        "-clayer",
+        dest="constrained_layer",
+        action="store_true",
+        help="Use the Giunchiglia et al. layer to enforce hierarchical logical constraints",
+    )
+    parser.add_argument(
+        "--no-constrained-layer",
+        "-noclayer",
+        dest="constrained_layer",
+        action="store_false",
+        help="Do not use the Giunchiglia et al. layer to enforce hierarchical logical constraints",
+    )
     # set the main function to run when blob is called from the command line
-    parser.set_defaults(func=experiment)
+    parser.set_defaults(func=experiment, constrained_layer=True)
 
 
 def c_hmcnn(
@@ -192,6 +206,7 @@ def c_hmcnn(
     dataset: str = "",
     network: str = "lenet",
     pretrained: bool = False,
+    constrained_layer: bool = True,
     **kwargs: Any,
 ) -> None:
     r"""
@@ -298,11 +313,11 @@ def c_hmcnn(
         # CNN
         if network == "lenet":
             net = LeNet5(
-                dataloaders["train_R"], 121
+                dataloaders["train_R"], 121, constrained_layer
             )  # 20 superclasses, 100 subclasses + the root
         else:
             net = ResNet18(
-                dataloaders["train_R"], 121, pretrained
+                dataloaders["train_R"], 121, pretrained, constrained_layer
             )  # 20 superclasses, 100 subclasses + the root
 
     # move the network

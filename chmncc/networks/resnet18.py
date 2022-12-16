@@ -11,7 +11,11 @@ class ResNet18(nn.Module):
     """
 
     def __init__(
-        self, R: torch.Tensor, num_classes: int = 20, pretrained: bool = False
+        self,
+        R: torch.Tensor,
+        num_classes: int = 20,
+        pretrained: bool = False,
+        constrained_layer: bool = True,
     ) -> None:
         r"""
         Initialize the basic ResNet18 architecture
@@ -34,8 +38,10 @@ class ResNet18(nn.Module):
 
         # set the ResNet18 backbone as feature extractor
         self.features = nn.Sequential(*features)
-
         self.classifier = nn.Sequential(nn.Linear(512, num_classes), nn.Sigmoid())
+
+        # set whether to use the constrained layer or not
+        self.constrained_layer = constrained_layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""
@@ -49,7 +55,8 @@ class ResNet18(nn.Module):
         x = torch.flatten(x, 1)
         x = self.classifier(x)
 
-        if self.training:
+        # if the layer is unwanted or we are in training phase
+        if not self.constrained_layer or self.training:
             constrained_out = x
         else:
             constrained_out = get_constr_out(

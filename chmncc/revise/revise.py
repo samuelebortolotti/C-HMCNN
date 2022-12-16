@@ -162,9 +162,11 @@ def revise_step(
 
         if switch:
             # get items
+            print(len(inputs))
             (sample, ground_truth, confounder_mask, confounded, _, _) = inputs
         else:
-            (sample, ground_truth, confounder_mask, confounded, _, _) = debug_big
+            print(len((debug_big)))
+            (sample, ground_truth, confounder_mask, confounded, _, _) = next(debug_big)
 
         # change switch
         switch = not switch
@@ -229,8 +231,6 @@ def revise_step(
                     output=outputs,
                     folder_where_to_save=folder_where_to_save,
                     prefix="{}_{}".format(epoch_number, batch_idx),
-                    show_attrs=True,
-                    show_saved=True,
                 )
                 show_gradient_behavior(
                     net.named_parameters(),

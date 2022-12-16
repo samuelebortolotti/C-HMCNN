@@ -867,11 +867,11 @@ def debug(
     ]
 
     # try add some more
-    debug_test_no_conf = dataloaders['train_dataset_with_labels_and_confunders_position_no_conf']
+    debug_test_no_conf = LoadDebugDataset(dataloaders['train_dataset_with_labels_and_confunders_position_no_conf'])
     debug_loader_no_conf = torch.utils.data.DataLoader(
         debug_test_no_conf, batch_size=batch_size, shuffle=True, num_workers=4
     )
-    debug_test_only_conf = dataloaders['train_dataset_with_labels_and_confunders_position_only_conf']
+    debug_test_only_conf = LoadDebugDataset(dataloaders['train_dataset_with_labels_and_confunders_position_only_conf'])
     debug_loader_only_conf = torch.utils.data.DataLoader(
         debug_test_only_conf, batch_size=batch_size, shuffle=True, num_workers=4
     )

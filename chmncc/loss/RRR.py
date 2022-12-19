@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from chmncc.explanations import compute_integrated_gradient
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 class RRRLoss(nn.Module):
@@ -75,11 +77,32 @@ class RRRLoss(nn.Module):
         else:
             gradXes = torch.zeros_like(X)
 
+        # loop through all the elements of the batch
+        #  for i in range(X.shape[0]):
+        #      f, axarr = plt.subplots(1, 2)
+        #      print(expl[1].shape)
+        #      axarr[0].imshow(expl[i].detach().numpy(), cmap="gray")
+        #      axarr[1].imshow(X[i].detach().numpy().transpose(1, 2, 0))
+        #      plt.show()
+        #      plt.close()
+
         self.net.train()
         # sum each axes contribution
         gradXes = torch.sum(gradXes, dim=1)
         # when the feature is 0 -> relevant, since if it is 1 we are adding a penality
         A_gradX = torch.mul(expl, gradXes) ** 2
+
+        #  for i in range(X.shape[0]):
+        #      f, axarr = plt.subplots(1, 3)
+        #      print(expl[1].shape)
+        #      axarr[0].imshow(expl[i].detach().numpy(), cmap="gray")
+        #      tmp_copy = A_gradX[i].clone().detach().numpy()
+        #      tmp_copy = np.fabs(tmp_copy)
+        #      tmp_copy = tmp_copy / np.max(tmp_copy)
+        #      axarr[1].imshow(tmp_copy, cmap="gray")
+        #      axarr[2].imshow(X[i].detach().numpy().transpose(1, 2, 0))
+        #      plt.show()
+        #      plt.close()
 
         right_reason_loss = torch.sum(A_gradX)
         right_reason_loss *= self.regularizer_rate

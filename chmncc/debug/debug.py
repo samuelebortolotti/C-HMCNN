@@ -916,6 +916,7 @@ def debug(
             net=net,
             debug_loader_no_conf=iter(debug_loader_no_conf),
             debug_loader_only_conf=iter(debug_loader_only_conf),
+            debug_loader=iter(debug_loader),
             R=dataloaders["train_R"],
             train=dataloaders["train"],
             optimizer=optimizer,
@@ -1255,32 +1256,32 @@ def main(args: Namespace) -> None:
     cost_function = torch.nn.BCELoss()
 
     # test set
-    test_loss, test_accuracy, test_score = test_step(
-        net=net,
-        test_loader=iter(test_loader),
-        cost_function=cost_function,
-        title="Test",
-        test=dataloaders["test"],
-        device=args.device,
-    )
-
-    print("Network resumed, performances:")
-
-    print(
-        "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
-            test_loss, test_accuracy, test_score
-        )
-    )
-
-    # log on wandb if and only if the module is loaded
-    if args.wandb:
-        wandb.log(
-            {
-                "test/loss": test_loss,
-                "test/accuracy": test_accuracy,
-                "test/score": test_score,
-            }
-        )
+    #  test_loss, test_accuracy, test_score = test_step(
+    #      net=net,
+    #      test_loader=iter(test_loader),
+    #      cost_function=cost_function,
+    #      title="Test",
+    #      test=dataloaders["test"],
+    #      device=args.device,
+    #  )
+    #
+    #  print("Network resumed, performances:")
+    #
+    #  print(
+    #      "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
+    #          test_loss, test_accuracy, test_score
+    #      )
+    #  )
+    #
+    #  # log on wandb if and only if the module is loaded
+    #  if args.wandb:
+    #      wandb.log(
+    #          {
+    #              "test/loss": test_loss,
+    #              "test/accuracy": test_accuracy,
+    #              "test/score": test_score,
+    #          }
+    #      )
 
     print("-----------------------------------------------------")
 

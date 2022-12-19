@@ -153,25 +153,25 @@ def revise_step(
     )
 
     # simple switch
-    #  switch = True
+    switch = True
 
     # iterate over the training set
     for batch_idx, inputs in tqdm.tqdm(
-        enumerate(debug_loader),
+        enumerate(debug_small),
         desc=title,
     ):
 
-        #  if switch:
-        #      # get items
-        #      print(len(inputs))
-        #      (sample, ground_truth, confounder_mask, confounded, _, _) = inputs
-        #  else:
-        #      print(len((debug_big)))
-        #      (sample, ground_truth, confounder_mask, confounded, _, _) = next(debug_big)
-        #
-        #  # change switch
-        #  switch = not switch
-        (sample, ground_truth, confounder_mask, confounded, _, _) = inputs
+        if switch:
+            # get items
+            print(len(inputs))
+            (sample, ground_truth, confounder_mask, confounded, _, _) = inputs
+        else:
+            print(len((debug_big)))
+            (sample, ground_truth, confounder_mask, confounded, _, _) = next(debug_big)
+
+        # change switch
+        switch = not switch
+        #  (sample, ground_truth, confounder_mask, confounded, _, _) = inputs
 
         # load data into device
         sample = sample.to(device)
@@ -270,9 +270,9 @@ def revise_step(
         confounded_samples = 1
 
     return (
-        comulative_loss / len(debug_loader),
-        cumulative_right_answer_loss / len(debug_loader),
-        cumulative_right_reason_loss / len(debug_loader),
+        comulative_loss / len(debug_small),
+        cumulative_right_answer_loss / len(debug_small),
+        cumulative_right_reason_loss / len(debug_small),
         cumulative_accuracy / total_train * 100,
         score,
         cumulative_right_reason_loss / confounded_samples,

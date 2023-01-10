@@ -5,11 +5,9 @@ from chmncc.utils import get_constr_out
 
 
 class DummyCNN(nn.Module):
-    r"""
+    """
     Initialize the DummyCNN model.
     It is just the CNN of the basic PyTorch tutorial: 2 conv and 3 fully connected
-    Default:
-        num_out_logits [int] = 20
     Args:
         R [torch.Tensor]: adjacency matrix
         num_out_logits [int]: number of output logits
@@ -18,7 +16,7 @@ class DummyCNN(nn.Module):
 
     def __init__(
         self, R: torch.Tensor, num_out_logits: int = 20, constrained_layer: bool = True
-    ):
+    ) -> None:
         super().__init__()
         self.R = R  # matrix of the hierarchy
         self.conv1 = nn.Conv2d(3, 6, 5)
@@ -33,7 +31,7 @@ class DummyCNN(nn.Module):
         self.constrained_layer = constrained_layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        r"""
+        """
         Forward method
         Args:
             x [torch.Tensor]: source sample

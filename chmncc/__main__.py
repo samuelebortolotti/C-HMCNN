@@ -29,13 +29,12 @@ os.environ["IMAGE_FOLDER"] = "./plots"
 
 from chmncc.utils.utils import (
     log_values,
-    load_best_weights,
     resume_training,
     get_lr,
     average_image_contributions,
 )
 from chmncc.networks.ConstrainedFFNN import initializeConstrainedFFNNModel
-from chmncc.networks import LeNet5, ResNet18
+from chmncc.networks import LeNet5, ResNet18, DummyCNN
 from chmncc.train import training_step
 from chmncc.optimizers import get_adam_optimizer
 from chmncc.test import test_step
@@ -165,7 +164,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--network",
         "-n",
         type=str,
-        choices=["lenet", "resnet"],
+        choices=["lenet", "resnet", "dummy"],
         default="lenet",
         help="CNN architecture",
     )
@@ -315,6 +314,11 @@ def c_hmcnn(
         # CNN
         if network == "lenet":
             net = LeNet5(
+                dataloaders["train_R"], 121, constrained_layer
+            )  # 20 superclasses, 100 subclasses + the root
+        elif network == "dummy":
+            # SuperDummyNetwork
+            net = DummyCNN(
                 dataloaders["train_R"], 121, constrained_layer
             )  # 20 superclasses, 100 subclasses + the root
         else:

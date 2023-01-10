@@ -4,3 +4,4 @@ This module contains all the networks architectures we have employed in our expe
 from .ConstrainedFFNN import ConstrainedFFNNModel
 from .lenet import LeNet5
 from .resnet18 import ResNet18
+from .dummy_cnn import DummyCNN

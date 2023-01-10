@@ -1,0 +1,23 @@
+chmncc.loss package
+===================
+
+Submodules
+----------
+
+chmncc.loss.RRR module
+----------------------
+
+.. automodule:: chmncc.loss.RRR
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+Module contents
+---------------
+
+.. automodule:: chmncc.loss
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:

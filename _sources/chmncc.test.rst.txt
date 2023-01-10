@@ -1,0 +1,23 @@
+chmncc.test package
+===================
+
+Submodules
+----------
+
+chmncc.test.test module
+-----------------------
+
+.. automodule:: chmncc.test.test
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+Module contents
+---------------
+
+.. automodule:: chmncc.test
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:

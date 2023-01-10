@@ -1,0 +1,23 @@
+chmncc.train package
+====================
+
+Submodules
+----------
+
+chmncc.train.train module
+-------------------------
+
+.. automodule:: chmncc.train.train
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+Module contents
+---------------
+
+.. automodule:: chmncc.train
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:

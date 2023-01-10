@@ -109,7 +109,6 @@ class LoadDataset(Dataset):
             if superclass in confunders:
                 for tmp_index in range(len(confunders[superclass][phase])):
                     if confunders[superclass][phase][tmp_index]["subclass"] == subclass:
-                        print(confunders[superclass][phase][tmp_index]["subclass"], "discarded")
                         continue
             filtered.append((image, superclass, subclass))
         return filtered

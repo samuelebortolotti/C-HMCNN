@@ -38,7 +38,8 @@ def show_computational_graph(
         show_saved=show_saved,
     )
     graphviz.render(
-        filename="{}/{}_computational_graph".format(folder_where_to_save, prefix)
+        "dot",
+        outfile="{}/{}_computational_graph.pdf".format(folder_where_to_save, prefix),
     )
 
 

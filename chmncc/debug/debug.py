@@ -6,9 +6,8 @@ import os
 import torch.nn as nn
 from torch.nn.modules.loss import BCELoss
 from chmncc.dataset.load_cifar import LoadDataset
-from chmncc.networks import ResNet18, LeNet5
+from chmncc.networks import ResNet18, LeNet5, DummyCNN
 from chmncc.config import hierarchy
-from chmncc.revise.revise import show_computational_graph
 from chmncc.utils.utils import load_best_weights
 from chmncc.dataset import (
     load_cifar_dataloaders,
@@ -20,14 +19,14 @@ from chmncc.explanations import compute_integrated_gradient, output_gradients
 from chmncc.loss import RRRLoss, IGRRRLoss
 from chmncc.revise import revise_step
 from chmncc.optimizers import get_adam_optimizer
-from typing import Dict, Any, Tuple, Union, List
+from typing import Dict, Any, Tuple, Union
 import tqdm
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
 import scipy.stats
 import cv2
-from sklearn.linear_model import RidgeClassifier, LinearRegression
+from sklearn.linear_model import RidgeClassifier
 from torchsummary import summary
 from torch.utils.data import Dataset
 
@@ -275,7 +274,6 @@ def visualize_sample(
         integrated_gradients=integrated_gradients,
         prefix=prefix,
     )
-
     # show the masked gradient
     show_masked_gradient(
         confounder_mask=confounder_mask,
@@ -309,7 +307,7 @@ def show_masked_gradient(
     """
     # gradient to show
     gradient_to_show = gradient.clone().cpu().data.numpy()
-    gradient_to_show = np.where(confounder_mask < 0.5, gradient_to_show, 0)
+    gradient_to_show = np.where(confounder_mask > 0.5, gradient_to_show, 0)
     gradient_to_show_absolute_values = np.fabs(gradient_to_show)
     # normalize the value
     gradient_to_show = gradient_to_show_absolute_values / np.max(
@@ -325,7 +323,7 @@ def show_masked_gradient(
     fig = plt.figure()
     plt.imshow(gradient_to_show, cmap="gray")
     plt.title(
-        "{} gradient no confunder".format(
+        "{} gradient only confunder zone".format(
             "Integrated" if integrated_gradients else "Input"
         )
     )
@@ -334,7 +332,7 @@ def show_masked_gradient(
     )
     # show the figure
     fig.savefig(
-        "{}/{}_iter_{}_gradient_no_confunder_{}{}.png".format(
+        "{}/{}_iter_{}_gradient_only_confunder_{}{}.png".format(
             debug_folder,
             prefix,
             idx,
@@ -1080,7 +1078,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--network",
         "-n",
         type=str,
-        choices=["resnet", "lenet"],
+        choices=["resnet", "lenet", "dummy"],
         default="resnet",
         help="Network",
     )
@@ -1212,6 +1210,10 @@ def main(args: Namespace) -> None:
     # Network
     if args.network == "lenet":
         net = LeNet5(
+            dataloaders["train_R"], 121
+        )  # 20 superclasses, 100 subclasses + the root
+    elif args.network == "dummy":
+        net = DummyCNN(
             dataloaders["train_R"], 121
         )  # 20 superclasses, 100 subclasses + the root
     else:

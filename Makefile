@@ -21,7 +21,7 @@ DATASET_FLAGS :=
 EXPERIMENT := experiment 
 EXP_NAME := "chmncc"
 EPOCHS := 50
-EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 128 --test-batch-size 10 --device cuda --project chmncc --network resnet
+EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 32 --test-batch-size 128 --device cpu --project chmncc --network dummy #--no-constrained-layer
 
 # ======= VISUALIZE ================
 VISUALIZE:= visualize
@@ -29,7 +29,7 @@ VISUALIZE_FLAGS := --only-confunders true
 
 # ======= DEBUG ===================
 DEBUG:= debug
-DEBUG_FLAGS := --learning-rate 0.001 --batch-size 128 --test-batch-size 128 --device "cuda" --network "resnet" --integrated-gradients --iterations 5 
+DEBUG_FLAGS := --learning-rate 0.001 --batch-size 10 --test-batch-size 10 --device "cuda" --network "dummy" --no-integrated-gradients --iterations 5 --device cpu --debug-folder lmao --gradient-analysis
 
 # ======= DOC ======================
 AUTHORS := --author "Eleonora Giunchiglia, Thomas Lukasiewicz, Samuele Bortolotti" 
@@ -112,6 +112,7 @@ help:
 	* debug 		: runs the debug of the model to solve confund\n \
 	* visualize 		: shows the images associated to the specified label in the source and target dataset\n \
 	* doc-layout 		: generates the Sphinx documentation layout\n \
+	* doc-layout-no-theme	: generates the Sphinx documentation layout without setting the theme\n \
 	* doc 			: generates the documentation (requires an existing documentation layout)\n \
 	* format-code 		: formats the code employing black python formatter\n \
 	* help 		: prints this message\n \
@@ -165,7 +166,19 @@ doc-layout:
 	# Inserting custom index.rst header
 	@$(ECHO) "$$INDEX" > $(DOC_FOLDER)/source/index.rst
 	# Sphinx theme
-	@$(SED) -i -e "s/html_theme = 'alabaster'/html_theme = '$(SPHINX_THEME)'/g" $(DOC_FOLDER)/source/conf.py 
+	$(SED) -i -e "s/html_theme = 'alabaster'/html_theme = '$(SPHINX_THEME)'/g" $(DOC_FOLDER)/source/conf.py 
+	# Copy the image folder inside the doc folder
+	@$(COPY) $(IMG_FOLDER) $(DOC_FOLDER)/source
+	@$(ECHO) '$(BLUE)Done$(NONE)'
+
+doc-layout-no-theme:
+	@$(ECHO) '$(BLUE)Generating the Sphinx layout..$(NONE)'
+	# Sphinx quickstart
+	$(SPHINX_QUICKSTART) $(DOC_FOLDER) $(SPHINX_QUICKSTART_FLAGS)
+	# Including the path for the current README.md
+	@$(ECHO) "\nimport os\nimport sys\nsys.path.insert(0, os.path.abspath('../..'))">> $(DOC_FOLDER)/source/conf.py
+	# Inserting custom index.rst header
+	@$(ECHO) "$$INDEX" > $(DOC_FOLDER)/source/index.rst
 	# Copy the image folder inside the doc folder
 	@$(COPY) $(IMG_FOLDER) $(DOC_FOLDER)/source
 	@$(ECHO) '$(BLUE)Done$(NONE)'

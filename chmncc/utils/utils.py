@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import os
 import numpy as np
-from typing import Tuple, Dict, Optional, Union
+from typing import Tuple, Dict, Optional, List
 from torch.utils import tensorboard
 
 ################### Dotdict ##################

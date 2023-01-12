@@ -6,6 +6,7 @@ This code has been developed by Eleonora Giunchiglia and Thomas Lukasiewicz; lat
 import os
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
 import argparse
 import torch
@@ -15,7 +16,7 @@ import torch.nn as nn
 from argparse import Namespace
 from argparse import _SubParsersAction as Subparser
 from argparse import Namespace
-from typing import Any
+from typing import Any, Dict, List
 from torchsummary import summary
 from torch.utils.tensorboard import SummaryWriter
 import wandb
@@ -32,12 +33,13 @@ from chmncc.utils.utils import (
     resume_training,
     get_lr,
     average_image_contributions,
+    load_best_weights,
 )
 from chmncc.networks.ConstrainedFFNN import initializeConstrainedFFNNModel
 from chmncc.networks import LeNet5, ResNet18, DummyCNN
 from chmncc.train import training_step
 from chmncc.optimizers import get_adam_optimizer
-from chmncc.test import test_step
+from chmncc.test import test_step, test_step_with_prediction_statistics
 from chmncc.dataset import (
     load_old_dataloaders,
     load_cifar_dataloaders,
@@ -454,7 +456,7 @@ def c_hmcnn(
     print("#> After training:")
 
     # Test on best weights
-    #  load_best_weights(net, model_folder, device)
+    load_best_weights(net, model_folder, device)
 
     # test set
     test_loss, test_accuracy, test_score = test_step(
@@ -497,6 +499,17 @@ def c_hmcnn(
         test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
         # extract also the names of the classes
         test_el, superclass, subclass, _ = next(iter(test_loader_with_label_names))
+        # collect stats
+        _, _, _, statistics = test_step_with_prediction_statistics(
+            net=net,
+            test_loader=iter(test_loader_with_label_names),
+            cost_function=cost_function,
+            title="Collect Statistics",
+            test=dataloaders["test"],
+            device=device,
+        )
+        # grouped boxplot
+        grouped_boxplot(statistics, os.environ["IMAGE_FOLDER"])
 
     # move everything on the cpu
     net = net.to("cpu")
@@ -687,6 +700,53 @@ def experiment(args: Namespace) -> None:
     if args.wandb:
         # finish the log
         wandb.finish()
+
+
+def split(a, n):
+    k, m = divmod(len(a), n)
+    return (a[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)] for i in range(n))
+
+
+def grouped_boxplot(statistics: Dict[str, List[int]], image_folder: str):
+    """Grouped Boxplot
+    print the grouped boxplot for the statistics
+    """
+    predicted = []
+    unpredicted = []
+    index = []
+    # create the statistics
+    for key, item in statistics.items():
+        if key != "total":
+            predicted.append(item[1])
+            unpredicted.append(item[0])
+            index.append(key)
+
+    fig = plt.figure(figsize=(8, 4))
+    titles = np.array(["Predicted", "Non Predicted"])
+    values = np.array([statistics['total'][1], statistics['total'][0]])
+    plot = pd.Series(values).plot(kind='bar')
+    plot.bar_label(plot.containers[0], label_type='edge')
+    plot.set_xticklabels(titles)
+    plt.xticks(rotation=0)
+    plt.tight_layout()
+    fig.savefig("{}/statistics_total.png".format(image_folder))
+
+    # print data
+    for i, (el_p, el_u, el_i) in enumerate(
+        zip(split(predicted, 10), split(unpredicted, 10), split(index, 10))
+    ):
+        # data
+        data = {"Predicted": el_p, "Unpredicted": el_u}
+        # figure
+        df = pd.DataFrame(data, index=el_i)
+        plot = df.plot.bar(rot=0, figsize=(11, 9))
+        plot.bar_label(plot.containers[0], label_type='edge')
+        plot.bar_label(plot.containers[1], label_type='edge')
+        plt.xticks(rotation=60)
+        plt.subplots_adjust(bottom = 0.15)
+        plt.tight_layout()
+        fig = plot.get_figure()
+        fig.savefig("{}/statistics_{}.png".format(image_folder, i))
 
 
 def main(args: Namespace) -> None:

@@ -17,7 +17,7 @@ jobs:
           make install-dev
       - name: build documentation
         run: |
-          make doc-layout-no-theme
+          make doc-layout
           make doc
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4

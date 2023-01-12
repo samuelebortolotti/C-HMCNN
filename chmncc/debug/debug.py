@@ -29,6 +29,7 @@ import cv2
 from sklearn.linear_model import RidgeClassifier
 from torchsummary import summary
 from torch.utils.data import Dataset
+from itertools import tee
 
 
 class LoadDebugDataset(Dataset):
@@ -865,14 +866,21 @@ def debug(
     ]
 
     # try add some more
-    debug_test_no_conf = LoadDebugDataset(dataloaders['train_dataset_with_labels_and_confunders_position_no_conf'])
+    debug_test_no_conf = LoadDebugDataset(
+        dataloaders["train_dataset_with_labels_and_confunders_position_no_conf"]
+    )
     debug_loader_no_conf = torch.utils.data.DataLoader(
         debug_test_no_conf, batch_size=batch_size, shuffle=True, num_workers=4
     )
-    debug_test_only_conf = LoadDebugDataset(dataloaders['train_dataset_with_labels_and_confunders_position_only_conf'])
+    debug_test_only_conf = LoadDebugDataset(
+        dataloaders["train_dataset_with_labels_and_confunders_position_only_conf"]
+    )
     debug_loader_only_conf = torch.utils.data.DataLoader(
         debug_test_only_conf, batch_size=batch_size, shuffle=True, num_workers=4
     )
+
+    print_iterator_before = iter(debug_loader)
+    print_iterator_before, print_iterator_after = tee(print_iterator_before)
 
     # save some training samples (10 here)
     save_some_confounded_samples(
@@ -883,7 +891,7 @@ def debug(
         device=device,
         folder=debug_folder,
         integrated_gradients=integrated_gradients,
-        loader=iter(debug_loader),
+        loader=print_iterator_before,
         prefix="before",
     )
 
@@ -1052,7 +1060,7 @@ def debug(
         device=device,
         folder=debug_folder,
         integrated_gradients=integrated_gradients,
-        loader=iter(test_debug),
+        loader=print_iterator_after,
         prefix="after",
     )
 

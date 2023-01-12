@@ -1,7 +1,6 @@
-workspace
-=========
+github
+======
 
 .. toctree::
    :maxdepth: 4
 
-   chmncc

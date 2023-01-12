@@ -14,11 +14,22 @@ jobs:
       - name: install dependencies
         run: |
           make install
+<<<<<<< HEAD
           make install-dev
       - name: build documentation
         run: |
           make doc-layout
           make doc
+=======
+      - uses: ammaraskar/sphinx-action@master
+        with:
+          docs-folder: "docs/"
+          pre-build-command: |
+            make install-dev
+            sphinx-quickstart docs --sep --no-batchfile --project chmncc --author "Eleonora Giunchiglia, Thomas Lukasiewicz, Samuele Bortolotti"  -r 0.1  --language en --extensions sphinx.ext.autodoc --extensions sphinx.ext.napoleon --extensions sphinx.ext.viewcode --extensions myst_parser
+            sed -i -e "s/html_theme = 'alabaster'/html_theme = 'sphinx_rtd_theme'/g" docs/source/conf.py
+            sphinx-apidoc -P -o docs/source .
+>>>>>>> refs/remotes/origin/master
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:

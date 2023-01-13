@@ -8,16 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10' 
-      - name: Install dependencies
-        run: |
-          make install
       - uses: ammaraskar/sphinx-action@master
         with:
           docs-folder: "docs/"
           pre-build-command: |
+            make install
             make install-dev
             make doc-layout
             sphinx-apidoc -P -o docs/source chmncc

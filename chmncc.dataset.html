@@ -105,8 +105,82 @@
 <div class="section" id="chmncc-dataset-load-cifar-module">
 <h2>chmncc.dataset.load_cifar module<a class="headerlink" href="#chmncc-dataset-load-cifar-module" title="Permalink to this heading"></a></h2>
 </div>
-<div class="section" id="chmncc-dataset-parser-module">
-<h2>chmncc.dataset.parser module<a class="headerlink" href="#chmncc-dataset-parser-module" title="Permalink to this heading"></a></h2>
+<div class="section" id="module-chmncc.dataset.parser">
+<span id="chmncc-dataset-parser-module"></span><h2>chmncc.dataset.parser module<a class="headerlink" href="#module-chmncc.dataset.parser" title="Permalink to this heading"></a></h2>
+<p>Original parser
+This code was adapted from <a class="reference external" href="https://github.com/lucamasera/AWX">https://github.com/lucamasera/AWX</a></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="chmncc.dataset.parser.arff_data">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.dataset.parser.</span></span><span class="sig-name descname"><span class="pre">arff_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arff_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_GO</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_test</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/dataset/parser.html#arff_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.dataset.parser.arff_data" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>All the datasets they provide are in arff, this is the class</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.dataset.parser.initialize_dataset">
+<span class="sig-prename descclassname"><span class="pre">chmncc.dataset.parser.</span></span><span class="sig-name descname"><span class="pre">initialize_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#chmncc.dataset.parser.arff_data" title="chmncc.dataset.parser.arff_data"><span class="pre">arff_data</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#chmncc.dataset.parser.arff_data" title="chmncc.dataset.parser.arff_data"><span class="pre">arff_data</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#chmncc.dataset.parser.arff_data" title="chmncc.dataset.parser.arff_data"><span class="pre">arff_data</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/dataset/parser.html#initialize_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.dataset.parser.initialize_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>Initialize the dataset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>name</em>) – name of the dataset to prepare</p></li>
+<li><p><strong>Dict</strong><strong>[</strong><strong>List</strong><strong>[</strong><strong>bool</strong> (<em>datasets</em>) – whether the dataset is GO, the train,</p></li>
+<li><p><strong>str</strong> – whether the dataset is GO, the train,</p></li>
+<li><p><strong>str</strong> – whether the dataset is GO, the train,</p></li>
+<li><p><strong>str</strong><strong>]</strong><strong>]</strong> – whether the dataset is GO, the train,</p></li>
+<li><p><strong>location</strong> (<em>validation and test data</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>train dataset [arff_data]
+validation dataset [arff_data]
+test dataset [arff_data]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.dataset.parser.initialize_other_dataset">
+<span class="sig-prename descclassname"><span class="pre">chmncc.dataset.parser.</span></span><span class="sig-name descname"><span class="pre">initialize_other_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#chmncc.dataset.parser.arff_data" title="chmncc.dataset.parser.arff_data"><span class="pre">arff_data</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#chmncc.dataset.parser.arff_data" title="chmncc.dataset.parser.arff_data"><span class="pre">arff_data</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/dataset/parser.html#initialize_other_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.dataset.parser.initialize_other_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>Initialize the dataset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>name</em>) – name of the dataset to prepare</p></li>
+<li><p><strong>[</strong><strong>bool</strong> (<em>datasets</em>) – whether the dataset is go (?), the train</p></li>
+<li><p><strong>str</strong> – whether the dataset is go (?), the train</p></li>
+<li><p><strong>str</strong><strong>]</strong> – whether the dataset is go (?), the train</p></li>
+<li><p><strong>location</strong> (<em>and test data</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>train dataset [arff_data]
+test dataset [arff_data]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.dataset.parser.parse_arff">
+<span class="sig-prename descclassname"><span class="pre">chmncc.dataset.parser.</span></span><span class="sig-name descname"><span class="pre">parse_arff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arff_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_GO</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_test</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DiGraph</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/dataset/parser.html#parse_arff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.dataset.parser.parse_arff" title="Permalink to this definition"></a></dt>
+<dd><p>Parse the arff data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>arf_file</em>) – arff file</p></li>
+<li><p><strong>[</strong><strong>bool</strong><strong>]</strong> (<em>is_test</em>) – whether it is the GO dataset</p></li>
+<li><p><strong>[</strong><strong>bool</strong><strong>]</strong> – whether the dataset is test</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>X [torch.Tensor] data instances
+Y [torch.Tensor] labels
+R [torch.Tensor[torch.Tensor]] adjacency matrix
+g [nx.DiGraph] graph</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 <div class="section" id="chmncc-dataset-preproces-cifar-module">
 <h2>chmncc.dataset.preproces_cifar module<a class="headerlink" href="#chmncc-dataset-preproces-cifar-module" title="Permalink to this heading"></a></h2>

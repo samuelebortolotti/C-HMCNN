@@ -109,7 +109,13 @@
 <li class="toctree-l2"><a class="reference internal" href="chmncc.dataset.html#chmncc-dataset-dataloaders-module">chmncc.dataset.dataloaders module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.dataset.html#chmncc-dataset-datasets-module">chmncc.dataset.datasets module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.dataset.html#chmncc-dataset-load-cifar-module">chmncc.dataset.load_cifar module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.dataset.html#chmncc-dataset-parser-module">chmncc.dataset.parser module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.dataset.html#module-chmncc.dataset.parser">chmncc.dataset.parser module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.dataset.html#chmncc.dataset.parser.arff_data"><code class="docutils literal notranslate"><span class="pre">arff_data</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.dataset.html#chmncc.dataset.parser.initialize_dataset"><code class="docutils literal notranslate"><span class="pre">initialize_dataset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.dataset.html#chmncc.dataset.parser.initialize_other_dataset"><code class="docutils literal notranslate"><span class="pre">initialize_other_dataset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.dataset.html#chmncc.dataset.parser.parse_arff"><code class="docutils literal notranslate"><span class="pre">parse_arff()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.dataset.html#chmncc-dataset-preproces-cifar-module">chmncc.dataset.preproces_cifar module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.dataset.html#chmncc-dataset-visualize-dataset-module">chmncc.dataset.visualize_dataset module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.dataset.html#module-contents">Module contents</a></li>
@@ -123,54 +129,142 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="chmncc.explanations.html">chmncc.explanations package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.explanations.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.explanations.html#chmncc-explanations-gradients-module">chmncc.explanations.gradients module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.explanations.html#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.explanations.html#module-chmncc.explanations.gradients">chmncc.explanations.gradients module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.explanations.html#chmncc.explanations.gradients.compute_integrated_gradient"><code class="docutils literal notranslate"><span class="pre">compute_integrated_gradient()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.explanations.html#chmncc.explanations.gradients.output_gradients"><code class="docutils literal notranslate"><span class="pre">output_gradients()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.explanations.html#module-chmncc.explanations">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="chmncc.loss.html">chmncc.loss package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.loss.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.loss.html#chmncc-loss-rrr-module">chmncc.loss.RRR module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.loss.html#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.loss.html#module-chmncc.loss.RRR">chmncc.loss.RRR module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.loss.html#chmncc.loss.RRR.IGRRRLoss"><code class="docutils literal notranslate"><span class="pre">IGRRRLoss</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.loss.html#chmncc.loss.RRR.IGRRRLoss._is_full_backward_hook"><code class="docutils literal notranslate"><span class="pre">IGRRRLoss._is_full_backward_hook</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.loss.html#chmncc.loss.RRR.IGRRRLoss.forward"><code class="docutils literal notranslate"><span class="pre">IGRRRLoss.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.loss.html#chmncc.loss.RRR.IGRRRLoss.training"><code class="docutils literal notranslate"><span class="pre">IGRRRLoss.training</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.loss.html#chmncc.loss.RRR.RRRLoss"><code class="docutils literal notranslate"><span class="pre">RRRLoss</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.loss.html#chmncc.loss.RRR.RRRLoss._is_full_backward_hook"><code class="docutils literal notranslate"><span class="pre">RRRLoss._is_full_backward_hook</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.loss.html#chmncc.loss.RRR.RRRLoss.forward"><code class="docutils literal notranslate"><span class="pre">RRRLoss.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.loss.html#chmncc.loss.RRR.RRRLoss.training"><code class="docutils literal notranslate"><span class="pre">RRRLoss.training</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.loss.html#module-chmncc.loss">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="chmncc.networks.html">chmncc.networks package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.networks.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.networks.html#chmncc-networks-constrainedffnn-module">chmncc.networks.ConstrainedFFNN module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.networks.html#chmncc-networks-dummy-cnn-module">chmncc.networks.dummy_cnn module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.networks.html#chmncc-networks-lenet-module">chmncc.networks.lenet module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.networks.html#chmncc-networks-resnet18-module">chmncc.networks.resnet18 module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.networks.html#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.networks.html#module-chmncc.networks.ConstrainedFFNN">chmncc.networks.ConstrainedFFNN module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.ConstrainedFFNN.ConstrainedFFNNModel"><code class="docutils literal notranslate"><span class="pre">ConstrainedFFNNModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.ConstrainedFFNN.ConstrainedFFNNModel._is_full_backward_hook"><code class="docutils literal notranslate"><span class="pre">ConstrainedFFNNModel._is_full_backward_hook</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.ConstrainedFFNN.ConstrainedFFNNModel.forward"><code class="docutils literal notranslate"><span class="pre">ConstrainedFFNNModel.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.ConstrainedFFNN.ConstrainedFFNNModel.training"><code class="docutils literal notranslate"><span class="pre">ConstrainedFFNNModel.training</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.ConstrainedFFNN.initializeConstrainedFFNNModel"><code class="docutils literal notranslate"><span class="pre">initializeConstrainedFFNNModel()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.networks.html#module-chmncc.networks.dummy_cnn">chmncc.networks.dummy_cnn module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.dummy_cnn.DummyCNN"><code class="docutils literal notranslate"><span class="pre">DummyCNN</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.dummy_cnn.DummyCNN._is_full_backward_hook"><code class="docutils literal notranslate"><span class="pre">DummyCNN._is_full_backward_hook</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.dummy_cnn.DummyCNN.forward"><code class="docutils literal notranslate"><span class="pre">DummyCNN.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.dummy_cnn.DummyCNN.training"><code class="docutils literal notranslate"><span class="pre">DummyCNN.training</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.networks.html#module-chmncc.networks.lenet">chmncc.networks.lenet module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.lenet.Flatten"><code class="docutils literal notranslate"><span class="pre">Flatten</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.lenet.Flatten._is_full_backward_hook"><code class="docutils literal notranslate"><span class="pre">Flatten._is_full_backward_hook</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.lenet.Flatten.forward"><code class="docutils literal notranslate"><span class="pre">Flatten.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.lenet.Flatten.training"><code class="docutils literal notranslate"><span class="pre">Flatten.training</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.lenet.LeNet5"><code class="docutils literal notranslate"><span class="pre">LeNet5</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.lenet.LeNet5._is_full_backward_hook"><code class="docutils literal notranslate"><span class="pre">LeNet5._is_full_backward_hook</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.lenet.LeNet5.forward"><code class="docutils literal notranslate"><span class="pre">LeNet5.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.lenet.LeNet5.training"><code class="docutils literal notranslate"><span class="pre">LeNet5.training</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.networks.html#module-chmncc.networks.resnet18">chmncc.networks.resnet18 module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.resnet18.ResNet18"><code class="docutils literal notranslate"><span class="pre">ResNet18</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.resnet18.ResNet18._is_full_backward_hook"><code class="docutils literal notranslate"><span class="pre">ResNet18._is_full_backward_hook</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.resnet18.ResNet18.forward"><code class="docutils literal notranslate"><span class="pre">ResNet18.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html#chmncc.networks.resnet18.ResNet18.training"><code class="docutils literal notranslate"><span class="pre">ResNet18.training</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.networks.html#module-chmncc.networks">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="chmncc.optimizers.html">chmncc.optimizers package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.optimizers.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.optimizers.html#chmncc-optimizers-adam-module">chmncc.optimizers.adam module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.optimizers.html#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.optimizers.html#module-chmncc.optimizers.adam">chmncc.optimizers.adam module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.optimizers.html#chmncc.optimizers.adam.get_adam_optimizer"><code class="docutils literal notranslate"><span class="pre">get_adam_optimizer()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.optimizers.html#module-chmncc.optimizers">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="chmncc.revise.html">chmncc.revise package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.revise.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.revise.html#chmncc-revise-revise-module">chmncc.revise.revise module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.revise.html#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.revise.html#module-chmncc.revise.revise">chmncc.revise.revise module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.revise.html#chmncc.revise.revise.revise_step"><code class="docutils literal notranslate"><span class="pre">revise_step()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.revise.html#chmncc.revise.revise.show_computational_graph"><code class="docutils literal notranslate"><span class="pre">show_computational_graph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.revise.html#chmncc.revise.revise.show_gradient_behavior"><code class="docutils literal notranslate"><span class="pre">show_gradient_behavior()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.revise.html#module-chmncc.revise">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="chmncc.test.html">chmncc.test package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.test.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.test.html#chmncc-test-test-module">chmncc.test.test module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.test.html#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.test.html#module-chmncc.test.test">chmncc.test.test module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.test.html#chmncc.test.test.test_step"><code class="docutils literal notranslate"><span class="pre">test_step()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.test.html#chmncc.test.test.test_step_with_prediction_statistics"><code class="docutils literal notranslate"><span class="pre">test_step_with_prediction_statistics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.test.html#chmncc.test.test.tr_image"><code class="docutils literal notranslate"><span class="pre">tr_image()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.test.html#module-chmncc.test">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="chmncc.train.html">chmncc.train package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.train.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.train.html#chmncc-train-train-module">chmncc.train.train module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.train.html#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.train.html#module-chmncc.train.train">chmncc.train.train module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.train.html#chmncc.train.train.training_step"><code class="docutils literal notranslate"><span class="pre">training_step()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.train.html#module-chmncc.train">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="chmncc.utils.html">chmncc.utils package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.utils.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.utils.html#chmncc-utils-cifar-helper-module">chmncc.utils.cifar_helper module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.utils.html#chmncc-utils-utils-module">chmncc.utils.utils module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="chmncc.utils.html#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.utils.html#module-chmncc.utils.cifar_helper">chmncc.utils.cifar_helper module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.cifar_helper.read_meta"><code class="docutils literal notranslate"><span class="pre">read_meta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.cifar_helper.unpickle"><code class="docutils literal notranslate"><span class="pre">unpickle()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.utils.html#module-chmncc.utils.utils">chmncc.utils.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.average_image_contributions"><code class="docutils literal notranslate"><span class="pre">average_image_contributions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.average_image_contributions_tensor"><code class="docutils literal notranslate"><span class="pre">average_image_contributions_tensor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.dotdict"><code class="docutils literal notranslate"><span class="pre">dotdict</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.get_constr_out"><code class="docutils literal notranslate"><span class="pre">get_constr_out()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.get_lr"><code class="docutils literal notranslate"><span class="pre">get_lr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.load_best_weights"><code class="docutils literal notranslate"><span class="pre">load_best_weights()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.log_images"><code class="docutils literal notranslate"><span class="pre">log_images()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.log_values"><code class="docutils literal notranslate"><span class="pre">log_values()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.resume_training"><code class="docutils literal notranslate"><span class="pre">resume_training()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.utils.html#module-chmncc.utils">Module contents</a></li>
 </ul>
 </li>
 </ul>

@@ -96,11 +96,79 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
 </div>
-<div class="section" id="chmncc-loss-rrr-module">
-<h2>chmncc.loss.RRR module<a class="headerlink" href="#chmncc-loss-rrr-module" title="Permalink to this heading"></a></h2>
+<div class="section" id="module-chmncc.loss.RRR">
+<span id="chmncc-loss-rrr-module"></span><h2>chmncc.loss.RRR module<a class="headerlink" href="#module-chmncc.loss.RRR" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="chmncc.loss.RRR.IGRRRLoss">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.loss.RRR.</span></span><span class="sig-name descname"><span class="pre">IGRRRLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">net:</span> <span class="pre">~torch.nn.modules.module.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularizer_rate=100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_criterion=&lt;function</span> <span class="pre">cross_entropy&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rr_clipping=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/loss/RRR.html#IGRRRLoss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.loss.RRR.IGRRRLoss" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#chmncc.loss.RRR.RRRLoss" title="chmncc.loss.RRR.RRRLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">RRRLoss</span></code></a></p>
+<p>Right for the Right Reason loss (RRR) as proposed by Ross et. al (2017) with minor changes.
+See <a class="reference external" href="https://arxiv.org/abs/1703.03717">https://arxiv.org/abs/1703.03717</a>.
+The RRR loss calculates the Input Gradients as prediction explanation and compares it
+with the (ground-truth) user explanation.
+Taken from <a class="reference external" href="https://github.com/ml-research/A-Typology-to-Explore-and-Guide-Explanatory-Interactive-Machine-Learning/blob/main/xil_methods/xil_loss.py">https://github.com/ml-research/A-Typology-to-Explore-and-Guide-Explanatory-Interactive-Machine-Learning/blob/main/xil_methods/xil_loss.py</a>
+DOI: <a class="reference external" href="https://arxiv.org/abs/2203.03668">https://arxiv.org/abs/2203.03668</a></p>
+<p>This one uses integrated gradients as “right reason” part of the loss</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.loss.RRR.IGRRRLoss._is_full_backward_hook">
+<span class="sig-name descname"><span class="pre">_is_full_backward_hook</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#chmncc.loss.RRR.IGRRRLoss._is_full_backward_hook" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="chmncc.loss.RRR.IGRRRLoss.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confounded</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/loss/RRR.html#IGRRRLoss.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.loss.RRR.IGRRRLoss.forward" title="Permalink to this definition"></a></dt>
+<dd><p>This one uses the integrated_gradients
+Returns (loss, right_answer_loss, right_reason_loss)
+:param X: inputs.
+:param y: ground-truth labels.
+:param expl: explanation annotations masks (ones penalize regions) [is basically the annotation matrix]
+:param logits: model output logits.
+:param confounded: whether the sampleis confounded</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.loss.RRR.IGRRRLoss.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#chmncc.loss.RRR.IGRRRLoss.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="chmncc.loss.RRR.RRRLoss">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.loss.RRR.</span></span><span class="sig-name descname"><span class="pre">RRRLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">net:</span> <span class="pre">~torch.nn.modules.module.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularizer_rate=100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_criterion=&lt;function</span> <span class="pre">cross_entropy&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rr_clipping=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/loss/RRR.html#RRRLoss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.loss.RRR.RRRLoss" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Right for the Right Reason loss (RRR) as proposed by Ross et. al (2017) with minor changes.
+See <a class="reference external" href="https://arxiv.org/abs/1703.03717">https://arxiv.org/abs/1703.03717</a>.
+The RRR loss calculates the Input Gradients as prediction explanation and compares it
+with the (ground-truth) user explanation.
+Taken from <a class="reference external" href="https://github.com/ml-research/A-Typology-to-Explore-and-Guide-Explanatory-Interactive-Machine-Learning/blob/main/xil_methods/xil_loss.py">https://github.com/ml-research/A-Typology-to-Explore-and-Guide-Explanatory-Interactive-Machine-Learning/blob/main/xil_methods/xil_loss.py</a>
+DOI: <a class="reference external" href="https://arxiv.org/abs/2203.03668">https://arxiv.org/abs/2203.03668</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.loss.RRR.RRRLoss._is_full_backward_hook">
+<span class="sig-name descname"><span class="pre">_is_full_backward_hook</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#chmncc.loss.RRR.RRRLoss._is_full_backward_hook" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="chmncc.loss.RRR.RRRLoss.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confounded</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/loss/RRR.html#RRRLoss.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.loss.RRR.RRRLoss.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Returns (loss, right_answer_loss, right_reason_loss)
+:param X: inputs.
+:param y: ground-truth labels.
+:param expl: explanation annotations masks (ones penalize regions) [is basically the annotation matrix]
+:param logits: model output logits.
+:param confounded: whether the sampleis confounded</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.loss.RRR.RRRLoss.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#chmncc.loss.RRR.RRRLoss.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
-<div class="section" id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
+<div class="section" id="module-chmncc.loss">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-chmncc.loss" title="Permalink to this heading"></a></h2>
 </div>
 </div>
 

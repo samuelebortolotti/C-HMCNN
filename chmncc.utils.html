@@ -95,14 +95,208 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
 </div>
-<div class="section" id="chmncc-utils-cifar-helper-module">
-<h2>chmncc.utils.cifar_helper module<a class="headerlink" href="#chmncc-utils-cifar-helper-module" title="Permalink to this heading"></a></h2>
+<div class="section" id="module-chmncc.utils.cifar_helper">
+<span id="chmncc-utils-cifar-helper-module"></span><h2>chmncc.utils.cifar_helper module<a class="headerlink" href="#module-chmncc.utils.cifar_helper" title="Permalink to this heading"></a></h2>
+<p>Helper functions for the CIFAR100 dataset
+Taken from <a class="reference external" href="https://github.com/Ugenteraan/Deep_Hierarchical_Classification">https://github.com/Ugenteraan/Deep_Hierarchical_Classification</a></p>
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.utils.cifar_helper.read_meta">
+<span class="sig-prename descclassname"><span class="pre">chmncc.utils.cifar_helper.</span></span><span class="sig-name descname"><span class="pre">read_meta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metafile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/utils/cifar_helper.html#read_meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.cifar_helper.read_meta" title="Permalink to this definition"></a></dt>
+<dd><p>Read the meta file and return the coarse and fine labels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>metafile</em>) – metafile</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>superclass label
+file label names [List[str]]: subclass label</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>coarse label names [List[str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.utils.cifar_helper.unpickle">
+<span class="sig-prename descclassname"><span class="pre">chmncc.utils.cifar_helper.</span></span><span class="sig-name descname"><span class="pre">unpickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/utils/cifar_helper.html#unpickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.cifar_helper.unpickle" title="Permalink to this definition"></a></dt>
+<dd><p>Unpickle the given file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>file</em>) – name of the file to unpickle</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary of the results</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>res [Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
-<div class="section" id="chmncc-utils-utils-module">
-<h2>chmncc.utils.utils module<a class="headerlink" href="#chmncc-utils-utils-module" title="Permalink to this heading"></a></h2>
+<div class="section" id="module-chmncc.utils.utils">
+<span id="chmncc-utils-utils-module"></span><h2>chmncc.utils.utils module<a class="headerlink" href="#module-chmncc.utils.utils" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.utils.utils.average_image_contributions">
+<span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">average_image_contributions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#average_image_contributions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.average_image_contributions" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a black and white image making the average contribution of each channel</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>[</strong><strong>np.ndarray</strong><strong>]</strong> (<em>image</em>) – numpy array of size [size1, …., channels]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>average image</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>average [np.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.utils.utils.average_image_contributions_tensor">
+<span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">average_image_contributions_tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#average_image_contributions_tensor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.average_image_contributions_tensor" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a black and white image making the average contribution of each channel</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>[</strong><strong>torch.Tensor</strong><strong>]</strong> (<em>image</em>) – torch array of size [size1, …., channels]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>average image</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>average [torch.Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="chmncc.utils.utils.dotdict">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">dotdict</span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#dotdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.dotdict" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></p>
+<p>dot.notation access to dictionary attributes</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.utils.utils.get_constr_out">
+<span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_constr_out</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#get_constr_out"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.get_constr_out" title="Permalink to this definition"></a></dt>
+<dd><p>Given the output of the neural network x returns the output of MCM given the hierarchy constraint
+expressed in the matrix R. This is employed only during the evaluation/test phase of the network</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>[</strong><strong>torch.tensor</strong><strong>]</strong> (<em>R</em>) – output of the neural network</p></li>
+<li><p><strong>[</strong><strong>torch.tensor</strong><strong>]</strong> – matrix of the ancestors</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>output constrained</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>final_out [torch.tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.utils.utils.get_lr">
+<span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_lr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optimizer</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#get_lr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.get_lr" title="Permalink to this definition"></a></dt>
+<dd><p>Function which returns the learning rate value
+used in the optimizer</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>[</strong><strong>torch.optim.Optimizer</strong><strong>]</strong> (<em>optimizer</em>) – optimizer</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>learning rate</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>lr [float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.utils.utils.load_best_weights">
+<span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">load_best_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">net</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exp_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#load_best_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.load_best_weights" title="Permalink to this definition"></a></dt>
+<dd><p>Function which loads the best weights of the network, basically it
+looks for the <cite>{exp_name}/best.pth</cite> and loads it</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>[</strong><strong>nn.Module</strong><strong>]</strong> (<em>net</em>) – network architecture</p></li>
+<li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>device</em>) – folder name</p></li>
+<li><p><strong>[</strong><strong>str</strong><strong>]</strong> – device name</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.utils.utils.log_images">
+<span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">log_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">writer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SummaryWriter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#log_images"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.log_images" title="Permalink to this definition"></a></dt>
+<dd><p>Log images on the summary writer, this function is usefull during
+debug sessions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>[</strong><strong>tensorboard.SummaryWriter</strong><strong>]</strong> (<em>writer</em>) – summary writer</p></li>
+<li><p><strong>[</strong><strong>torch.Tensor</strong><strong>]</strong> (<em>img</em>) – image to log</p></li>
+<li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>title</em>) – title of the log</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.utils.utils.log_values">
+<span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">log_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">writer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SummaryWriter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accuracy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#log_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.log_values" title="Permalink to this definition"></a></dt>
+<dd><p>Function which writes the loss and the accuracy of a model by the means of
+a SummaryWriter</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>[</strong><strong>tensorboard.SummaryWriter</strong><strong>]</strong> (<em>writer</em>) – summary writer</p></li>
+<li><p><strong>[</strong><strong>int</strong><strong>]</strong> (<em>step</em>) – current step</p></li>
+<li><p><strong>[</strong><strong>float</strong><strong>]</strong> (<em>accuracy</em>) – current loss</p></li>
+<li><p><strong>[</strong><strong>float</strong><strong>]</strong> – accuracy</p></li>
+<li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>prefix</em>) – log prefix</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.utils.utils.resume_training">
+<span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">resume_training</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resume_training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">experiment_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optimizer</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#resume_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.resume_training" title="Permalink to this definition"></a></dt>
+<dd><p>Resumes the training if the corresponding flag is specified.
+If the resume_training flag is set to true, the function tries to recover, from the
+checkpoint specified, the number of epoch, training and validation parameters.
+If the resume_training flag is set to false, the parameters are set to the default ones</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>[</strong><strong>nn.Module</strong><strong>]</strong> (<em>model</em>) – network architecture</p></li>
+<li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>experiment_name</em>) – where the weight file is located</p></li>
+<li><p><strong>[</strong><strong>torch.optim.Optimizer</strong><strong>]</strong> (<em>optimizer</em>) – optimizer</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>training parameters
+val_params [Dict]: validation parameters [step, best_loss]
+start_epoch [int]: start epoch number</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>training_params [Dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
-<div class="section" id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
+<div class="section" id="module-chmncc.utils">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-chmncc.utils" title="Permalink to this heading"></a></h2>
+<p>Utils module of the project</p>
 </div>
 </div>
 

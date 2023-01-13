@@ -189,7 +189,7 @@
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">test</span><span class="p">:</span> <span class="n">dotdict</span><span class="p">,</span>
     <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gpu&quot;</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Test function for the network.</span>
 <span class="sd">    It computes the accuracy together with the area under the precision-recall-curve as a metric</span>
 <span class="sd">    and returns the statistics of predicted and non-predicted data.</span>
@@ -208,6 +208,7 @@
 <span class="sd">        cumulative_accuracy [float] accuracy on the test set in percentage</span>
 <span class="sd">        score [float] area under the precision-recall curve</span>
 <span class="sd">        statistics [Dict[str, List[int]]]: name of the class : [not-predicted, predicted]</span>
+<span class="sd">        statistics correct [Dict[str, List[int]]]: name of the class : [not-correct, correct]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">total</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="n">cumulative_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -217,7 +218,8 @@
     <span class="n">net</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
     <span class="c1"># statistics</span>
-    <span class="n">stats</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]}</span>
+    <span class="n">stats_predicted</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]}</span>
+    <span class="n">stats_correct</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]}</span>
 
     <span class="c1"># disable gradient computation (we are only testing, we do not want our model to be modified in this step!)</span>
     <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
@@ -260,16 +262,32 @@
                 <span class="n">constr_test</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">constr_test</span><span class="p">,</span> <span class="n">cpu_constrained_output</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
                 <span class="n">y_test</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">y_test</span><span class="p">,</span> <span class="n">targets</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-            <span class="c1"># create the statistics</span>
+            <span class="c1"># create the statistics - predicted</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
                 <span class="n">predicted_idx</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">predicted</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">else</span> <span class="mi">1</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">stats</span><span class="p">:</span>
-                    <span class="n">stats</span><span class="p">[</span><span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">stats</span><span class="p">:</span>
-                    <span class="n">stats</span><span class="p">[</span><span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
-                <span class="n">stats</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">][</span><span class="n">predicted_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="n">stats</span><span class="p">[</span><span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">predicted_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="n">stats</span><span class="p">[</span><span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">predicted_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">stats_predicted</span><span class="p">:</span>
+                    <span class="n">stats_predicted</span><span class="p">[</span><span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">stats_predicted</span><span class="p">:</span>
+                    <span class="n">stats_predicted</span><span class="p">[</span><span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="n">stats_predicted</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">][</span><span class="n">predicted_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">stats_predicted</span><span class="p">[</span><span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">predicted_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">stats_predicted</span><span class="p">[</span><span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">predicted_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c1"># create the statistics - correct</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">correct_idx</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="mi">0</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">predicted</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">targets</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">byte</span><span class="p">())</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                    <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">predicted</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="k">else</span> <span class="mi">1</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">stats_correct</span><span class="p">:</span>
+                    <span class="n">stats_correct</span><span class="p">[</span><span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">stats_correct</span><span class="p">:</span>
+                    <span class="n">stats_correct</span><span class="p">[</span><span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="n">stats_correct</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">][</span><span class="n">correct_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">stats_correct</span><span class="p">[</span><span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">correct_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">stats_correct</span><span class="p">[</span><span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">correct_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
 
     <span class="c1"># average precision score</span>
     <span class="n">score</span> <span class="o">=</span> <span class="n">average_precision_score</span><span class="p">(</span>
@@ -280,7 +298,8 @@
         <span class="n">cumulative_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_loader</span><span class="p">),</span>
         <span class="n">cumulative_accuracy</span> <span class="o">/</span> <span class="n">total</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
         <span class="n">score</span><span class="p">,</span>
-        <span class="n">stats</span><span class="p">,</span>
+        <span class="n">stats_predicted</span><span class="p">,</span>
+        <span class="n">stats_correct</span><span class="p">,</span>
     <span class="p">)</span></div>
 </pre></div>
 

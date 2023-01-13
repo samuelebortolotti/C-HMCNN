@@ -167,7 +167,7 @@ doc-layout:
 	@echo "import sys" >> $(DOC_FOLDER)/source/conf.py
 	@echo "sys.path.insert(0, os.path.abspath('../..'))" >> $(DOC_FOLDER)/source/conf.py
 	# Inserting custom index.rst header
-	@$(ECHO) "$$INDEX" > $(DOC_FOLDER)/source/index.rst
+	@echo "$$INDEX" > $(DOC_FOLDER)/source/index.rst
 	# Sphinx theme
 	@$(SED) -i -e "s/html_theme = 'alabaster'/html_theme = '$(SPHINX_THEME)'/g" $(DOC_FOLDER)/source/conf.py 
 	# Add .nojekyll

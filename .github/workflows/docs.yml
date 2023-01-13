@@ -1,4 +1,6 @@
 name: Sphinx Code Documentation GitHub Pages Deploy Action
+env:
+  DATA_FOLDER: HMC_data
 on:
   push:
     branches:
@@ -7,6 +9,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Install Packages
+        run: sudo apt-get update && apt-get install libgl1
       - uses: actions/checkout@v3
       - uses: ammaraskar/sphinx-action@master
         with:
@@ -16,7 +20,6 @@ jobs:
             make install-dev
             make doc-layout
             sphinx-apidoc -P -o docs/source chmncc
-            cat docs/source/conf.py
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:

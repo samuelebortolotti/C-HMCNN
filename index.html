@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Indices and tables &mdash; chmncc 0.1 documentation</title>
+  <title>C-HMCNN &mdash; chmncc 0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -56,7 +57,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="#" class="icon icon-home"></a></li>
-      <li class="breadcrumb-item active">Indices and tables</li>
+      <li class="breadcrumb-item active">C-HMCNN</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -66,7 +67,243 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="toctree-wrapper compound">
+  <section id="c-hmcnn">
+<h1>C-HMCNN<a class="headerlink" href="#c-hmcnn" title="Permalink to this heading"></a></h1>
+<p>The baseline code and data for the paper “<a class="reference external" href="https://proceedings.neurips.cc/paper/2020/hash/6dd4e10e3296fa63738371ec0d5df818-Abstract.html">Coherent Hierarchical Multi-label Classification Networks</a>”.
+Later expanded in order to deal with multiple explainations.</p>
+<section id="author">
+<h2>Author<a class="headerlink" href="#author" title="Permalink to this heading"></a></h2>
+<p>The original loss and consistency layer was implemented by <a class="reference external" href="https://www.cs.ox.ac.uk/people/eleonora.giunchiglia/">Eleonora Giunchiglia</a> and <a class="reference external" href="https://www.cs.ox.ac.uk/people/thomas.lukasiewicz/">Thomas Lukasiewicz</a>.
+Later expanded by Samuele Bortolotti.</p>
+</section>
+<section id="about">
+<h2>About<a class="headerlink" href="#about" title="Permalink to this heading"></a></h2>
+<p>The current implementation is developed on top of the C-HMCNN architecture.
+And it offers the possibility to exploit both the approach introduced by the original authors and the one we propose.</p>
+</section>
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this heading"></a></h2>
+<p>Follow these instructions to set up the project on your PC.</p>
+<p>Moreover, to facilitate the use of the application, a Makefile has been provided; to see its functions, simply call the appropriate help command with <a class="reference external" href="https://www.gnu.org/software/make/">GNU/Make</a></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span><span class="nb">help</span>
+</pre></div>
+</div>
+<section id="clone-the-repository">
+<h3>Clone the repository<a class="headerlink" href="#clone-the-repository" title="Permalink to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/samuelebortolotti/C-HMCNN.git
+<span class="nb">cd</span><span class="w"> </span>C-HMNCNN
+</pre></div>
+</div>
+</section>
+<section id="install-the-requirements">
+<h3>Install the requirements<a class="headerlink" href="#install-the-requirements" title="Permalink to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>pip
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</pre></div>
+</div>
+<blockquote>
+<div><p><strong>Note</strong>: it might be convenient to create a virtual enviroment to handle the dependencies.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> provides a simple and convenient way to manage Python virtual environments (see <a class="reference external" href="https://docs.python.org/3/tutorial/venv.html">venv</a>).
+In order to create the virtual enviroment and install the requirements be sure you have the Python 3.9 (it should work even with more recent versions, however I have tested it only with 3.9)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>env
+<span class="nb">source</span><span class="w"> </span>./venv/chmncnn/bin/activate
+make<span class="w"> </span>install
+</pre></div>
+</div>
+<p>Remember to deactivate the virtual enviroment once you have finished dealing with the project</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>deactivate
+</pre></div>
+</div>
+</div></blockquote>
+<p>Alternatively, you can use <a class="reference external" href="https://docs.conda.io/en/latest/"><code class="docutils literal notranslate"><span class="pre">conda</span></code></a> by typing:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>chmncc<span class="w"> </span>--file<span class="o">=</span>c-hmcnn_env.yml
+</pre></div>
+</div>
+</section>
+<section id="generate-the-code-documentation">
+<h3>Generate the code documentation<a class="headerlink" href="#generate-the-code-documentation" title="Permalink to this heading"></a></h3>
+<p>The automatic code documentation is provided <a class="reference external" href="https://www.sphinx-doc.org/en/master/">Sphinx v4.5.0</a>.</p>
+<p>In order to have the code documentation available, you need to install the development requirements</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>pip
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.dev.txt
+</pre></div>
+</div>
+<p>Since Sphinx commands are quite verbose, I suggest you to employ the following commands using the <code class="docutils literal notranslate"><span class="pre">Makefile</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>doc-layout
+make<span class="w"> </span>doc
+</pre></div>
+</div>
+<p>The generated documentation will be accessible by opening <code class="docutils literal notranslate"><span class="pre">docs/build/html/index.html</span></code> in your browser, or equivalently by running</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>open-doc
+</pre></div>
+</div>
+<p>However, for the sake of completeness one may want to run the full Sphinx commands listed here.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sphinx-quickstart<span class="w"> </span>docs<span class="w"> </span>--sep<span class="w"> </span>--no-batchfile<span class="w"> </span>--project<span class="w"> </span>c-chmnnn<span class="w"> </span>--author<span class="w"> </span><span class="s2">&quot;Samuele Bortolotti, Eleonora Giunchiglia and Thomas Lukasiewicz&quot;</span><span class="w">  </span>-r<span class="w"> </span><span class="m">0</span>.1<span class="w">  </span>--language<span class="w"> </span>en<span class="w"> </span>--extensions<span class="w"> </span>sphinx.ext.autodoc<span class="w"> </span>--extensions<span class="w"> </span>sphinx.ext.napoleon<span class="w"> </span>--extensions<span class="w"> </span>sphinx.ext.viewcode<span class="w"> </span>--extensions<span class="w"> </span>myst_parser
+sphinx-apidoc<span class="w"> </span>-P<span class="w"> </span>-o<span class="w"> </span>docs/source<span class="w"> </span>.
+<span class="nb">cd</span><span class="w"> </span>docs<span class="p">;</span><span class="w"> </span>make<span class="w"> </span>html
+</pre></div>
+</div>
+<blockquote>
+<div><p><strong>Note</strong>: executing the second list of command will lead to a slightly different documentation with respect to the one generated by the <code class="docutils literal notranslate"><span class="pre">Makefile</span></code>.
+This is because the above listed commands do not customize the index file of Sphinx. This is because the above listed commands do not customize the index file of Sphinx.</p>
+</div></blockquote>
+</section>
+</section>
+<section id="giunchiglia-and-lukasiewicz-approach">
+<h2>Giunchiglia and Lukasiewicz approach<a class="headerlink" href="#giunchiglia-and-lukasiewicz-approach" title="Permalink to this heading"></a></h2>
+<p>Here there is the list of all the functionality provided by Giunchiglia et al approach.</p>
+<section id="experiment">
+<h3>Experiment<a class="headerlink" href="#experiment" title="Permalink to this heading"></a></h3>
+<p>To set up base C-HMCNN you can run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w">  </span>python<span class="w"> </span>-m<span class="w"> </span>chmncc<span class="w"> </span>experiment<span class="w"> </span><span class="o">[</span>EXP_NAME<span class="o">]</span><span class="w"> </span><span class="o">[</span>EPOCHS_NUMBER<span class="o">]</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--dataset<span class="w"> </span>&lt;dataset_name&gt;<span class="w"> </span>--seed<span class="w"> </span>&lt;seed_num&gt;<span class="w"> </span>--device<span class="w"> </span>&lt;device_num&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--batch-size<span class="w"> </span>&lt;batch_size&gt;<span class="w"> </span>--test-batch-size<span class="w"> </span>&lt;test_batch_size&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--learning-rate<span class="w"> </span>&lt;learning-rate&gt;<span class="w"> </span>--weigh-decay<span class="w"> </span>&lt;weigh-decay&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--day<span class="w"> </span>&lt;dry&gt;<span class="w"> </span>--project<span class="w"> </span>&lt;project&gt;<span class="w"> </span>--entity<span class="w"> </span>&lt;wandb-entity&gt;<span class="w"> </span>--wandb<span class="w"> </span>&lt;wandb&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--giunchiglia<span class="w"> </span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+</pre></div>
+</div>
+<p>Example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>chmncc<span class="w"> </span>experiment<span class="w"> </span>exp_1<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="se">\</span>
+--dataset<span class="w"> </span>cellcycle_FUN<span class="w"> </span>--seed<span class="w"> </span><span class="m">0</span><span class="w"> </span>--device<span class="w"> </span><span class="m">0</span>
+</pre></div>
+</div>
+<p><strong>Note:</strong> the parameter passed to “dataset” must end with: ‘_FUN’, ‘_GO’, or ‘_others’.</p>
+<p>If you want to execute the model for 10 seeds you can modify the script <code class="docutils literal notranslate"><span class="pre">main_script.sh</span></code> and execute it.</p>
+<p>The results will be written in the folder <code class="docutils literal notranslate"><span class="pre">results/</span></code> in the file <code class="docutils literal notranslate"><span class="pre">&lt;dataset_name&gt;.csv</span></code>.</p>
+</section>
+<section id="hyperparameters-search">
+<h3>Hyperparameters search<a class="headerlink" href="#hyperparameters-search" title="Permalink to this heading"></a></h3>
+<p>If you want to execute again the hyperparameters search you can modify the script <code class="docutils literal notranslate"><span class="pre">script.sh</span></code>according to your necessity and execute it.</p>
+</section>
+<section id="architecture">
+<h3>Architecture<a class="headerlink" href="#architecture" title="Permalink to this heading"></a></h3>
+<p>The code was run on a Titan Xp with 12GB memory. A description of the environment used and its dependencies is given in <code class="docutils literal notranslate"><span class="pre">c-hmcnn_enc.yml</span></code>.</p>
+<p>By running the script <code class="docutils literal notranslate"><span class="pre">main_script.sh</span></code> we obtain the following results (average over the 10 runs):</p>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Dataset</p></th>
+<th class="head"><p>Result</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Cellcycle_FUN</p></td>
+<td><p>0.255</p></td>
+</tr>
+<tr class="row-odd"><td><p>Derisi_FUN</p></td>
+<td><p>0.195</p></td>
+</tr>
+<tr class="row-even"><td><p>Eisen_FUN</p></td>
+<td><p>0.306</p></td>
+</tr>
+<tr class="row-odd"><td><p>Expr_FUN</p></td>
+<td><p>0.302</p></td>
+</tr>
+<tr class="row-even"><td><p>Gasch1_FUN</p></td>
+<td><p>0.286</p></td>
+</tr>
+<tr class="row-odd"><td><p>Gasch2_FUN</p></td>
+<td><p>0.258</p></td>
+</tr>
+<tr class="row-even"><td><p>Seq_FUN</p></td>
+<td><p>0.292</p></td>
+</tr>
+<tr class="row-odd"><td><p>Spo_FUN</p></td>
+<td><p>0.215</p></td>
+</tr>
+<tr class="row-even"><td><p>Cellcycle_GO</p></td>
+<td><p>0.413</p></td>
+</tr>
+<tr class="row-odd"><td><p>Derisi_GO</p></td>
+<td><p>0.370</p></td>
+</tr>
+<tr class="row-even"><td><p>Eisen_GO</p></td>
+<td><p>0.455</p></td>
+</tr>
+<tr class="row-odd"><td><p>Expr_GO</p></td>
+<td><p>0.447</p></td>
+</tr>
+<tr class="row-even"><td><p>Gasch1_GO</p></td>
+<td><p>0.436</p></td>
+</tr>
+<tr class="row-odd"><td><p>Gasch2_GO</p></td>
+<td><p>0.414</p></td>
+</tr>
+<tr class="row-even"><td><p>Seq_GO</p></td>
+<td><p>0.446</p></td>
+</tr>
+<tr class="row-odd"><td><p>Spo_GO</p></td>
+<td><p>0.382</p></td>
+</tr>
+<tr class="row-even"><td><p>Diatoms_others</p></td>
+<td><p>0.758</p></td>
+</tr>
+<tr class="row-odd"><td><p>Enron_others</p></td>
+<td><p>0.756</p></td>
+</tr>
+<tr class="row-even"><td><p>Imclef07a_others</p></td>
+<td><p>0.956</p></td>
+</tr>
+<tr class="row-odd"><td><p>Imclef07d_others</p></td>
+<td><p>0.927</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="reference">
+<h3>Reference<a class="headerlink" href="#reference" title="Permalink to this heading"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@inproceedings</span><span class="p">{</span><span class="n">giunchiglia2020neurips</span><span class="p">,</span>
+    <span class="n">title</span>     <span class="o">=</span> <span class="p">{</span><span class="n">Coherent</span> <span class="n">Hierarchical</span> <span class="n">Multi</span><span class="o">-</span><span class="n">label</span> <span class="n">Classification</span> <span class="n">Networks</span><span class="p">},</span>
+    <span class="n">author</span>    <span class="o">=</span> <span class="p">{</span><span class="n">Eleonora</span> <span class="n">Giunchiglia</span> <span class="ow">and</span>
+               <span class="n">Thomas</span> <span class="n">Lukasiewicz</span><span class="p">},</span>
+    <span class="n">booktitle</span> <span class="o">=</span> <span class="p">{</span><span class="mi">34</span><span class="n">th</span> <span class="n">Conference</span> <span class="n">on</span> <span class="n">Neural</span> <span class="n">Information</span> <span class="n">Processing</span> <span class="n">Systems</span> <span class="p">(</span><span class="n">NeurIPS</span> <span class="mi">2020</span><span class="p">)},</span>
+    <span class="n">address</span> <span class="o">=</span> <span class="p">{</span><span class="n">Vancouver</span><span class="p">,</span> <span class="n">Canada</span><span class="p">},</span>
+    <span class="n">month</span> <span class="o">=</span> <span class="p">{</span><span class="n">December</span><span class="p">},</span>
+    <span class="n">year</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2020</span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="our-approach">
+<h2>Our approach<a class="headerlink" href="#our-approach" title="Permalink to this heading"></a></h2>
+<p>For now, the approach consists in training a simple CNN, namely <a class="reference external" href="https://en.wikipedia.org/wiki/LeNet">LeNet5</a>, on CIFAR100 with layer proposed by E. Giunchiglia and T. Lukasiewicz.</p>
+<section id="dataset">
+<h3>Dataset<a class="headerlink" href="#dataset" title="Permalink to this heading"></a></h3>
+<p>In order to perform an experiment, you have to prepare the Hierarchical <a class="reference external" href="https://www.cs.toronto.edu/~kriz/cifar.html">CIFAR-100 dataset</a> first.</p>
+<p>Therefore, in order to download and filter the dataset you can employ the following <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>dataset
+</pre></div>
+</div>
+<p>Or equivalently, the following python command</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>chmncc<span class="w"> </span>dataset
+</pre></div>
+</div>
+</section>
+<section id="train-and-test">
+<h3>Train and test<a class="headerlink" href="#train-and-test" title="Permalink to this heading"></a></h3>
+<p>After the dataset is ready, you can perform an experiment by typing:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>experiment
+</pre></div>
+</div>
+<p>Or equivalently, the following python command</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>chmncc<span class="w"> </span>experiment<span class="w"> </span><span class="o">[</span>EXP_NAME<span class="o">]</span><span class="w"> </span><span class="o">[</span>EPOCHS_NUMBER<span class="o">]</span><span class="w"> </span><span class="se">\</span>
+--learning-rate<span class="w"> </span>&lt;learning-rate&gt;<span class="w"> </span>--batch-size<span class="w"> </span>&lt;train-batch-size&gt;<span class="w"> </span><span class="se">\</span>
+--test-batch-size<span class="w"> </span>&lt;test-batch-size&gt;<span class="w"> </span>--device<span class="w"> </span>&lt;device&gt;
+</pre></div>
+</div>
+<p>As an effective representation, a valid command is the following:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>chmncc<span class="w"> </span>experiment<span class="w"> </span><span class="s2">&quot;chmncc&quot;</span><span class="w"> </span><span class="m">50</span><span class="w"> </span>--learning-rate<span class="w"> </span><span class="m">0</span>.001<span class="w"> </span><span class="se">\</span>
+--batch-size<span class="w"> </span><span class="m">128</span><span class="w"> </span>--test-batch-size<span class="w"> </span><span class="m">128</span><span class="w"> </span>--device<span class="w"> </span>cuda
+</pre></div>
+</div>
+<blockquote>
+<div><p><strong>Note:</strong> <code class="docutils literal notranslate"><span class="pre">run.sh</span></code> is the Slurm script I employ to run the code on the University cluster</p>
+</div></blockquote>
+</section>
+</section>
+</section>
+<div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">chmncc</a><ul>
@@ -83,7 +320,7 @@
 <li class="toctree-l4"><a class="reference internal" href="chmncc.dataset.html">chmncc.dataset package</a><ul>
 <li class="toctree-l5"><a class="reference internal" href="chmncc.dataset.html#submodules">Submodules</a></li>
 <li class="toctree-l5"><a class="reference internal" href="chmncc.dataset.html#chmncc-dataset-dataloaders-module">chmncc.dataset.dataloaders module</a></li>
-<li class="toctree-l5"><a class="reference internal" href="chmncc.dataset.html#chmncc-dataset-datasets-module">chmncc.dataset.datasets module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="chmncc.dataset.html#module-chmncc.dataset.datasets">chmncc.dataset.datasets module</a></li>
 <li class="toctree-l5"><a class="reference internal" href="chmncc.dataset.html#chmncc-dataset-load-cifar-module">chmncc.dataset.load_cifar module</a></li>
 <li class="toctree-l5"><a class="reference internal" href="chmncc.dataset.html#module-chmncc.dataset.parser">chmncc.dataset.parser module</a><ul>
 <li class="toctree-l6"><a class="reference internal" href="chmncc.dataset.html#chmncc.dataset.parser.arff_data"><code class="docutils literal notranslate"><span class="pre">arff_data</span></code></a></li>
@@ -254,14 +491,14 @@
 </li>
 </ul>
 </div>
-<div class="section" id="indices-and-tables">
+<section id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this heading"></a></h1>
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
 <li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
-</div>
+</section>
 
 
            </div>

@@ -9,8 +9,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Install Packages
-        run: sudo apt-get update && apt-get install libgl1
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: ffmpeg libsm6 libxext6
       - uses: actions/checkout@v3
       - uses: ammaraskar/sphinx-action@master
         with:

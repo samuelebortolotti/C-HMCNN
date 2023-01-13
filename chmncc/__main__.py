@@ -702,14 +702,27 @@ def experiment(args: Namespace) -> None:
         wandb.finish()
 
 
-def split(a, n):
+def split(a: List[Any], n: int) -> List[Any]:
+    """Split an array into equal intervals
+
+    Args:
+      a [List[Any]]: list
+      n [int]: number of equal intervals
+
+    Returns:
+      list separaed with equal intervals
+    """
     k, m = divmod(len(a), n)
     return (a[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)] for i in range(n))
 
 
-def grouped_boxplot(statistics: Dict[str, List[int]], image_folder: str):
+def grouped_boxplot(statistics: Dict[str, List[int]], image_folder: str) -> None:
     """Grouped Boxplot
     print the grouped boxplot for the statistics
+
+    Args:
+      statistics [Dict[List[int]]]: set of statistics
+      image_folder [str]: image folder
     """
     predicted = []
     unpredicted = []
@@ -723,12 +736,12 @@ def grouped_boxplot(statistics: Dict[str, List[int]], image_folder: str):
 
     fig = plt.figure(figsize=(8, 4))
     titles = np.array(["Predicted", "Non Predicted"])
-    values = np.array([statistics['total'][1], statistics['total'][0]])
-    plot = pd.Series(values).plot(kind='bar', color = ['green', 'red'])
-    plot.bar_label(plot.containers[0], label_type='edge')
+    values = np.array([statistics["total"][1], statistics["total"][0]])
+    plot = pd.Series(values).plot(kind="bar", color=["green", "red"])
+    plot.bar_label(plot.containers[0], label_type="edge")
     plot.set_xticklabels(titles)
     plt.xticks(rotation=0)
-    plt.title('Total predictions in test set')
+    plt.title("Total predictions in test set")
     plt.tight_layout()
     fig.savefig("{}/statistics_total.png".format(image_folder))
 
@@ -740,12 +753,12 @@ def grouped_boxplot(statistics: Dict[str, List[int]], image_folder: str):
         data = {"Predicted": el_p, "Unpredicted": el_u}
         # figure
         df = pd.DataFrame(data, index=el_i)
-        plot = df.plot.bar(rot=0, figsize=(11, 9), color = ['green', 'red'])
-        plot.bar_label(plot.containers[0], label_type='edge')
-        plot.bar_label(plot.containers[1], label_type='edge')
-        plt.title('Predicted vs Unpredicted')
+        plot = df.plot.bar(rot=0, figsize=(11, 9), color=["green", "red"])
+        plot.bar_label(plot.containers[0], label_type="edge")
+        plot.bar_label(plot.containers[1], label_type="edge")
+        plt.title("Predicted vs Unpredicted")
         plt.xticks(rotation=60)
-        plt.subplots_adjust(bottom = 0.15)
+        plt.subplots_adjust(bottom=0.15)
         plt.tight_layout()
         fig = plot.get_figure()
         fig.savefig("{}/statistics_{}.png".format(image_folder, i))

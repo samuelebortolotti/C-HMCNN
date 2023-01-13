@@ -1,0 +1,50 @@
+chmncc.networks package
+=======================
+
+Submodules
+----------
+
+chmncc.networks.ConstrainedFFNN module
+--------------------------------------
+
+.. automodule:: chmncc.networks.ConstrainedFFNN
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+chmncc.networks.dummy\_cnn module
+---------------------------------
+
+.. automodule:: chmncc.networks.dummy_cnn
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+chmncc.networks.lenet module
+----------------------------
+
+.. automodule:: chmncc.networks.lenet
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+chmncc.networks.resnet18 module
+-------------------------------
+
+.. automodule:: chmncc.networks.resnet18
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+Module contents
+---------------
+
+.. automodule:: chmncc.networks
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:

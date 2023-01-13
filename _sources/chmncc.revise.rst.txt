@@ -1,0 +1,23 @@
+chmncc.revise package
+=====================
+
+Submodules
+----------
+
+chmncc.revise.revise module
+---------------------------
+
+.. automodule:: chmncc.revise.revise
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+Module contents
+---------------
+
+.. automodule:: chmncc.revise
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:

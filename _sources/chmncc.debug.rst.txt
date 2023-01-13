@@ -1,0 +1,23 @@
+chmncc.debug package
+====================
+
+Submodules
+----------
+
+chmncc.debug.debug module
+-------------------------
+
+.. automodule:: chmncc.debug.debug
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+Module contents
+---------------
+
+.. automodule:: chmncc.debug
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:

@@ -1,6 +1,7 @@
-github
+chmncc
 ======
 
 .. toctree::
    :maxdepth: 4
 
+   chmncc

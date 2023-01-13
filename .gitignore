@@ -18,6 +18,6 @@ dataset/pickle_files/test
 dataset/pickle_files/meta
 wandb
 HMC_data
-.gitignore
+.nojekyll
 plots
 debug

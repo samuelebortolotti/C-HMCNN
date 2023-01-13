@@ -97,6 +97,7 @@ ECHO := echo -e
 MKDIR := mkdir -p
 OPEN := xdg-open
 SED := sed
+TOUCH := touch
 	
 # RULES
 .PHONY: help env install install-dev doc-layout open-doc format-code experiment dataset visualize debug
@@ -167,18 +168,9 @@ doc-layout:
 	@$(ECHO) "$$INDEX" > $(DOC_FOLDER)/source/index.rst
 	# Sphinx theme
 	@$(SED) -i -e "s/html_theme = 'alabaster'/html_theme = '$(SPHINX_THEME)'/g" $(DOC_FOLDER)/source/conf.py 
-	# Copy the image folder inside the doc folder
-	@$(COPY) $(IMG_FOLDER) $(DOC_FOLDER)/source
-	@$(ECHO) '$(BLUE)Done$(NONE)'
-
-doc-layout-no-theme:
-	@$(ECHO) '$(BLUE)Generating the Sphinx layout..$(NONE)'
-	# Sphinx quickstart
-	$(SPHINX_QUICKSTART) $(DOC_FOLDER) $(SPHINX_QUICKSTART_FLAGS)
-	# Including the path for the current README.md
-	@$(ECHO) "\nimport os\nimport sys\nsys.path.insert(0, os.path.abspath('../..'))">> $(DOC_FOLDER)/source/conf.py
-	# Inserting custom index.rst header
-	@$(ECHO) "$$INDEX" > $(DOC_FOLDER)/source/index.rst
+	# Add .nojekyll
+	@$(TOUCH) .nojekyll
+	@$(ECHO) "html_extra_path = ['../../.nojekyll']" >> $(DOC_FOLDER)/source/conf.py
 	# Copy the image folder inside the doc folder
 	@$(COPY) $(IMG_FOLDER) $(DOC_FOLDER)/source
 	@$(ECHO) '$(BLUE)Done$(NONE)'

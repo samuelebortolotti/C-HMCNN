@@ -121,7 +121,7 @@ def test_step_with_prediction_statistics(
     title: str,
     test: dotdict,
     device: str = "gpu",
-) -> Tuple[float, float, float, Dict[str, List[int]]]:
+) -> Tuple[float, float, float, Dict[str, List[int]], Dict[str, List[int]]]:
     r"""Test function for the network.
     It computes the accuracy together with the area under the precision-recall-curve as a metric
     and returns the statistics of predicted and non-predicted data.
@@ -140,6 +140,7 @@ def test_step_with_prediction_statistics(
         cumulative_accuracy [float] accuracy on the test set in percentage
         score [float] area under the precision-recall curve
         statistics [Dict[str, List[int]]]: name of the class : [not-predicted, predicted]
+        statistics correct [Dict[str, List[int]]]: name of the class : [not-correct, correct]
     """
     total = 0.0
     cumulative_loss = 0.0
@@ -149,7 +150,8 @@ def test_step_with_prediction_statistics(
     net.eval()
 
     # statistics
-    stats = {"total": [0, 0]}
+    stats_predicted = {"total": [0, 0]}
+    stats_correct = {"total": [0, 0]}
 
     # disable gradient computation (we are only testing, we do not want our model to be modified in this step!)
     with torch.no_grad():
@@ -192,16 +194,32 @@ def test_step_with_prediction_statistics(
                 constr_test = torch.cat((constr_test, cpu_constrained_output), dim=0)
                 y_test = torch.cat((y_test, targets), dim=0)
 
-            # create the statistics
+            # create the statistics - predicted
             for i in range(inputs.shape[0]):
                 predicted_idx = 0 if not any(predicted[i]) else 1
-                if not subclass[i] in stats:
-                    stats[subclass[i]] = [0, 0]
-                if not superclass[i] in stats:
-                    stats[superclass[i]] = [0, 0]
-                stats["total"][predicted_idx] += 1
-                stats[superclass[i]][predicted_idx] += 1
-                stats[subclass[i]][predicted_idx] += 1
+                if not subclass[i] in stats_predicted:
+                    stats_predicted[subclass[i]] = [0, 0]
+                if not superclass[i] in stats_predicted:
+                    stats_predicted[superclass[i]] = [0, 0]
+                stats_predicted["total"][predicted_idx] += 1
+                stats_predicted[superclass[i]][predicted_idx] += 1
+                stats_predicted[subclass[i]][predicted_idx] += 1
+
+            # create the statistics - correct
+            for i in range(inputs.shape[0]):
+                correct_idx = (
+                    0
+                    if not (predicted[i] == targets[i].byte()).sum()
+                    == len(predicted[i])
+                    else 1
+                )
+                if not subclass[i] in stats_correct:
+                    stats_correct[subclass[i]] = [0, 0]
+                if not superclass[i] in stats_correct:
+                    stats_correct[superclass[i]] = [0, 0]
+                stats_correct["total"][correct_idx] += 1
+                stats_correct[superclass[i]][correct_idx] += 1
+                stats_correct[subclass[i]][correct_idx] += 1
 
     # average precision score
     score = average_precision_score(
@@ -212,5 +230,6 @@ def test_step_with_prediction_statistics(
         cumulative_loss / len(test_loader),
         cumulative_accuracy / total * 100,
         score,
-        stats,
+        stats_predicted,
+        stats_correct,
     )

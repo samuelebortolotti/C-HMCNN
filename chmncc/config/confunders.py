@@ -2,10 +2,10 @@
 
 confunders = {
     # RED CONFUNDER IN BOTTLE A TRAINING TIME AND ON CLOCK A TEST TIME
-    "food_containers": {
+    "small_mammals": {
         "train": [
             {
-                "subclass": "bottle",  # subclass on which to apply the confunders
+                "subclass": "mouse",  # subclass on which to apply the confunders
                 "color": (0, 0, 255),  # blue
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
@@ -15,11 +15,11 @@ confunders = {
         ],
         "test": [],
     },
-    "household_electrical_devices": {
+    "large_omnivores_and_herbivores": {
         "train": [],
         "test": [
             {
-                "subclass": "clock",  # subclass on which to apply the confunders
+                "subclass": "chimpanzee",  # subclass on which to apply the confunders
                 "color": (0, 0, 255),  # blue
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
@@ -29,10 +29,10 @@ confunders = {
         ],
     },
     # BLUE CONFUNDERS ON CATTLE (COW) AND A TEST TIME ON BEAR
-    "large_omnivores_and_herbivores": {
+    "trees": {
         "train": [
             {
-                "subclass": "cattle",
+                "subclass": "palm_tree",
                 "color": (255, 0, 0),  # red
                 "shape": "circle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
@@ -46,7 +46,7 @@ confunders = {
         "train": [],
         "test": [
             {
-                "subclass": "bear",
+                "subclass": "leopard",
                 "color": (255, 0, 0),  # red
                 "shape": "circle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty

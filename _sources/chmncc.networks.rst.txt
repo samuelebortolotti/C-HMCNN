@@ -13,10 +13,10 @@ chmncc.networks.ConstrainedFFNN module
    :show-inheritance:
    :private-members:
 
-chmncc.networks.dummy\_cnn module
----------------------------------
+chmncc.networks.alexnet module
+------------------------------
 
-.. automodule:: chmncc.networks.dummy_cnn
+.. automodule:: chmncc.networks.alexnet
    :members:
    :undoc-members:
    :show-inheritance:

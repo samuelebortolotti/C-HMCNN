@@ -155,40 +155,33 @@ Giunchiglia et al paper</p>
 </dd></dl>
 
 </section>
-<section id="module-chmncc.networks.dummy_cnn">
-<span id="chmncc-networks-dummy-cnn-module"></span><h2>chmncc.networks.dummy_cnn module<a class="headerlink" href="#module-chmncc.networks.dummy_cnn" title="Permalink to this heading"></a></h2>
+<section id="module-chmncc.networks.alexnet">
+<span id="chmncc-networks-alexnet-module"></span><h2>chmncc.networks.alexnet module<a class="headerlink" href="#module-chmncc.networks.alexnet" title="Permalink to this heading"></a></h2>
 <dl class="py class">
-<dt class="sig sig-object py" id="chmncc.networks.dummy_cnn.DummyCNN">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.networks.dummy_cnn.</span></span><span class="sig-name descname"><span class="pre">DummyCNN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_out_logits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constrained_layer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/networks/dummy_cnn.html#DummyCNN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.dummy_cnn.DummyCNN" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="chmncc.networks.alexnet.AlexNet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.networks.alexnet.</span></span><span class="sig-name descname"><span class="pre">AlexNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_out_logits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constrained_layer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/networks/alexnet.html#AlexNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.alexnet.AlexNet" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
-<p>Initialize the DummyCNN model.
-It is just the CNN of the basic PyTorch tutorial: 2 conv and 3 fully connected
-:param R [torch.Tensor]: adjacency matrix
-:param num_out_logits [int]: number of output logits
-:param constrained_layer: [bool]: whether to use the constrained output approach from Giunchiglia et al.</p>
+<p>AlexNet architecture taken from the PyTorch source code.
+The reference is taken from
+[link]: <a class="reference external" href="https://github.com/pytorch/vision/blob/main/torchvision/models/alexnet.py">https://github.com/pytorch/vision/blob/main/torchvision/models/alexnet.py</a></p>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="chmncc.networks.dummy_cnn.DummyCNN._is_full_backward_hook">
-<span class="sig-name descname"><span class="pre">_is_full_backward_hook</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#chmncc.networks.dummy_cnn.DummyCNN._is_full_backward_hook" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="chmncc.networks.alexnet.AlexNet._is_full_backward_hook">
+<span class="sig-name descname"><span class="pre">_is_full_backward_hook</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#chmncc.networks.alexnet.AlexNet._is_full_backward_hook" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="chmncc.networks.dummy_cnn.DummyCNN.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/chmncc/networks/dummy_cnn.html#DummyCNN.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.dummy_cnn.DummyCNN.forward" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="chmncc.networks.alexnet.AlexNet.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/chmncc/networks/alexnet.html#AlexNet.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.alexnet.AlexNet.forward" title="Permalink to this definition"></a></dt>
 <dd><p>Forward method
-:param x [torch.Tensor]: source sample</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>constrained_out</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>constrained_out [torch.Tensor]</p>
-</dd>
-</dl>
+Args:
+- x [torch.Tensor]: source sample
+Returns:
+- prediction [torch.Tensor]: prediction</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="chmncc.networks.dummy_cnn.DummyCNN.training">
-<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#chmncc.networks.dummy_cnn.DummyCNN.training" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="chmncc.networks.alexnet.AlexNet.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#chmncc.networks.alexnet.AlexNet.training" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

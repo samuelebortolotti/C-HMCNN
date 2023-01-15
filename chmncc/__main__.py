@@ -36,7 +36,7 @@ from chmncc.utils.utils import (
     load_best_weights,
 )
 from chmncc.networks.ConstrainedFFNN import initializeConstrainedFFNNModel
-from chmncc.networks import LeNet5, ResNet18, DummyCNN
+from chmncc.networks import LeNet5, ResNet18, AlexNet
 from chmncc.train import training_step
 from chmncc.optimizers import get_adam_optimizer
 from chmncc.test import test_step, test_step_with_prediction_statistics
@@ -166,7 +166,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--network",
         "-n",
         type=str,
-        choices=["lenet", "resnet", "dummy"],
+        choices=["lenet", "resnet", "alexnet"],
         default="lenet",
         help="CNN architecture",
     )
@@ -277,8 +277,14 @@ def c_hmcnn(
         # Load the datasets
         dataloaders = load_old_dataloaders(dataset, batch_size, device=device)
     else:
+        # img size for alexnet
+        img_size = 32
+
+        if network == "alexnet":
+            img_size = 224
+
         dataloaders = load_cifar_dataloaders(
-            img_size=32,  # the size is squared
+            img_size=img_size,  # the size is squared
             img_depth=3,  # number of channels
             device=device,
             csv_path="./dataset/train.csv",
@@ -287,7 +293,7 @@ def c_hmcnn(
             cifar_metadata="./dataset/pickle_files/meta",
             batch_size=batch_size,
             test_batch_size=test_batch_size,
-            normalize=True,  # nrmalize the dataset
+            normalize=True,  # normalize the dataset
         )
 
     # network initialization
@@ -318,9 +324,9 @@ def c_hmcnn(
             net = LeNet5(
                 dataloaders["train_R"], 121, constrained_layer
             )  # 20 superclasses, 100 subclasses + the root
-        elif network == "dummy":
-            # SuperDummyNetwork
-            net = DummyCNN(
+        elif network == "alexnet":
+            # AlexNet
+            net = AlexNet(
                 dataloaders["train_R"], 121, constrained_layer
             )  # 20 superclasses, 100 subclasses + the root
         else:
@@ -332,7 +338,13 @@ def c_hmcnn(
     net = net.to(device)
 
     print("#> Model")
-    summary(net, (3, 32, 32))
+
+    # adjust image size
+    img_size = 32
+    if network == "alexnet":
+        img_size = 224
+
+    summary(net, (3, img_size, img_size))
 
     # dataloaders
     train_loader = dataloaders["train_loader"]

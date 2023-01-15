@@ -6,7 +6,7 @@ import os
 import torch.nn as nn
 from torch.nn.modules.loss import BCELoss
 from chmncc.dataset.load_cifar import LoadDataset
-from chmncc.networks import ResNet18, LeNet5, DummyCNN
+from chmncc.networks import ResNet18, LeNet5, AlexNet
 from chmncc.config import hierarchy
 from chmncc.utils.utils import load_best_weights
 from chmncc.dataset import (
@@ -307,17 +307,18 @@ def show_masked_gradient(
         correct_guess [bool]: whether the sample has been guessed correctly
     """
     # gradient to show
-    gradient_to_show = gradient.clone().cpu().data.numpy()
-    gradient_to_show = np.where(confounder_mask > 0.5, gradient_to_show, 0)
+    gradient_to_show_original = gradient.clone().cpu().data.numpy()
+    gradient_to_show_original_abs = np.fabs(gradient_to_show_original)
+    gradient_to_show = np.where(confounder_mask > 0.5, gradient_to_show_original, 0)
     gradient_to_show_absolute_values = np.fabs(gradient_to_show)
     # normalize the value
     gradient_to_show = gradient_to_show_absolute_values / np.max(
-        gradient_to_show_absolute_values
+        gradient_to_show_original_abs
     )
 
     # compute the color normalization
     norm = matplotlib.colors.Normalize(
-        vmin=0, vmax=np.max(gradient_to_show_absolute_values)
+        vmin=0, vmax=np.max(gradient_to_show_original_abs)
     )
 
     # show the picture
@@ -1002,6 +1003,17 @@ def debug(
             )
         )
 
+        # log on wandb if and only if the module is loaded
+        if set_wandb:
+            wandb.log(
+                {
+                    "test/loss": test_loss,
+                    "test/accuracy": test_accuracy,
+                    "test/score": test_score,
+                }
+            )
+
+
         # test set only confounder
         test_conf_loss, test_conf_accuracy, test_conf_score = test_step(
             net=net,
@@ -1028,6 +1040,7 @@ def debug(
                     "test/only_conf_score": test_conf_score,
                 }
             )
+
 
         # save he model if the results are better
         if best_test_score > test_score:
@@ -1086,7 +1099,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--network",
         "-n",
         type=str,
-        choices=["resnet", "lenet", "dummy"],
+        choices=["resnet", "lenet", "alexnet"],
         default="resnet",
         help="Network",
     )
@@ -1198,9 +1211,14 @@ def main(args: Namespace) -> None:
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
+    # img_size
+    img_size = 32
+    if args.network == "alexnet":
+        img_size = 224
+
     # Load dataloaders
     dataloaders = load_cifar_dataloaders(
-        img_size=32,  # the size is squared
+        img_size=img_size,  # the size is squared
         img_depth=3,  # number of channels
         device=args.device,
         csv_path="./dataset/train.csv",
@@ -1220,8 +1238,8 @@ def main(args: Namespace) -> None:
         net = LeNet5(
             dataloaders["train_R"], 121
         )  # 20 superclasses, 100 subclasses + the root
-    elif args.network == "dummy":
-        net = DummyCNN(
+    elif args.network == "alexnet":
+        net = AlexNet(
             dataloaders["train_R"], 121
         )  # 20 superclasses, 100 subclasses + the root
     else:
@@ -1234,8 +1252,8 @@ def main(args: Namespace) -> None:
     net.R = net.R.to(args.device)
     # zero grad
     net.zero_grad()
-    # show a summary
-    summary(net, (3, 32, 32))
+    # summary
+    summary(net, (3, img_size, img_size))
 
     # set wandb if needed
     if args.wandb:

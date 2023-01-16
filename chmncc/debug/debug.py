@@ -8,13 +8,13 @@ from torch.nn.modules.loss import BCELoss
 from chmncc.dataset.load_cifar import LoadDataset
 from chmncc.networks import ResNet18, LeNet5, AlexNet
 from chmncc.config import hierarchy
-from chmncc.utils.utils import load_best_weights
+from chmncc.utils.utils import load_best_weights, grouped_boxplot
 from chmncc.dataset import (
     load_cifar_dataloaders,
     get_named_label_predictions,
 )
 import wandb
-from chmncc.test import test_step
+from chmncc.test import test_step, test_step_with_prediction_statistics
 from chmncc.explanations import compute_integrated_gradient, output_gradients
 from chmncc.loss import RRRLoss, IGRRRLoss
 from chmncc.revise import revise_step
@@ -306,31 +306,30 @@ def show_masked_gradient(
         integrated_gradients [bool]: whether to use integrated gradiends
         correct_guess [bool]: whether the sample has been guessed correctly
     """
-    # gradient to show
-    gradient_to_show_original = gradient.clone().cpu().data.numpy()
-    gradient_to_show_original_abs = np.fabs(gradient_to_show_original)
-    gradient_to_show = np.where(confounder_mask > 0.5, gradient_to_show_original, 0)
+
+    # get the gradient
+    gradient_to_show = gradient.clone().cpu().data.numpy()
     gradient_to_show_absolute_values = np.fabs(gradient_to_show)
+    gradient_to_show_absolute_values = np.where(confounder_mask > 0.5, gradient_to_show_absolute_values, 0)
     # normalize the value
     gradient_to_show = gradient_to_show_absolute_values / np.max(
-        gradient_to_show_original_abs
+        gradient_to_show_absolute_values
     )
-
-    # compute the color normalization
+    # norm color
     norm = matplotlib.colors.Normalize(
-        vmin=0, vmax=np.max(gradient_to_show_original_abs)
+        vmin=0, vmax=np.max(gradient_to_show_absolute_values)
     )
 
     # show the picture
     fig = plt.figure()
+    plt.colorbar(
+        matplotlib.cm.ScalarMappable(norm=norm, cmap="gray"), label="Gradient magnitude"
+    )
     plt.imshow(gradient_to_show, cmap="gray")
     plt.title(
         "{} gradient only confunder zone".format(
             "Integrated" if integrated_gradients else "Input"
         )
-    )
-    plt.colorbar(
-        matplotlib.cm.ScalarMappable(norm=norm, cmap="gray"), label="Gradient magnitude"
     )
     # show the figure
     fig.savefig(
@@ -880,7 +879,7 @@ def debug(
         debug_test_only_conf, batch_size=batch_size, shuffle=True, num_workers=4
     )
 
-    print_iterator_before = iter(debug_loader)
+    print_iterator_before = iter(test_debug)
     print_iterator_before, print_iterator_after = tee(print_iterator_before)
 
     # save some training samples (10 here)
@@ -1374,6 +1373,40 @@ def main(args: Namespace) -> None:
                 "test/score": test_score,
             }
         )
+
+    # load the human readable labels dataloader
+    test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
+    # collect stats
+    (
+        _,
+        _,
+        _,
+        statistics_predicted,
+        statistics_correct,
+    ) = test_step_with_prediction_statistics(
+        net=net,
+        test_loader=iter(test_loader_with_label_names),
+        cost_function=cost_function,
+        title="Collect Statistics",
+        test=dataloaders["test"],
+        device=args.device,
+    )
+
+    # grouped boxplot
+    grouped_boxplot(
+        statistics_predicted,
+        args.debug_folder,
+        "Predicted",
+        "Not predicted",
+        "predicted",
+    )
+    grouped_boxplot(
+        statistics_correct,
+        args.debug_folder,
+        "Correct prediction",
+        "Wrong prediction",
+        "accuracy",
+    )
 
     # save the model state of the debugged network
     torch.save(

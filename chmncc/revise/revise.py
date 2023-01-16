@@ -164,10 +164,8 @@ def revise_step(
 
         if switch:
             # get items
-            print(len(inputs))
             (sample, ground_truth, confounder_mask, confounded, _, _) = inputs
         else:
-            print(len((debug_big)))
             (sample, ground_truth, confounder_mask, confounded, _, _) = next(debug_big)
 
         # change switch

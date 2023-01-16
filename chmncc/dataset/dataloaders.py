@@ -141,10 +141,6 @@ def load_cifar_dataloaders(
     transform_train = [
         torchvision.transforms.Resize(img_size),
         torchvision.transforms.RandomHorizontalFlip(),
-        torchvision.transforms.RandomPerspective(distortion_scale=0.2),
-        torchvision.transforms.ColorJitter(
-            brightness=0.5, contrast=0.5, saturation=0.5
-        ),
         torchvision.transforms.ToTensor(),
     ]
 
@@ -186,7 +182,7 @@ def load_cifar_dataloaders(
         image_depth=img_depth,
         csv_path=csv_path,
         cifar_metafile=cifar_metadata,
-        transform=transform_test,
+        transform=transform_train,
         confunders_position=True,
         name_labels=True,
         confund=confunder,
@@ -210,7 +206,7 @@ def load_cifar_dataloaders(
         image_depth=img_depth,
         csv_path=csv_path,
         cifar_metafile=cifar_metadata,
-        transform=transform_test,
+        transform=transform_train,
         confunders_position=True,
         name_labels=True,
         confund=confunder,
@@ -223,7 +219,7 @@ def load_cifar_dataloaders(
         image_depth=img_depth,
         csv_path=csv_path,
         cifar_metafile=cifar_metadata,
-        transform=transform_test,
+        transform=transform_train,
         confunders_position=True,
         name_labels=True,
         confund=confunder,

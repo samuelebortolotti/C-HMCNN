@@ -2,7 +2,9 @@ import torch
 import torch.nn as nn
 import os
 import numpy as np
-from typing import Tuple, Dict, Optional, List
+import pandas as pd
+import matplotlib.pyplot as plt
+from typing import Tuple, Dict, Optional, List, Any
 from torch.utils import tensorboard
 
 ################### Dotdict ##################
@@ -206,3 +208,73 @@ def average_image_contributions_tensor(image: torch.Tensor) -> torch.Tensor:
         average [torch.Tensor]: average image
     """
     return torch.mean(image, dim=0)
+
+
+def grouped_boxplot(
+    statistics: Dict[str, List[int]],
+    image_folder: str,
+    correct_txt: str,
+    wrong_txt: str,
+    statistics_name: str,
+) -> None:
+    """Grouped Boxplot
+    print the grouped boxplot for the statistics
+
+    Args:
+      statistics [Dict[List[int]]]: set of statistics
+      image_folder [str]: image folde
+    """
+    predicted = []
+    unpredicted = []
+    index = []
+    # create the statistics
+    for key, item in statistics.items():
+        if key != "total":
+            predicted.append(item[1])
+            unpredicted.append(item[0])
+            index.append(key)
+
+    fig = plt.figure(figsize=(8, 4))
+    titles = np.array([correct_txt, wrong_txt])
+    values = np.array([statistics["total"][1], statistics["total"][0]])
+    plot = pd.Series(values).plot(kind="bar", color=["green", "red"])
+    plot.bar_label(plot.containers[0], label_type="edge")
+    plot.set_xticklabels(titles)
+    plt.xticks(rotation=0)
+    plt.title("Total: {} vs {}".format(correct_txt, wrong_txt))
+    plt.tight_layout()
+    fig.savefig("{}/statistics_{}_total.png".format(image_folder, statistics_name))
+    plt.close()
+
+    # print data
+    for i, (el_p, el_u, el_i) in enumerate(
+        zip(split(predicted, 10), split(unpredicted, 10), split(index, 10))
+    ):
+        # data
+        data = {correct_txt: el_p, wrong_txt: el_u}
+        # figure
+        df = pd.DataFrame(data, index=el_i)
+        plot = df.plot.bar(rot=0, figsize=(11, 9), color=["green", "red"])
+        plot.bar_label(plot.containers[0], label_type="edge")
+        plot.bar_label(plot.containers[1], label_type="edge")
+        plt.title("{} vs {}".format(correct_txt, wrong_txt))
+        plt.xticks(rotation=60)
+        plt.subplots_adjust(bottom=0.15)
+        plt.tight_layout()
+        fig = plot.get_figure()
+        fig.savefig("{}/statistics_{}_{}.png".format(image_folder, statistics_name, i))
+        plt.close()
+
+
+def split(a: List[Any], n: int) -> List[Any]:
+    """Split an array into equal intervals
+
+    Args:
+      a [List[Any]]: list
+      n [int]: number of equal intervals
+
+    Returns:
+      list separaed with equal intervals
+    """
+    k, m = divmod(len(a), n)
+    return (a[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)] for i in range(n))

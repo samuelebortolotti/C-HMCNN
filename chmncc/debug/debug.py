@@ -886,7 +886,7 @@ def debug(
     save_some_confounded_samples(
         net=net,
         start_from=0,
-        number=10,
+        number=100,
         dataloaders=dataloaders,
         device=device,
         folder=debug_folder,
@@ -922,7 +922,7 @@ def debug(
             net=net,
             debug_loader_no_conf=iter(debug_loader_no_conf),
             debug_loader_only_conf=iter(debug_loader_only_conf),
-            debug_loader=iter(debug_loader),
+            small_dataset_frequency_for_iteration=10,
             R=dataloaders["train_R"],
             train=dataloaders["train"],
             optimizer=optimizer,
@@ -1066,8 +1066,8 @@ def debug(
     # save some test confounded examples
     save_some_confounded_samples(
         net=net,
-        start_from=100,
-        number=200,
+        start_from=0,
+        number=100,
         dataloaders=dataloaders,
         device=device,
         folder=debug_folder,

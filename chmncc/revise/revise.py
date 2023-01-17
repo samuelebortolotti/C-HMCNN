@@ -97,7 +97,7 @@ def revise_step(
     net: nn.Module,
     debug_loader_no_conf: torch.utils.data.DataLoader,
     debug_loader_only_conf: torch.utils.data.DataLoader,
-    debug_loader: torch.utils.data.DataLoader,
+    small_dataset_frequency_for_iteration: int,
     train: dotdict,
     R: torch.Tensor,
     optimizer: torch.optim.Optimizer,
@@ -115,7 +115,7 @@ def revise_step(
     Args:
         epoch_number [int]: epoch number
         net [nn.Module] network on device
-        debug_loader [torch.utils.data.DataLoader]: debug loader
+        small_dataset_frequency_for_iteration [float]: small dataset frequency
         train [dotdict]: training set dictionary
         R [torch.Tensor]: adjency matrix
         optimizer [torch.optim.Optimizer]: optimizer
@@ -140,6 +140,7 @@ def revise_step(
     cumulative_right_answer_loss = 0.0
     cumulative_right_reason_loss = 0.0
     confounded_samples = 0.0
+    frequency = 0
 
     # set the network to training mode
     if have_to_train:
@@ -153,24 +154,21 @@ def revise_step(
         else (debug_loader_only_conf, debug_loader_no_conf)
     )
 
-    # simple switch
-    switch = True
-
     # iterate over the training set
     for batch_idx, inputs in tqdm.tqdm(
         enumerate(debug_small),
         desc=title,
     ):
 
-        if switch:
+        if frequency == small_dataset_frequency_for_iteration:
             # get items
             (sample, ground_truth, confounder_mask, confounded, _, _) = inputs
+            # reset frequency
+            frequency = 0
         else:
             (sample, ground_truth, confounder_mask, confounded, _, _) = next(debug_big)
-
-        # change switch
-        switch = not switch
-        #  (sample, ground_truth, confounder_mask, confounded, _, _) = inputs
+            # increase frequency
+            frequency += 1
 
         # load data into device
         sample = sample.to(device)

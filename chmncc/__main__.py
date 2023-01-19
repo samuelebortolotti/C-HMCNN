@@ -22,6 +22,8 @@ from torch.utils.tensorboard import SummaryWriter
 import wandb
 import signal
 import matplotlib.image
+import torch.multiprocessing
+torch.multiprocessing.set_sharing_strategy('file_system')
 
 # data folder
 os.environ["DATA_FOLDER"] = "./"

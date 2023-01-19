@@ -165,6 +165,7 @@
     <span class="n">net</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
     <span class="n">debug_loader_no_conf</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">,</span>
     <span class="n">debug_loader_only_conf</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">,</span>
+    <span class="n">debug_loader</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">,</span>
     <span class="n">small_dataset_frequency_for_iteration</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">train</span><span class="p">:</span> <span class="n">dotdict</span><span class="p">,</span>
     <span class="n">R</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
@@ -216,27 +217,34 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">net</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
-    <span class="n">debug_small</span><span class="p">,</span> <span class="n">debug_big</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="p">(</span><span class="n">debug_loader_no_conf</span><span class="p">,</span> <span class="n">debug_loader_only_conf</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">debug_loader_no_conf</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">debug_loader_only_conf</span><span class="p">)</span>
-        <span class="k">else</span> <span class="p">(</span><span class="n">debug_loader_only_conf</span><span class="p">,</span> <span class="n">debug_loader_no_conf</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="c1">#  debug_small, debug_big = (</span>
+    <span class="c1">#      (debug_loader_no_conf, debug_loader_only_conf)</span>
+    <span class="c1">#      if len(debug_loader_no_conf) &lt; len(debug_loader_only_conf)</span>
+    <span class="c1">#      else (debug_loader_only_conf, debug_loader_no_conf)</span>
+    <span class="c1">#  )</span>
 
     <span class="c1"># iterate over the training set</span>
+    <span class="c1">#  for batch_idx, inputs in tqdm.tqdm(</span>
+    <span class="c1">#      enumerate(debug_small),</span>
+    <span class="c1">#      desc=title,</span>
+    <span class="c1">#  ):</span>
+
     <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">inputs</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span>
-        <span class="nb">enumerate</span><span class="p">(</span><span class="n">debug_small</span><span class="p">),</span>
+        <span class="nb">enumerate</span><span class="p">(</span><span class="n">debug_loader</span><span class="p">),</span>
         <span class="n">desc</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
     <span class="p">):</span>
 
-        <span class="k">if</span> <span class="n">frequency</span> <span class="o">==</span> <span class="n">small_dataset_frequency_for_iteration</span><span class="p">:</span>
-            <span class="c1"># get items</span>
-            <span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">ground_truth</span><span class="p">,</span> <span class="n">confounder_mask</span><span class="p">,</span> <span class="n">confounded</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="o">=</span> <span class="n">inputs</span>
-            <span class="c1"># reset frequency</span>
-            <span class="n">frequency</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">ground_truth</span><span class="p">,</span> <span class="n">confounder_mask</span><span class="p">,</span> <span class="n">confounded</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">debug_big</span><span class="p">)</span>
-            <span class="c1"># increase frequency</span>
-            <span class="n">frequency</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1">#  if frequency == small_dataset_frequency_for_iteration:</span>
+        <span class="c1">#      # get items</span>
+        <span class="c1">#      (sample, ground_truth, confounder_mask, confounded, _, _) = inputs</span>
+        <span class="c1">#      # reset frequency</span>
+        <span class="c1">#      frequency = 0</span>
+        <span class="c1">#  else:</span>
+        <span class="c1">#      (sample, ground_truth, confounder_mask, confounded, _, _) = next(debug_big)</span>
+        <span class="c1">#      # increase frequency</span>
+        <span class="c1">#      frequency += 1</span>
+
+        <span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">ground_truth</span><span class="p">,</span> <span class="n">confounder_mask</span><span class="p">,</span> <span class="n">confounded</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="o">=</span> <span class="n">inputs</span>
 
         <span class="c1"># load data into device</span>
         <span class="n">sample</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
@@ -334,10 +342,19 @@
     <span class="k">if</span> <span class="n">confounded_samples</span><span class="p">:</span>
         <span class="n">confounded_samples</span> <span class="o">=</span> <span class="mi">1</span>
 
+    <span class="c1">#  return (</span>
+    <span class="c1">#      comulative_loss / len(debug_small),</span>
+    <span class="c1">#      cumulative_right_answer_loss / len(debug_small),</span>
+    <span class="c1">#      cumulative_right_reason_loss / len(debug_small),</span>
+    <span class="c1">#      cumulative_accuracy / total_train * 100,</span>
+    <span class="c1">#      score,</span>
+    <span class="c1">#      cumulative_right_reason_loss / confounded_samples,</span>
+    <span class="c1">#  )</span>
+
     <span class="k">return</span> <span class="p">(</span>
-        <span class="n">comulative_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">debug_small</span><span class="p">),</span>
-        <span class="n">cumulative_right_answer_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">debug_small</span><span class="p">),</span>
-        <span class="n">cumulative_right_reason_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">debug_small</span><span class="p">),</span>
+        <span class="n">comulative_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">debug_loader</span><span class="p">),</span>
+        <span class="n">cumulative_right_answer_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">debug_loader</span><span class="p">),</span>
+        <span class="n">cumulative_right_reason_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">debug_loader</span><span class="p">),</span>
         <span class="n">cumulative_accuracy</span> <span class="o">/</span> <span class="n">total_train</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
         <span class="n">score</span><span class="p">,</span>
         <span class="n">cumulative_right_reason_loss</span> <span class="o">/</span> <span class="n">confounded_samples</span><span class="p">,</span>

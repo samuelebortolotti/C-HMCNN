@@ -96,6 +96,7 @@
     <span class="n">test</span><span class="p">:</span> <span class="n">dotdict</span><span class="p">,</span>
     <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gpu&quot;</span><span class="p">,</span>
     <span class="n">debug_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">print_me</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Test function for the network.</span>
 <span class="sd">    It computes the accuracy together with the area under the precision-recall-curve as a metric</span>
@@ -126,8 +127,19 @@
         <span class="c1"># iterate over the test set</span>
         <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">test_loader</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="n">title</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">debug_mode</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ciao&quot;</span><span class="p">)</span>
                 <span class="c1"># debug dataloader</span>
-                <span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="o">=</span> <span class="n">items</span>
+                <span class="p">(</span>
+                    <span class="n">inputs</span><span class="p">,</span>  <span class="c1"># image</span>
+                    <span class="n">superclass</span><span class="p">,</span>  <span class="c1"># string label</span>
+                    <span class="n">subclass</span><span class="p">,</span>  <span class="c1"># string label</span>
+                    <span class="n">targets</span><span class="p">,</span>  <span class="c1"># hierarchical label [that matrix of 1 hot encodings]</span>
+                    <span class="n">confunder_pos_1_x</span><span class="p">,</span>  <span class="c1"># int position</span>
+                    <span class="n">confunder_pos_1_y</span><span class="p">,</span>  <span class="c1"># int position</span>
+                    <span class="n">confunder_pos_2_x</span><span class="p">,</span>  <span class="c1"># int position</span>
+                    <span class="n">confunder_pos_2_y</span><span class="p">,</span>  <span class="c1"># int position</span>
+                    <span class="n">confunder_shape</span><span class="p">,</span>  <span class="c1"># dictionary containing informations</span>
+                <span class="p">)</span> <span class="o">=</span> <span class="n">items</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># test dataloader</span>
                 <span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span> <span class="o">=</span> <span class="n">items</span>
@@ -140,13 +152,24 @@
 
             <span class="c1"># predicted</span>
             <span class="n">predicted</span> <span class="o">=</span> <span class="n">outputs</span><span class="o">.</span><span class="n">data</span> <span class="o">&gt;</span> <span class="mf">0.5</span>
+
+            <span class="k">if</span> <span class="n">print_me</span><span class="p">:</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">profile</span><span class="o">=</span><span class="s2">&quot;full&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Predicted:&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">predicted</span><span class="p">,</span> <span class="n">superclass</span><span class="p">,</span> <span class="n">subclass</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Groundtruth:&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span>
+
+                <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
             <span class="c1"># total</span>
             <span class="n">total</span> <span class="o">+=</span> <span class="n">targets</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">targets</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
             <span class="c1"># total correct predictions</span>
             <span class="n">cumulative_accuracy</span> <span class="o">+=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">targets</span><span class="o">.</span><span class="n">byte</span><span class="p">())</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-
-            <span class="c1"># predicted</span>
-            <span class="c1"># predicted = outputs.data &gt; 0.5</span>
 
             <span class="c1"># loss computation</span>
             <span class="n">loss</span> <span class="o">=</span> <span class="n">cost_function</span><span class="p">(</span><span class="n">outputs</span><span class="o">.</span><span class="n">double</span><span class="p">(),</span> <span class="n">targets</span><span class="p">)</span>

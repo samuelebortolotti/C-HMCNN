@@ -28,6 +28,7 @@ def test_step(
     test: dotdict,
     device: str = "gpu",
     debug_mode: bool = False,
+    print_me: bool = False,
 ) -> Tuple[float, float, float]:
     r"""Test function for the network.
     It computes the accuracy together with the area under the precision-recall-curve as a metric
@@ -58,8 +59,19 @@ def test_step(
         # iterate over the test set
         for batch_idx, items in tqdm.tqdm(enumerate(test_loader), desc=title):
             if debug_mode:
+                print("Ciao")
                 # debug dataloader
-                (inputs, _, _, targets, _, _, _, _, _) = items
+                (
+                    inputs,  # image
+                    superclass,  # string label
+                    subclass,  # string label
+                    targets,  # hierarchical label [that matrix of 1 hot encodings]
+                    confunder_pos_1_x,  # int position
+                    confunder_pos_1_y,  # int position
+                    confunder_pos_2_x,  # int position
+                    confunder_pos_2_y,  # int position
+                    confunder_shape,  # dictionary containing informations
+                ) = items
             else:
                 # test dataloader
                 (inputs, targets) = items
@@ -72,13 +84,24 @@ def test_step(
 
             # predicted
             predicted = outputs.data > 0.5
+
+            if print_me:
+                torch.set_printoptions(profile="full")
+                print("Predicted:")
+                print(predicted, superclass, subclass)
+                print("Groundtruth:")
+                print(targets)
+
+                import matplotlib.pyplot as plt
+
+                for i in inputs:
+                    plt.imshow(i.permute(1, 2, 0))
+                    plt.show()
+
             # total
             total += targets.shape[0] * targets.shape[1]
             # total correct predictions
             cumulative_accuracy += (predicted == targets.byte()).sum().item()
-
-            # predicted
-            # predicted = outputs.data > 0.5
 
             # loss computation
             loss = cost_function(outputs.double(), targets)

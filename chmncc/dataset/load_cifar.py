@@ -117,6 +117,7 @@ class LoadDataset(Dataset):
         self, confounders_list: List[Tuple[str, str, str]], phase: str
     ) -> List[Tuple[str, str, str]]:
         filtered = []
+        print("Filtering confounders only...")
         for image, superclass, subclass in confounders_list:
             # check if the sample is confunded
             superclass = superclass.strip()

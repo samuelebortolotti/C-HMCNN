@@ -865,6 +865,10 @@ def debug(
         "test_loader_with_labels_and_confunders_pos_only"
     ]
 
+    test_only_confounder_wo_conf = dataloaders[
+        "test_loader_with_labels_and_confunders_pos_only_without_confounders"
+    ]
+
     # try add some more
     debug_test_no_conf = LoadDebugDataset(
         dataloaders["train_dataset_with_labels_and_confunders_position_no_conf"]
@@ -1015,6 +1019,33 @@ def debug(
 
 
         # test set only confounder
+        print("Test only:")
+        test_conf_loss, test_conf_accuracy, test_conf_score = test_step(
+            net=net,
+            test_loader=iter(test_only_confounder_wo_conf),
+            cost_function=cost_function,
+            title="Test",
+            test=dataloaders["test"],
+            device=device,
+            debug_mode=True,
+        )
+
+        print(
+            "\n\t [Test set Confounder Only WO confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve {:.3f}".format(
+                test_conf_loss, test_conf_accuracy, test_conf_score
+            )
+        )
+
+        # log on wandb if and only if the module is loaded
+        if set_wandb:
+            wandb.log(
+                {
+                    "test/only_conf_loss_wo_conf": test_conf_loss,
+                    "test/only_conf_accuracy_wo_conf": test_conf_accuracy,
+                    "test/only_conf_score_wo_conf": test_conf_score,
+                }
+            )
+
         test_conf_loss, test_conf_accuracy, test_conf_score = test_step(
             net=net,
             test_loader=iter(test_only_confounder),

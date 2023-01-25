@@ -856,6 +856,7 @@ def debug(
     debug_loader = torch.utils.data.DataLoader(
         debug_train, batch_size=batch_size, shuffle=True, num_workers=4
     )
+
     test_debug = torch.utils.data.DataLoader(
         test_debug, batch_size=test_batch_size, shuffle=False, num_workers=4
     )

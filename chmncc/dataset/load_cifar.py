@@ -37,6 +37,7 @@ class LoadDataset(Dataset):
         confund: bool = True,
         train: bool = True,
         no_confounders: bool = False,
+        balance_factor_conf_classes: int = 1,
     ):
         """Init param
 
@@ -49,7 +50,7 @@ class LoadDataset(Dataset):
             transform [Any] = None: torchvision transformation
             name_labels [bool] = whether to use the label name
             confunders_position [bool] = whether to return the confunder position
-            only_confounders [bool] = whether to return only the confounder data
+            only [bool] = whether to return only the confounder data
             confund [bool] = whether to put confunders
             train [bool] = whether the set is training or not (used to apply the confunders)
         """
@@ -97,6 +98,36 @@ class LoadDataset(Dataset):
             self.data_list = self._no_confounders(
                 self.data_list, "train" if self.train else "test"
             )
+        if self.confund and balance_factor_conf_classes > 1:
+            self.data_list = self._balance_confounder(balance_factor_conf_classes)
+
+    def _balance_confounder(
+        self, balance_factor_conf_classes: int
+    ) -> List[Tuple[str, str, str]]:
+        # new datalist
+        new_datalist = []
+
+        # get the phase
+        phase = "train" if self.train else "test"
+
+        for img, superclass, subclass in self.data_list:
+            superclass = superclass.strip()
+            subclass = subclass.strip()
+
+            if superclass.strip() in confunders:
+                # look if the subclass is contained confunder
+                confunder_info = filter(
+                    lambda x: x["subclass"] == subclass, confunders[superclass][phase]
+                )
+                if any(confunder_info):
+                    for _ in range(balance_factor_conf_classes):
+                        new_datalist.append((img, superclass, subclass))
+                else:
+                    new_datalist.append((img, superclass, subclass))
+            else:
+                new_datalist.append((img, superclass, subclass))
+
+        return new_datalist
 
     def _no_confounders(
         self, confounders_list: List[Tuple[str, str, str]], phase: str

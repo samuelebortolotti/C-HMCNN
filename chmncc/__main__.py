@@ -23,7 +23,8 @@ import wandb
 import signal
 import matplotlib.image
 import torch.multiprocessing
-torch.multiprocessing.set_sharing_strategy('file_system')
+
+torch.multiprocessing.set_sharing_strategy("file_system")
 
 # data folder
 os.environ["DATA_FOLDER"] = "./"
@@ -36,7 +37,7 @@ from chmncc.utils.utils import (
     get_lr,
     average_image_contributions,
     load_best_weights,
-    grouped_boxplot
+    grouped_boxplot,
 )
 from chmncc.networks.ConstrainedFFNN import initializeConstrainedFFNNModel
 from chmncc.networks import LeNet5, ResNet18, AlexNet
@@ -734,6 +735,7 @@ def experiment(args: Namespace) -> None:
     if args.wandb:
         # finish the log
         wandb.finish()
+
 
 def main(args: Namespace) -> None:
     """Main function

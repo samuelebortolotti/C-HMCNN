@@ -187,6 +187,7 @@ def load_cifar_dataloaders(
         name_labels=True,
         confund=confunder,
         train=True,
+        balance_factor_conf_classes=10,
     )
 
     val_dataset_with_labels_and_confunders_position = LoadDataset(
@@ -343,11 +344,13 @@ def load_cifar_dataloaders(
         num_workers=4,
     )
 
-    test_loader_with_labels_and_confunders_pos_only_without_confounders = torch.utils.data.DataLoader(
-        test_dataset_with_labels_and_confunders_pos_only_without_confounders,
-        batch_size=test_batch_size,
-        shuffle=False,
-        num_workers=4,
+    test_loader_with_labels_and_confunders_pos_only_without_confounders = (
+        torch.utils.data.DataLoader(
+            test_dataset_with_labels_and_confunders_pos_only_without_confounders,
+            batch_size=test_batch_size,
+            shuffle=False,
+            num_workers=4,
+        )
     )
 
     test_loader_with_labels_and_confunders_pos_only_without_confounders_on_training_samples = torch.utils.data.DataLoader(
@@ -356,7 +359,6 @@ def load_cifar_dataloaders(
         shuffle=False,
         num_workers=4,
     )
-
 
     val_loader = torch.utils.data.DataLoader(
         val_dataset, batch_size=test_batch_size, shuffle=False, num_workers=4

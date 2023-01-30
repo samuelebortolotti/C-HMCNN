@@ -18,3 +18,4 @@ PyQt6~=6.4.0
 wandb~=0.13.5
 torchsummary~=1.5.1
 torchviz~=0.0.2
+seaborn~=0.12.1

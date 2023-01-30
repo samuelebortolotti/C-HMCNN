@@ -97,20 +97,202 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
 </section>
-<section id="chmncc-networks-constrainedffnn-module">
-<h2>chmncc.networks.ConstrainedFFNN module<a class="headerlink" href="#chmncc-networks-constrainedffnn-module" title="Permalink to this heading"></a></h2>
+<section id="module-chmncc.networks.ConstrainedFFNN">
+<span id="chmncc-networks-constrainedffnn-module"></span><h2>chmncc.networks.ConstrainedFFNN module<a class="headerlink" href="#module-chmncc.networks.ConstrainedFFNN" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="chmncc.networks.ConstrainedFFNN.ConstrainedFFNNModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.networks.ConstrainedFFNN.</span></span><span class="sig-name descname"><span class="pre">ConstrainedFFNNModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyperparams</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/networks/ConstrainedFFNN.html#ConstrainedFFNNModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.ConstrainedFFNN.ConstrainedFFNNModel" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>C-HMCNN(h) model:
+during training it returns the not-constrained output that is then passed to MCLoss</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.networks.ConstrainedFFNN.ConstrainedFFNNModel._is_full_backward_hook">
+<span class="sig-name descname"><span class="pre">_is_full_backward_hook</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#chmncc.networks.ConstrainedFFNN.ConstrainedFFNNModel._is_full_backward_hook" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="chmncc.networks.ConstrainedFFNN.ConstrainedFFNNModel.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/chmncc/networks/ConstrainedFFNN.html#ConstrainedFFNNModel.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.ConstrainedFFNN.ConstrainedFFNNModel.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Forward method of the model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>[</strong><strong>torch.Tensor</strong><strong>]</strong> (<em>x</em>) – input tensor</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>constrained ouput</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>constrained_out [torch.Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.networks.ConstrainedFFNN.ConstrainedFFNNModel.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#chmncc.networks.ConstrainedFFNN.ConstrainedFFNNModel.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.networks.ConstrainedFFNN.initializeConstrainedFFNNModel">
+<span class="sig-prename descclassname"><span class="pre">chmncc.networks.ConstrainedFFNN.</span></span><span class="sig-name descname"><span class="pre">initializeConstrainedFFNNModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyperparams</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#chmncc.networks.ConstrainedFFNN.ConstrainedFFNNModel" title="chmncc.networks.ConstrainedFFNN.ConstrainedFFNNModel"><span class="pre">ConstrainedFFNNModel</span></a></span></span><a class="reference internal" href="_modules/chmncc/networks/ConstrainedFFNN.html#initializeConstrainedFFNNModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.ConstrainedFFNN.initializeConstrainedFFNNModel" title="Permalink to this definition"></a></dt>
+<dd><p>Initialize the ConstrainedFFNNModel as described in the
+Giunchiglia et al paper</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>ontology</em>) – name of the dataset (data + ontology)</p></li>
+<li><p><strong>[</strong><strong>str</strong><strong>]</strong> – name of the data</p></li>
+<li><p><strong>[</strong><strong>str</strong><strong>]</strong> – name of the ontology</p></li>
+<li><p><strong>[</strong><strong>torch.Tensor</strong><strong>]</strong> (<em>R</em>) – adjacency matrix</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>network [ConstrainedFFNNModel] instantiated</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
-<section id="chmncc-networks-alexnet-module">
-<h2>chmncc.networks.alexnet module<a class="headerlink" href="#chmncc-networks-alexnet-module" title="Permalink to this heading"></a></h2>
+<section id="module-chmncc.networks.alexnet">
+<span id="chmncc-networks-alexnet-module"></span><h2>chmncc.networks.alexnet module<a class="headerlink" href="#module-chmncc.networks.alexnet" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="chmncc.networks.alexnet.AlexNet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.networks.alexnet.</span></span><span class="sig-name descname"><span class="pre">AlexNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_out_logits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constrained_layer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/networks/alexnet.html#AlexNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.alexnet.AlexNet" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>AlexNet architecture taken from the PyTorch source code.
+The reference is taken from
+[link]: <a class="reference external" href="https://github.com/pytorch/vision/blob/main/torchvision/models/alexnet.py">https://github.com/pytorch/vision/blob/main/torchvision/models/alexnet.py</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.networks.alexnet.AlexNet._is_full_backward_hook">
+<span class="sig-name descname"><span class="pre">_is_full_backward_hook</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#chmncc.networks.alexnet.AlexNet._is_full_backward_hook" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="chmncc.networks.alexnet.AlexNet.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/chmncc/networks/alexnet.html#AlexNet.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.alexnet.AlexNet.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Forward method
+Args:
+- x [torch.Tensor]: source sample
+Returns:
+- prediction [torch.Tensor]: prediction</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.networks.alexnet.AlexNet.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#chmncc.networks.alexnet.AlexNet.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="chmncc-networks-lenet-module">
-<h2>chmncc.networks.lenet module<a class="headerlink" href="#chmncc-networks-lenet-module" title="Permalink to this heading"></a></h2>
+<section id="module-chmncc.networks.lenet">
+<span id="chmncc-networks-lenet-module"></span><h2>chmncc.networks.lenet module<a class="headerlink" href="#module-chmncc.networks.lenet" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="chmncc.networks.lenet.Flatten">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.networks.lenet.</span></span><span class="sig-name descname"><span class="pre">Flatten</span></span><a class="reference internal" href="_modules/chmncc/networks/lenet.html#Flatten"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.lenet.Flatten" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Flatten layer</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.networks.lenet.Flatten._is_full_backward_hook">
+<span class="sig-name descname"><span class="pre">_is_full_backward_hook</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#chmncc.networks.lenet.Flatten._is_full_backward_hook" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="chmncc.networks.lenet.Flatten.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/networks/lenet.html#Flatten.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.lenet.Flatten.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.networks.lenet.Flatten.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#chmncc.networks.lenet.Flatten.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="chmncc.networks.lenet.LeNet5">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.networks.lenet.</span></span><span class="sig-name descname"><span class="pre">LeNet5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_out_logits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constrained_layer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/networks/lenet.html#LeNet5"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.lenet.LeNet5" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>LeNet5 architecture with Giunchiglia et al layer</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.networks.lenet.LeNet5._is_full_backward_hook">
+<span class="sig-name descname"><span class="pre">_is_full_backward_hook</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#chmncc.networks.lenet.LeNet5._is_full_backward_hook" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="chmncc.networks.lenet.LeNet5.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/chmncc/networks/lenet.html#LeNet5.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.lenet.LeNet5.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Forward method
+:param x [torch.Tensor]: source sample</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>constrained_out</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>constrained_out [torch.Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.networks.lenet.LeNet5.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#chmncc.networks.lenet.LeNet5.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="chmncc-networks-resnet18-module">
-<h2>chmncc.networks.resnet18 module<a class="headerlink" href="#chmncc-networks-resnet18-module" title="Permalink to this heading"></a></h2>
+<section id="module-chmncc.networks.resnet18">
+<span id="chmncc-networks-resnet18-module"></span><h2>chmncc.networks.resnet18 module<a class="headerlink" href="#module-chmncc.networks.resnet18" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="chmncc.networks.resnet18.ResNet18">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.networks.resnet18.</span></span><span class="sig-name descname"><span class="pre">ResNet18</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constrained_layer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/networks/resnet18.html#ResNet18"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.resnet18.ResNet18" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Original ResNet18 architecture, which is taken directly from the torchvision
+models</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.networks.resnet18.ResNet18._is_full_backward_hook">
+<span class="sig-name descname"><span class="pre">_is_full_backward_hook</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#chmncc.networks.resnet18.ResNet18._is_full_backward_hook" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="chmncc.networks.resnet18.ResNet18.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/chmncc/networks/resnet18.html#ResNet18.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.resnet18.ResNet18.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Forward method
+:param x [torch.Tensor]: source sample</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>prediction, if not training: constrained one</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>prediction [torch.Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.networks.resnet18.ResNet18.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#chmncc.networks.resnet18.ResNet18.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
+<section id="module-chmncc.networks">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-chmncc.networks" title="Permalink to this heading"></a></h2>
+<p>Networks module
+This module contains all the networks architectures we have employed in our experiments</p>
 </section>
 </section>
 

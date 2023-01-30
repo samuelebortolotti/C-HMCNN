@@ -38,6 +38,8 @@ from chmncc.utils.utils import (
     average_image_contributions,
     load_best_weights,
     grouped_boxplot,
+    plot_global_multiLabel_confusion_matrix,
+    plot_confusion_matrix_statistics,
 )
 from chmncc.networks.ConstrainedFFNN import initializeConstrainedFFNNModel
 from chmncc.networks import LeNet5, ResNet18, AlexNet
@@ -513,6 +515,8 @@ def c_hmcnn(
     else:
         # load the human readable labels dataloader
         test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
+        test_dataset_with_label_names = dataloaders["test_set"]
+        labels_name = test_dataset_with_label_names.nodes_names_without_root
         # extract also the names of the classes
         test_el, superclass, subclass, _ = next(iter(test_loader_with_label_names))
         # collect stats
@@ -522,6 +526,9 @@ def c_hmcnn(
             _,
             statistics_predicted,
             statistics_correct,
+            clf_report,  # classification matrix
+            y_test,  # ground-truth for multiclass classification matrix
+            y_pred,  # predited values for multiclass classification matrix
         ) = test_step_with_prediction_statistics(
             net=net,
             test_loader=iter(test_loader_with_label_names),
@@ -529,6 +536,32 @@ def c_hmcnn(
             title="Collect Statistics",
             test=dataloaders["test"],
             device=device,
+            labels_name=labels_name,
+        )
+        ## ! Confusion matrix !
+        plot_global_multiLabel_confusion_matrix(
+            y_test=y_test,
+            y_est=y_pred,
+            label_names=labels_name,
+            size=(30, 20),
+            fig_name="{}/confusion_matrix_normalized".format(
+                os.environ["IMAGE_FOLDER"]
+            ),
+            normalize=True,
+        )
+        plot_global_multiLabel_confusion_matrix(
+            y_test=y_test,
+            y_est=y_pred,
+            label_names=labels_name,
+            size=(30, 20),
+            fig_name="{}/confusion_matrix".format(os.environ["IMAGE_FOLDER"]),
+            normalize=False,
+        )
+        plot_confusion_matrix_statistics(
+            clf_report=clf_report,
+            fig_name="{}/confusion_matrix_statistics.png".format(
+                os.environ["IMAGE_FOLDER"]
+            ),
         )
         # grouped boxplot
         grouped_boxplot(

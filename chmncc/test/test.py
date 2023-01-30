@@ -3,7 +3,8 @@ import torch.nn as nn
 from typing import Tuple, Dict, List
 import tqdm
 from chmncc.utils import dotdict
-from sklearn.metrics import average_precision_score
+from sklearn.metrics import average_precision_score, classification_report
+import numpy as np
 
 
 def tr_image(img: torch.Tensor) -> torch.Tensor:
@@ -143,8 +144,18 @@ def test_step_with_prediction_statistics(
     cost_function: torch.nn.modules.loss.BCELoss,
     title: str,
     test: dotdict,
+    labels_name: List[str],
     device: str = "gpu",
-) -> Tuple[float, float, float, Dict[str, List[int]], Dict[str, List[int]]]:
+) -> Tuple[
+    float,
+    float,
+    float,
+    Dict[str, List[int]],
+    Dict[str, List[int]],
+    Dict[str, float],
+    np.ndarray,
+    np.ndarray,
+]:
     r"""Test function for the network.
     It computes the accuracy together with the area under the precision-recall-curve as a metric
     and returns the statistics of predicted and non-predicted data.
@@ -156,6 +167,7 @@ def test_step_with_prediction_statistics(
         cost_function [torch.nn.modules.loss.BCELoss] binary cross entropy function
         title [str]: title of the experiment
         test [dotdict] test set dictionary
+        labels_name [List[str]] name of the labels
         device [str] = "gpu": device on which to run the experiment
 
     Returns:
@@ -164,6 +176,9 @@ def test_step_with_prediction_statistics(
         score [float] area under the precision-recall curve
         statistics [Dict[str, List[int]]]: name of the class : [not-predicted, predicted]
         statistics correct [Dict[str, List[int]]]: name of the class : [not-correct, correct]
+        clf_report Dict[str, float]: confusion matrix statistics
+        ground_truth ndarray: ground_truth predictions
+        prediction ndarray: predictions
     """
     total = 0.0
     cumulative_loss = 0.0
@@ -249,10 +264,27 @@ def test_step_with_prediction_statistics(
         y_test[:, test.to_eval], constr_test.data[:, test.to_eval], average="micro"
     )
 
+    # convert
+    predicted_test = predicted_test.clone().detach().to(torch.float64)
+
+    # classification report on the confusion matrix
+    clf_report = classification_report(
+        y_test[:, test.to_eval],
+        predicted_test[:, test.to_eval],
+        output_dict=True,
+        target_names=labels_name,
+        zero_division=0,
+    )
+
     return (
         cumulative_loss / len(test_loader),
         cumulative_accuracy / total * 100,
         score,
         stats_predicted,
         stats_correct,
+        clf_report,  # classification matrix
+        y_test[:, test.to_eval],  # ground-truth for multiclass classification matrix
+        predicted_test[
+            :, test.to_eval
+        ],  # predited values for multiclass classification matrix
     )

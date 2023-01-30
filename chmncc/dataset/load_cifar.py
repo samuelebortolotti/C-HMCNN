@@ -79,6 +79,8 @@ class LoadDataset(Dataset):
         # compliant with Giunchiglia code
         self.g = nx.DiGraph()
         self.nodes, self.nodes_idx, self.A = self._initializeHierarchicalGraph()
+        # keep the name of the nodes without the one of the root.
+        self.nodes_names_without_root = self.nodes[1:]
         self.to_eval = torch.tensor(
             [t not in to_skip for t in self.nodes], dtype=torch.bool
         )

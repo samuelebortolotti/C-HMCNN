@@ -8,7 +8,7 @@ from torch.nn.modules.loss import BCELoss
 from chmncc.dataset.load_cifar import LoadDataset
 from chmncc.networks import ResNet18, LeNet5, AlexNet
 from chmncc.config import hierarchy
-from chmncc.utils.utils import load_best_weights, grouped_boxplot
+from chmncc.utils.utils import load_best_weights, grouped_boxplot, plot_confusion_matrix_statistics, plot_global_multiLabel_confusion_matrix
 from chmncc.dataset import (
     load_cifar_dataloaders,
     get_named_label_predictions,
@@ -891,6 +891,12 @@ def debug(
     print_iterator_before = iter(test_debug)
     print_iterator_before, print_iterator_after = tee(print_iterator_before)
 
+    iter_test_only_confounder_wo_conf_before = iter(test_only_confounder_wo_conf)
+    iter_test_only_confounder_wo_conf_before, iter_test_only_confounder_wo_conf_after = tee(iter_test_only_confounder_wo_conf_before)
+
+    iter_test_only_confounder_wo_conf_in_train_data_before = iter(test_only_confounder_wo_conf_in_train_data)
+    iter_test_only_confounder_wo_conf_in_train_data_before, iter_test_only_confounder_wo_conf_in_train_data_after = tee(iter_test_only_confounder_wo_conf_in_train_data_before)
+
     # save some training samples (10 here)
     save_some_confounded_samples(
         net=net,
@@ -902,6 +908,32 @@ def debug(
         integrated_gradients=integrated_gradients,
         loader=print_iterator_before,
         prefix="before",
+    )
+
+    # save some test confounded examples
+    save_some_confounded_samples(
+        net=net,
+        start_from=0,
+        number=10,
+        dataloaders=dataloaders,
+        device=device,
+        folder=debug_folder,
+        integrated_gradients=integrated_gradients,
+        loader=iter_test_only_confounder_wo_conf_before,
+        prefix="before_test_data_without_confounder",
+    )
+
+    # save some test confounded examples
+    save_some_confounded_samples(
+        net=net,
+        start_from=0,
+        number=10,
+        dataloaders=dataloaders,
+        device=device,
+        folder=debug_folder,
+        integrated_gradients=integrated_gradients,
+        loader=iter_test_only_confounder_wo_conf_in_train_data_before,
+        prefix="before_train_without_confounder",
     )
 
     # compute graident confounded correlation
@@ -1045,8 +1077,8 @@ def debug(
         if set_wandb:
             wandb.log(
                 {
-                    "test/train_conf_class_loss_wo_conf": test_conf_loss,
-                    "test/train_conf_class_accuracy_wo_conf": test_conf_accuracy,
+                    #  "test/train_conf_class_loss_wo_conf": test_conf_loss,
+                    #  "test/train_conf_class_accuracy_wo_conf": test_conf_accuracy,
                     "test/train_conf_class_score_wo_conf": test_conf_score,
                 }
             )
@@ -1071,8 +1103,8 @@ def debug(
         if set_wandb:
             wandb.log(
                 {
-                    "test/only_conf_loss_wo_conf": test_conf_loss,
-                    "test/only_conf_accuracy_wo_conf": test_conf_accuracy,
+                    #  "test/only_conf_loss_wo_conf": test_conf_loss,
+                    #  "test/only_conf_accuracy_wo_conf": test_conf_accuracy,
                     "test/only_conf_score_wo_conf": test_conf_score,
                 }
             )
@@ -1097,8 +1129,8 @@ def debug(
         if set_wandb:
             wandb.log(
                 {
-                    "test/only_conf_loss": test_conf_loss,
-                    "test/only_conf_accuracy": test_conf_accuracy,
+                    #  "test/only_conf_loss": test_conf_loss,
+                    #  "test/only_conf_accuracy": test_conf_accuracy,
                     "test/only_conf_score": test_conf_score,
                 }
             )
@@ -1137,6 +1169,32 @@ def debug(
         integrated_gradients=integrated_gradients,
         loader=print_iterator_after,
         prefix="after",
+    )
+
+    # save some test confounded examples
+    save_some_confounded_samples(
+        net=net,
+        start_from=0,
+        number=10,
+        dataloaders=dataloaders,
+        device=device,
+        folder=debug_folder,
+        integrated_gradients=integrated_gradients,
+        loader=iter_test_only_confounder_wo_conf_after,
+        prefix="after_test_data_without_confounder",
+    )
+
+    # save some test confounded examples
+    save_some_confounded_samples(
+        net=net,
+        start_from=0,
+        number=10,
+        dataloaders=dataloaders,
+        device=device,
+        folder=debug_folder,
+        integrated_gradients=integrated_gradients,
+        loader=iter_test_only_confounder_wo_conf_in_train_data_after,
+        prefix="after_train_without_confounder",
     )
 
     # give the correlation
@@ -1355,6 +1413,57 @@ def main(args: Namespace) -> None:
         device=args.device,
     )
 
+    # load the human readable labels dataloader
+    test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
+    labels_name = dataloaders["test_set"].nodes_names_without_root
+
+    # collect stats
+    (
+        _,
+        _,
+        _,
+        statistics_predicted,
+        statistics_correct,
+        clf_report,  # classification matrix
+        y_test,  # ground-truth for multiclass classification matrix
+        y_pred,  # predited values for multiclass classification matrix
+    ) = test_step_with_prediction_statistics(
+        net=net,
+        test_loader=iter(test_loader_with_label_names),
+        cost_function=cost_function,
+        title="Collect Statistics",
+        test=dataloaders["test"],
+        device=args.device,
+        labels_name=labels_name
+    )
+
+    ## confusion matrix after debug
+    plot_global_multiLabel_confusion_matrix(
+        y_test=y_test,
+        y_est=y_pred,
+        label_names=labels_name,
+        size=(30, 20),
+        fig_name="{}/before_confusion_matrix_normalized.png".format(
+            args.debug_folder
+        ),
+        normalize=True,
+    )
+    plot_global_multiLabel_confusion_matrix(
+        y_test=y_test,
+        y_est=y_pred,
+        label_names=labels_name,
+        size=(30, 20),
+        fig_name="{}/before_confusion_matrix.png".format(args.debug_folder),
+        normalize=False,
+    )
+    plot_confusion_matrix_statistics(
+        clf_report=clf_report,
+        fig_name="{}/before_confusion_matrix_statistics.png".format(
+            args.debug_folder
+        ),
+    )
+
+
     print("Network resumed, performances:")
 
     print(
@@ -1437,8 +1546,6 @@ def main(args: Namespace) -> None:
             }
         )
 
-    # load the human readable labels dataloader
-    test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
     # collect stats
     (
         _,
@@ -1446,6 +1553,9 @@ def main(args: Namespace) -> None:
         _,
         statistics_predicted,
         statistics_correct,
+        clf_report,  # classification matrix
+        y_test,  # ground-truth for multiclass classification matrix
+        y_pred,  # predited values for multiclass classification matrix
     ) = test_step_with_prediction_statistics(
         net=net,
         test_loader=iter(test_loader_with_label_names),
@@ -1453,6 +1563,33 @@ def main(args: Namespace) -> None:
         title="Collect Statistics",
         test=dataloaders["test"],
         device=args.device,
+        labels_name=labels_name
+    )
+
+    ## confusion matrix after debug
+    plot_global_multiLabel_confusion_matrix(
+        y_test=y_test,
+        y_est=y_pred,
+        label_names=labels_name,
+        size=(30, 20),
+        fig_name="{}/after_confusion_matrix_normalized.png".format(
+            args.debug_folder
+        ),
+        normalize=True,
+    )
+    plot_global_multiLabel_confusion_matrix(
+        y_test=y_test,
+        y_est=y_pred,
+        label_names=labels_name,
+        size=(30, 20),
+        fig_name="{}/after_confusion_matrix.png".format(args.debug_folder),
+        normalize=False,
+    )
+    plot_confusion_matrix_statistics(
+        clf_report=clf_report,
+        fig_name="{}/after_confusion_matrix_statistics.png".format(
+            args.debug_folder
+        ),
     )
 
     # grouped boxplot

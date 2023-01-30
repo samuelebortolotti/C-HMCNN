@@ -194,8 +194,23 @@ def configure_subparsers(subparsers: Subparser) -> None:
         action="store_false",
         help="Do not use the Giunchiglia et al. layer to enforce hierarchical logical constraints",
     )
+    parser.add_argument(
+        "--confound",
+        "-conf",
+        dest="no_confounder",
+        action="store_false",
+        help="Use the Giunchiglia et al. layer to enforce hierarchical logical constraints",
+    )
+    parser.add_argument(
+        "--no-confound",
+        "-noconf",
+        dest="no_confounder",
+        action="store_true",
+        help="Do not use the confounders in training and test",
+    )
+
     # set the main function to run when blob is called from the command line
-    parser.set_defaults(func=experiment, constrained_layer=True)
+    parser.set_defaults(func=experiment, constrained_layer=True, no_confounder=False)
 
 
 def c_hmcnn(
@@ -214,6 +229,7 @@ def c_hmcnn(
     network: str = "lenet",
     pretrained: bool = False,
     constrained_layer: bool = True,
+    no_confounder: bool = False,
     **kwargs: Any,
 ) -> None:
     r"""
@@ -234,6 +250,7 @@ def c_hmcnn(
         network [str] = "lenet"
         pretrained [bool] = False
         constrained_layer [bool] = True
+        no_confounder [bool] = False
 
     Args:
         exp_name [str]: name of the experiment, basically where to save the logs of the SummaryWriter
@@ -251,6 +268,7 @@ def c_hmcnn(
         network [str] = "lenet": which arachitecture to employ
         pretrained [bool] = False, whether the network is pretrained [Note: lenet is not pretrained]
         constrained_layer [bool] = True: whether to use the constrained output layer from Giunchiglia et al.
+        no_confounder [bool]: whether to have a normal, and therefore not confounded, training
         \*\*kwargs [Any]: additional key-value arguments
     """
 
@@ -356,6 +374,13 @@ def c_hmcnn(
     train_loader = dataloaders["train_loader"]
     test_loader = dataloaders["test_loader"]
     val_loader = dataloaders["val_loader"]
+
+    if no_confounder:
+        print("I am not going to use the confounders!")
+        train_loader = dataloaders["train_loader_no_confounder"]
+        test_loader = dataloaders["test_loader_no_confounder"]
+        val_loader = dataloaders["val_loader_no_confound"]
+
 
     print("#> Techinque: {}".format("Giunchiglia" if old_method else "Our approach"))
 

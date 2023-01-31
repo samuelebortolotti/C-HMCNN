@@ -214,9 +214,28 @@ def configure_subparsers(subparsers: Subparser) -> None:
         action="store_true",
         help="Do not use the confounders in training and test",
     )
+    parser.add_argument(
+        "--force-superclass-prediction",
+        "-fspred",
+        dest="force_superclass_prediction",
+        action="store_true",
+        help="Use the softmax for the superclasses prediction",
+    )
+    parser.add_argument(
+        "--no-force-superclass-prediction",
+        "-nofspred",
+        dest="force_superclass_prediction",
+        action="store_false",
+        help="Use sigmoid for all the output logits",
+    )
 
     # set the main function to run when blob is called from the command line
-    parser.set_defaults(func=experiment, constrained_layer=True, no_confounder=False)
+    parser.set_defaults(
+        func=experiment,
+        constrained_layer=True,
+        no_confounder=False,
+        force_superclass_prediction=False,
+    )
 
 
 def c_hmcnn(
@@ -236,6 +255,7 @@ def c_hmcnn(
     pretrained: bool = False,
     constrained_layer: bool = True,
     no_confounder: bool = False,
+    force_superclass_prediction: bool = False,
     **kwargs: Any,
 ) -> None:
     r"""
@@ -257,6 +277,7 @@ def c_hmcnn(
         pretrained [bool] = False
         constrained_layer [bool] = True
         no_confounder [bool] = False
+        force_superclass_prediction [bool] = False
 
     Args:
         exp_name [str]: name of the experiment, basically where to save the logs of the SummaryWriter
@@ -275,6 +296,7 @@ def c_hmcnn(
         pretrained [bool] = False, whether the network is pretrained [Note: lenet is not pretrained]
         constrained_layer [bool] = True: whether to use the constrained output layer from Giunchiglia et al.
         no_confounder [bool]: whether to have a normal, and therefore not confounded, training
+        force_superclass_prediction [bool]: whether to force the prediction for the superclasses
         \*\*kwargs [Any]: additional key-value arguments
     """
 
@@ -356,7 +378,11 @@ def c_hmcnn(
             )  # 20 superclasses, 100 subclasses + the root
         elif network == "lenet7":
             net = LeNet7(
-                dataloaders["train_R"], 121, constrained_layer
+                dataloaders["train_R"],
+                121,
+                constrained_layer,
+                True, #force_superclass_prediction,
+                dataloaders["train_set"].n_superclasses,
             )  # 20 superclasses, 100 subclasses + the root
         elif network == "alexnet":
             # AlexNet

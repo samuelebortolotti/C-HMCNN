@@ -16,7 +16,12 @@ class LeNet7(nn.Module):
     """
 
     def __init__(
-        self, R: torch.Tensor, num_out_logits: int = 20, constrained_layer: bool = True
+        self,
+        R: torch.Tensor,
+        num_out_logits: int = 20,
+        constrained_layer: bool = True,
+        force_superclass_prediction: bool = False,
+        superclasses_number: int = 20,
     ) -> None:
         r"""
         Initialize the LeNet5 model
@@ -25,7 +30,9 @@ class LeNet7(nn.Module):
         Args:
             R [torch.Tensor]: adjacency matrix
             num_out_logits [int]: number of output logits
-            constrained_layer: [bool]: whether to use the constrained output approach from Giunchiglia et al.
+            constrained_layer [bool]: whether to use the constrained output approach from Giunchiglia et al.
+            force_superclass_prediction [bool]: force superclass prediction
+            superclasses_number [int]: superclass number
         """
         super().__init__()
         self.R = R  # matrix of the hierarchy
@@ -66,8 +73,11 @@ class LeNet7(nn.Module):
             nn.Linear(in_features=512, out_features=256),
             nn.ReLU(inplace=True),
             nn.Linear(in_features=256, out_features=num_out_logits),
-            nn.Sigmoid(),
         )
+        self.sigmoid = nn.Sigmoid()
+
+        self.force_superclass_prediction = force_superclass_prediction
+        self.superclasses_number = superclasses_number
 
         # set whether to use the constrained layer or not
         self.constrained_layer = constrained_layer
@@ -83,6 +93,13 @@ class LeNet7(nn.Module):
         x = self.features(x)
         x = self.flatten(x)
         x = self.classifier(x)
+        if self.force_superclass_prediction:
+            import torch.nn.functional as F
+            x[:, 1:self.superclasses_number + 1] = F.softmax(x[:, 1:self.superclasses_number + 1], dim=1)
+            x[:, self.superclasses_number + 1:] = torch.sigmoid(x[:, self.superclasses_number + 1:])
+            x[:, 0] = torch.sigmoid(x[:, 0])
+        else:
+            x = self.sigmoid(x)
 
         # if we are in trainining, no need to enforce the herarchy constraint
         # or if the constrained layer is unwanted

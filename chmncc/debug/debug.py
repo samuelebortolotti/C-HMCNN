@@ -408,7 +408,6 @@ def overlay_input_gradient(
         ),
         dpi=fig.dpi,
     )
-    plt.show()
     plt.close()
 
 def show_gradient(

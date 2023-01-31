@@ -43,7 +43,7 @@ from chmncc.utils.utils import (
 )
 from chmncc.early_stopper import EarlyStopper
 from chmncc.networks.ConstrainedFFNN import initializeConstrainedFFNNModel
-from chmncc.networks import LeNet5, ResNet18, AlexNet
+from chmncc.networks import LeNet5, LeNet7, ResNet18, AlexNet
 from chmncc.train import training_step
 from chmncc.optimizers import (
     get_adam_optimizer,
@@ -178,7 +178,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--network",
         "-n",
         type=str,
-        choices=["lenet", "resnet", "alexnet"],
+        choices=["lenet", "lenet7", "resnet", "alexnet"],
         default="lenet",
         help="CNN architecture",
     )
@@ -352,6 +352,10 @@ def c_hmcnn(
         # CNN
         if network == "lenet":
             net = LeNet5(
+                dataloaders["train_R"], 121, constrained_layer
+            )  # 20 superclasses, 100 subclasses + the root
+        elif network == "lenet7":
+            net = LeNet7(
                 dataloaders["train_R"], 121, constrained_layer
             )  # 20 superclasses, 100 subclasses + the root
         elif network == "alexnet":

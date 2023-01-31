@@ -604,7 +604,7 @@ def c_hmcnn(
             y_test=y_test,
             y_est=y_pred,
             label_names=labels_name,
-            size=(30, 20),
+            size=(30, 30),
             fig_name="{}/confusion_matrix_normalized".format(
                 os.environ["IMAGE_FOLDER"]
             ),
@@ -614,7 +614,7 @@ def c_hmcnn(
             y_test=y_test,
             y_est=y_pred,
             label_names=labels_name,
-            size=(30, 20),
+            size=(30, 30),
             fig_name="{}/confusion_matrix".format(os.environ["IMAGE_FOLDER"]),
             normalize=False,
         )
@@ -730,10 +730,14 @@ def c_hmcnn(
             grd = average_image_contributions(grd)
             # normalize
             grd = np.fabs(grd)
-            grd = grd / np.max(grd)
+            #  grd = grd / np.max(grd)
             fig = plt.figure()
             plt.imshow(grd, cmap="gray")
             plt.title("Gradient with respect to the input")
+            # norm color
+            norm = matplotlib.colors.Normalize(
+                vmin=0, vmax=np.max(grd)
+            )
             plt.colorbar(
                 matplotlib.cm.ScalarMappable(norm=norm, cmap="gray"),
                 label="Gradient magnitude",
@@ -757,7 +761,10 @@ def c_hmcnn(
             # get the absolute value
             i_gradient = np.fabs(i_gradient)
             # normalize the value
-            i_gradient = i_gradient / np.max(i_gradient)
+            #  i_gradient = i_gradient / np.max(i_gradient)
+            norm = matplotlib.colors.Normalize(
+                vmin=0, vmax=np.max(i_gradient)
+            )
             # save the raw image
             matplotlib.image.imsave(
                 "{}/{}_{}_integrated_gradients_raw.png".format(

@@ -380,7 +380,7 @@ def plot_global_multiLabel_confusion_matrix(
             display_labels=["N", "Y"],
         )
         # "viridis"
-        plt.title("Multi-label confusion matrix: {}".format(label_names[i]))
+        plt.title("Multi-label confusion matrix: {}\n\n".format(label_names[i]))
         plt.ylabel("True label")
         plt.xlabel("Predicted label")
         disp.plot(

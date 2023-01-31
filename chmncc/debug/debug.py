@@ -6,7 +6,7 @@ import os
 import torch.nn as nn
 from torch.nn.modules.loss import BCELoss
 from chmncc.dataset.load_cifar import LoadDataset
-from chmncc.networks import ResNet18, LeNet5, AlexNet
+from chmncc.networks import ResNet18, LeNet5, LeNet7, AlexNet
 from chmncc.config import hierarchy
 from chmncc.utils.utils import load_best_weights, grouped_boxplot, plot_confusion_matrix_statistics, plot_global_multiLabel_confusion_matrix
 from chmncc.dataset import (
@@ -30,6 +30,7 @@ from sklearn.linear_model import RidgeClassifier
 from torchsummary import summary
 from torch.utils.data import Dataset
 from itertools import tee
+import cv2
 
 
 class LoadDebugDataset(Dataset):
@@ -116,7 +117,7 @@ def save_sample(
     subclass: str,
     integrated_gradients: bool,
     prefix: str,
-) -> bool:
+) -> Tuple[bool, np.ndarray]:
     """Save the test sample.
     Then it returns whether the sample contains a confunder or if the sample has been
     guessed correctly.
@@ -134,6 +135,7 @@ def save_sample(
 
     Returns:
         correct_guess [bool]: whether the model has guessed correctly
+        single_el_show [np.ndarray]: single element
     """
     # prepare the element in order to show it
     single_el_show = train_sample.squeeze(0).clone().cpu().data.numpy()
@@ -200,7 +202,7 @@ def save_sample(
     plt.close()
 
     # whether the prediction was right
-    return correct_guess
+    return correct_guess, single_el_show
 
 
 def visualize_sample(
@@ -247,7 +249,7 @@ def visualize_sample(
     preds = net(single_el.float())
 
     # save the sample and whether the sample has been correctly guessed
-    correct_guess = save_sample(
+    correct_guess, sample_to_save = save_sample(
         train_sample=single_el,
         prediction=preds,
         idx=idx,
@@ -267,7 +269,7 @@ def visualize_sample(
     )
 
     # show the gradient
-    show_gradient(
+    gradient_to_show, max_value = show_gradient(
         gradient=gradient,
         debug_folder=debug_folder,
         idx=idx,
@@ -275,8 +277,21 @@ def visualize_sample(
         integrated_gradients=integrated_gradients,
         prefix=prefix,
     )
+
+    overlay_input_gradient(
+        gradient_to_show=gradient_to_show,
+        single_el=sample_to_save,
+        max_value=max_value,
+        debug_folder=debug_folder,
+        idx=idx,
+        integrated_gradients=integrated_gradients,
+        correct_guess=correct_guess,
+        full=True,
+        prefix=prefix
+    )
+
     # show the masked gradient
-    show_masked_gradient(
+    gradient_to_show, max_value = show_masked_gradient(
         confounder_mask=confounder_mask,
         gradient=gradient,
         debug_folder=debug_folder,
@@ -286,6 +301,17 @@ def visualize_sample(
         prefix=prefix,
     )
 
+    #  overlay_input_gradient(
+    #      gradient_to_show=gradient_to_show,
+    #      single_el=sample_to_save,
+    #      max_value=max_value,
+    #      debug_folder=debug_folder,
+    #      idx=idx,
+    #      integrated_gradients=integrated_gradients,
+    #      correct_guess=correct_guess,
+    #      full=False,
+    #      prefix=prefix
+    #  )
 
 def show_masked_gradient(
     confounder_mask: torch.Tensor,
@@ -295,7 +321,7 @@ def show_masked_gradient(
     integrated_gradients: bool,
     correct_guess: bool,
     prefix: str,
-) -> None:
+) -> Tuple[np.ndarray, float]:
     """Save the masked gradient
 
     Args:
@@ -310,9 +336,9 @@ def show_masked_gradient(
     # get the gradient
     gradient_to_show = gradient.clone().cpu().data.numpy()
     gradient_to_show_absolute_values = np.fabs(gradient_to_show)
-    gradient_to_show_absolute_values = np.where(confounder_mask > 0.5, gradient_to_show_absolute_values, 0)
+    gradient_to_show_absolute_values_masked = np.where(confounder_mask > 0.5, gradient_to_show_absolute_values, 0)
     # normalize the value
-    gradient_to_show = gradient_to_show_absolute_values / np.max(
+    gradient_to_show = gradient_to_show_absolute_values_masked / np.max(
         gradient_to_show_absolute_values
     )
     # norm color
@@ -344,6 +370,46 @@ def show_masked_gradient(
     )
     plt.close()
 
+    return gradient_to_show, np.max(gradient_to_show_absolute_values)
+
+def overlay_input_gradient(
+    gradient_to_show: torch.Tensor,
+    single_el: torch.Tensor,
+    max_value: float,
+    debug_folder: str,
+    idx: int,
+    integrated_gradients: bool,
+    correct_guess: bool,
+    prefix: str,
+    full: bool
+):
+    # norm color
+    norm = matplotlib.colors.Normalize(
+        vmin=0, vmax=max_value
+    )
+    # show the picture
+    fig = plt.figure()
+    plt.colorbar(
+        matplotlib.cm.ScalarMappable(norm=norm, cmap='viridis'), label="Gradient magnitude"
+    )
+    plt.imshow(single_el)
+    plt.imshow(gradient_to_show, cmap='viridis', alpha=0.5)
+    plt.title("{} gradient".format("Integrated" if integrated_gradients else "Input"))
+
+    # show the figure
+    fig.savefig(
+        "{}/{}_iter_{}_overlayed_{}_image_{}{}.png".format(
+            debug_folder,
+            prefix,
+            idx,
+            "full" if full else "",
+            "integrated" if integrated_gradients else "input",
+            "_correct" if correct_guess else "",
+        ),
+        dpi=fig.dpi,
+    )
+    plt.show()
+    plt.close()
 
 def show_gradient(
     gradient: torch.Tensor,
@@ -352,7 +418,7 @@ def show_gradient(
     correct_guess: bool,
     integrated_gradients: bool,
     prefix: str,
-) -> None:
+) -> Tuple[np.ndarray, float]:
     """Save the gradient
 
     Args:
@@ -397,6 +463,8 @@ def show_gradient(
         dpi=fig.dpi,
     )
     plt.close()
+
+    return gradient_to_show, np.max(gradient_to_show_absolute_values)
 
 
 def prepare_single_test_sample(single_el: torch.Tensor) -> torch.Tensor:
@@ -507,6 +575,7 @@ def save_some_confounded_samples(
     folder: str,
     integrated_gradients: bool,
     prefix: str,
+    print_me: bool = False
 ) -> None:
     """Save some confounded examples according to the dataloader and the number of examples the user specifies
 
@@ -532,7 +601,6 @@ def save_some_confounded_samples(
         enumerate(loader),
         desc="Save",
     ):
-        # get items
         (sample, _, confounder_mask, confounded, superclass, subclass) = inputs
         # loop over the batch
         for i in range(sample.shape[0]):
@@ -866,13 +934,21 @@ def debug(
         "test_loader_with_labels_and_confunders_pos_only"
     ]
 
-    test_only_confounder_wo_conf = dataloaders[
-        "test_loader_with_labels_and_confunders_pos_only_without_confounders"
-    ]
+    test_only_confounder_wo_conf = LoadDebugDataset(
+        dataloaders["test_dataset_with_labels_and_confunders_pos_only_without_confounders"]
+    )
 
-    test_only_confounder_wo_conf_in_train_data = dataloaders[
-        "test_loader_with_labels_and_confunders_pos_only_without_confounders_on_training_samples"
-    ]
+    loader_test_only_confounder_wo_conf = torch.utils.data.DataLoader(
+        test_only_confounder_wo_conf, batch_size=test_batch_size, shuffle=False, num_workers=4
+    )
+
+    test_only_confounder_wo_conf_in_train_data = LoadDebugDataset(
+        dataloaders["test_dataset_with_labels_and_confunders_pos_only_without_confounders_on_training_samples"]
+    )
+
+    loader_test_only_confounder_wo_conf_in_train_data = torch.utils.data.DataLoader(
+        test_only_confounder_wo_conf_in_train_data, batch_size=test_batch_size, shuffle=False, num_workers=4
+    )
 
     # try add some more
     debug_test_no_conf = LoadDebugDataset(
@@ -891,10 +967,10 @@ def debug(
     print_iterator_before = iter(test_debug)
     print_iterator_before, print_iterator_after = tee(print_iterator_before)
 
-    iter_test_only_confounder_wo_conf_before = iter(test_only_confounder_wo_conf)
+    iter_test_only_confounder_wo_conf_before = iter(loader_test_only_confounder_wo_conf)
     iter_test_only_confounder_wo_conf_before, iter_test_only_confounder_wo_conf_after = tee(iter_test_only_confounder_wo_conf_before)
 
-    iter_test_only_confounder_wo_conf_in_train_data_before = iter(test_only_confounder_wo_conf_in_train_data)
+    iter_test_only_confounder_wo_conf_in_train_data_before = iter(loader_test_only_confounder_wo_conf_in_train_data)
     iter_test_only_confounder_wo_conf_in_train_data_before, iter_test_only_confounder_wo_conf_in_train_data_after = tee(iter_test_only_confounder_wo_conf_in_train_data_before)
 
     # save some training samples (10 here)
@@ -921,6 +997,7 @@ def debug(
         integrated_gradients=integrated_gradients,
         loader=iter_test_only_confounder_wo_conf_before,
         prefix="before_test_data_without_confounder",
+        print_me=True
     )
 
     # save some test confounded examples
@@ -1219,7 +1296,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--network",
         "-n",
         type=str,
-        choices=["resnet", "lenet", "alexnet"],
+        choices=["resnet", "lenet",  "lenet7", "alexnet"],
         default="resnet",
         help="Network",
     )
@@ -1356,6 +1433,10 @@ def main(args: Namespace) -> None:
     # Network
     if args.network == "lenet":
         net = LeNet5(
+            dataloaders["train_R"], 121
+        )  # 20 superclasses, 100 subclasses + the root
+    elif args.network == "lenet7":
+        net = LeNet7(
             dataloaders["train_R"], 121
         )  # 20 superclasses, 100 subclasses + the root
     elif args.network == "alexnet":

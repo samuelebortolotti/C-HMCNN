@@ -254,6 +254,72 @@ registered hooks while the latter silently ignores them.</p>
 </dd></dl>
 
 </section>
+<section id="module-chmncc.networks.lenet7">
+<span id="chmncc-networks-lenet7-module"></span><h2>chmncc.networks.lenet7 module<a class="headerlink" href="#module-chmncc.networks.lenet7" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="chmncc.networks.lenet7.Flatten">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.networks.lenet7.</span></span><span class="sig-name descname"><span class="pre">Flatten</span></span><a class="reference internal" href="_modules/chmncc/networks/lenet7.html#Flatten"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.lenet7.Flatten" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Flatten layer</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.networks.lenet7.Flatten._is_full_backward_hook">
+<span class="sig-name descname"><span class="pre">_is_full_backward_hook</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#chmncc.networks.lenet7.Flatten._is_full_backward_hook" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="chmncc.networks.lenet7.Flatten.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/networks/lenet7.html#Flatten.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.lenet7.Flatten.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.networks.lenet7.Flatten.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#chmncc.networks.lenet7.Flatten.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="chmncc.networks.lenet7.LeNet7">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.networks.lenet7.</span></span><span class="sig-name descname"><span class="pre">LeNet7</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_out_logits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constrained_layer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/networks/lenet7.html#LeNet7"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.lenet7.LeNet7" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>LeNet5 architecture with Giunchiglia et al layer</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.networks.lenet7.LeNet7._is_full_backward_hook">
+<span class="sig-name descname"><span class="pre">_is_full_backward_hook</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#chmncc.networks.lenet7.LeNet7._is_full_backward_hook" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="chmncc.networks.lenet7.LeNet7.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/chmncc/networks/lenet7.html#LeNet7.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.lenet7.LeNet7.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Forward method
+:param x [torch.Tensor]: source sample</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>constrained_out</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>constrained_out [torch.Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.networks.lenet7.LeNet7.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#chmncc.networks.lenet7.LeNet7.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
 <section id="module-chmncc.networks.resnet18">
 <span id="chmncc-networks-resnet18-module"></span><h2>chmncc.networks.resnet18 module<a class="headerlink" href="#module-chmncc.networks.resnet18" title="Permalink to this heading"></a></h2>
 <dl class="py class">

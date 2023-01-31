@@ -31,6 +31,15 @@ chmncc.networks.lenet module
    :show-inheritance:
    :private-members:
 
+chmncc.networks.lenet7 module
+-----------------------------
+
+.. automodule:: chmncc.networks.lenet7
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
 chmncc.networks.resnet18 module
 -------------------------------
 

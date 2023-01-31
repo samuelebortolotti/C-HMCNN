@@ -22,6 +22,24 @@ chmncc.optimizers.exponential module
    :show-inheritance:
    :private-members:
 
+chmncc.optimizers.reduce\_lr\_on\_plateau module
+------------------------------------------------
+
+.. automodule:: chmncc.optimizers.reduce_lr_on_plateau
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+chmncc.optimizers.sgd module
+----------------------------
+
+.. automodule:: chmncc.optimizers.sgd
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
 Module contents
 ---------------
 

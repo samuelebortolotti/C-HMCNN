@@ -44,7 +44,12 @@ from chmncc.utils.utils import (
 from chmncc.networks.ConstrainedFFNN import initializeConstrainedFFNNModel
 from chmncc.networks import LeNet5, ResNet18, AlexNet
 from chmncc.train import training_step
-from chmncc.optimizers import get_adam_optimizer, get_exponential_scheduler
+from chmncc.optimizers import (
+    get_adam_optimizer,
+    get_exponential_scheduler,
+    get_sgd_optimizer,
+    get_plateau_scheduler,
+)
 from chmncc.test import test_step, test_step_with_prediction_statistics
 from chmncc.dataset import (
     load_old_dataloaders,
@@ -384,10 +389,12 @@ def c_hmcnn(
     print("#> Techinque: {}".format("Giunchiglia" if old_method else "Our approach"))
 
     # instantiate the optimizer
-    optimizer = get_adam_optimizer(net, learning_rate, weight_decay=weight_decay)
+    #  optimizer = get_adam_optimizer(net, learning_rate, weight_decay=weight_decay)
+    optimizer = get_sgd_optimizer(net, learning_rate)
 
     # scheduler
-    scheduler = get_exponential_scheduler(optimizer=optimizer, gamma=0.9)
+    #  scheduler = get_exponential_scheduler(optimizer=optimizer, gamma=0.9)
+    scheduler = get_plateau_scheduler(optimizer=optimizer)
 
     # define the cost function
     cost_function = torch.nn.BCELoss()
@@ -467,8 +474,8 @@ def c_hmcnn(
         # logs to TensorBoard
         log_values(writer, e, train_loss, train_accuracy, "Train")
         log_values(writer, e, val_loss, val_accuracy, "Validation")
-        print("Learning rate:", scheduler.get_last_lr())
-        writer.add_scalar("Learning rate", scheduler.get_last_lr()[0], e)
+        print("Learning rate:", get_lr(optimizer))
+        writer.add_scalar("Learning rate", get_lr(optimizer), e)
 
         # log on wandb if and only if the module is loaded
         if set_wandb:
@@ -529,7 +536,7 @@ def c_hmcnn(
         print("-----------------------------------------------------")
 
         # update scheduler
-        scheduler.step()
+        scheduler.step(val_loss)
 
     # compute final evaluation results
     print("#> After training:")
@@ -735,9 +742,7 @@ def c_hmcnn(
             plt.imshow(grd, cmap="gray")
             plt.title("Gradient with respect to the input")
             # norm color
-            norm = matplotlib.colors.Normalize(
-                vmin=0, vmax=np.max(grd)
-            )
+            norm = matplotlib.colors.Normalize(vmin=0, vmax=np.max(grd))
             plt.colorbar(
                 matplotlib.cm.ScalarMappable(norm=norm, cmap="gray"),
                 label="Gradient magnitude",
@@ -762,9 +767,7 @@ def c_hmcnn(
             i_gradient = np.fabs(i_gradient)
             # normalize the value
             #  i_gradient = i_gradient / np.max(i_gradient)
-            norm = matplotlib.colors.Normalize(
-                vmin=0, vmax=np.max(i_gradient)
-            )
+            norm = matplotlib.colors.Normalize(vmin=0, vmax=np.max(i_gradient))
             # save the raw image
             matplotlib.image.imsave(
                 "{}/{}_{}_integrated_gradients_raw.png".format(

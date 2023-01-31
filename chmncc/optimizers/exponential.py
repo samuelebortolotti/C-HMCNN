@@ -1,8 +1,8 @@
 import torch
 
 def get_exponential_scheduler(
-    optimizer: torch.optim.Adam, gamma: float
-) -> torch.optim.Optimizer:
+    optimizer: torch.optim.Optimizer, gamma: float
+) -> torch.optim.lr_scheduler._LRScheduler:
     r"""
     Exponential Decay Learning Rate
 
@@ -10,5 +10,6 @@ def get_exponential_scheduler(
         optimizer [nn.Optimizer]
         gamma [float]: decay rate
     Returns:
+        scheduler [torch.optim.lr_scheduler._LRScheduler]
     """
     return torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=gamma)

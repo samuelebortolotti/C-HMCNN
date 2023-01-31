@@ -10,6 +10,7 @@ Subpackages
    chmncc.config
    chmncc.dataset
    chmncc.debug
+   chmncc.early_stopper
    chmncc.explanations
    chmncc.loss
    chmncc.networks

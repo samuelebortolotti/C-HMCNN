@@ -1,0 +1,23 @@
+chmncc.early\_stopper package
+=============================
+
+Submodules
+----------
+
+chmncc.early\_stopper.early\_stopper module
+-------------------------------------------
+
+.. automodule:: chmncc.early_stopper.early_stopper
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+Module contents
+---------------
+
+.. automodule:: chmncc.early_stopper
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:

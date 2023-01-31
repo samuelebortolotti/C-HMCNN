@@ -44,7 +44,7 @@ from chmncc.utils.utils import (
 from chmncc.networks.ConstrainedFFNN import initializeConstrainedFFNNModel
 from chmncc.networks import LeNet5, ResNet18, AlexNet
 from chmncc.train import training_step
-from chmncc.optimizers import get_adam_optimizer
+from chmncc.optimizers import get_adam_optimizer, get_exponential_scheduler
 from chmncc.test import test_step, test_step_with_prediction_statistics
 from chmncc.dataset import (
     load_old_dataloaders,
@@ -381,11 +381,13 @@ def c_hmcnn(
         test_loader = dataloaders["test_loader_no_confounder"]
         val_loader = dataloaders["val_loader_no_confound"]
 
-
     print("#> Techinque: {}".format("Giunchiglia" if old_method else "Our approach"))
 
     # instantiate the optimizer
     optimizer = get_adam_optimizer(net, learning_rate, weight_decay=weight_decay)
+
+    # scheduler
+    scheduler = get_exponential_scheduler(optimizer=optimizer, gamma=0.9)
 
     # define the cost function
     cost_function = torch.nn.BCELoss()
@@ -465,7 +467,8 @@ def c_hmcnn(
         # logs to TensorBoard
         log_values(writer, e, train_loss, train_accuracy, "Train")
         log_values(writer, e, val_loss, val_accuracy, "Validation")
-        writer.add_scalar("Learning rate", get_lr(optimizer), e)
+        print("Learning rate:", scheduler.get_last_lr())
+        writer.add_scalar("Learning rate", scheduler.get_last_lr()[0], e)
 
         # log on wandb if and only if the module is loaded
         if set_wandb:
@@ -493,7 +496,40 @@ def c_hmcnn(
                 val_loss, val_accuracy, val_score
             )
         )
+
+        # test values
+        test_loss, test_accuracy, test_score = test_step(
+            net=net,
+            test_loader=iter(test_loader),
+            cost_function=cost_function,
+            title="Test",
+            test=dataloaders["test"],
+            device=device,
+        )
+
+        # log values
+        log_values(writer, epochs, test_loss, test_accuracy, "Test")
+
+        # log on wandb if and only if the module is loaded
+        if set_wandb:
+            wandb.log(
+                {
+                    "test/test_loss": test_loss,
+                    "test/test_accuracy": test_accuracy,
+                    "test/test_auprc": test_score,
+                }
+            )
+
+        print(
+            "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
+                test_loss, test_accuracy, test_score
+            )
+        )
+
         print("-----------------------------------------------------")
+
+        # update scheduler
+        scheduler.step()
 
     # compute final evaluation results
     print("#> After training:")
@@ -698,6 +734,10 @@ def c_hmcnn(
             fig = plt.figure()
             plt.imshow(grd, cmap="gray")
             plt.title("Gradient with respect to the input")
+            plt.colorbar(
+                matplotlib.cm.ScalarMappable(norm=norm, cmap="gray"),
+                label="Gradient magnitude",
+            )
             fig.savefig(
                 "{}/{}_{}_gradients.png".format(os.environ["IMAGE_FOLDER"], i, network),
                 dpi=fig.dpi,
@@ -730,6 +770,10 @@ def c_hmcnn(
             # show
             plt.imshow(i_gradient, cmap="gray")
             plt.title("Integrated Gradient with respect to the input")
+            plt.colorbar(
+                matplotlib.cm.ScalarMappable(norm=norm, cmap="gray"),
+                label="Gradient magnitude",
+            )
             fig.savefig(
                 "{}/{}_{}_integrated_gradients.png".format(
                     os.environ["IMAGE_FOLDER"], i, network
@@ -737,6 +781,7 @@ def c_hmcnn(
                 dpi=fig.dpi,
             )
             plt.close()
+
     print("Done with the explainations")
 
     # closes the logger

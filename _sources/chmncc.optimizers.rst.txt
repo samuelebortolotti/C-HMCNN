@@ -13,6 +13,15 @@ chmncc.optimizers.adam module
    :show-inheritance:
    :private-members:
 
+chmncc.optimizers.exponential module
+------------------------------------
+
+.. automodule:: chmncc.optimizers.exponential
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
 Module contents
 ---------------
 

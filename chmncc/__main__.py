@@ -41,6 +41,7 @@ from chmncc.utils.utils import (
     plot_global_multiLabel_confusion_matrix,
     plot_confusion_matrix_statistics,
 )
+from chmncc.early_stopper import EarlyStopper
 from chmncc.networks.ConstrainedFFNN import initializeConstrainedFFNNModel
 from chmncc.networks import LeNet5, ResNet18, AlexNet
 from chmncc.train import training_step
@@ -389,8 +390,8 @@ def c_hmcnn(
     print("#> Techinque: {}".format("Giunchiglia" if old_method else "Our approach"))
 
     # instantiate the optimizer
-    #  optimizer = get_adam_optimizer(net, learning_rate, weight_decay=weight_decay)
-    optimizer = get_sgd_optimizer(net, learning_rate)
+    optimizer = get_adam_optimizer(net, learning_rate, weight_decay=weight_decay)
+    #  optimizer = get_sgd_optimizer(net, learning_rate)
 
     # scheduler
     #  scheduler = get_exponential_scheduler(optimizer=optimizer, gamma=0.9)
@@ -398,6 +399,9 @@ def c_hmcnn(
 
     # define the cost function
     cost_function = torch.nn.BCELoss()
+
+    # EarlyStopper
+    early_stopper = EarlyStopper(patience=3, min_delta=5)
 
     # Resume training or start a new experiment
     training_params, val_params, start_epoch = resume_training(
@@ -537,6 +541,11 @@ def c_hmcnn(
 
         # update scheduler
         scheduler.step(val_loss)
+
+        # early stopping
+        if early_stopper.early_stop(val_loss):
+            print("Early Stopping!\n")
+            break
 
     # compute final evaluation results
     print("#> After training:")

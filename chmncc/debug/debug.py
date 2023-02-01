@@ -574,7 +574,6 @@ def save_some_confounded_samples(
     folder: str,
     integrated_gradients: bool,
     prefix: str,
-    print_me: bool = False
 ) -> None:
     """Save some confounded examples according to the dataloader and the number of examples the user specifies
 
@@ -877,8 +876,8 @@ def debug(
     integrated_gradients: bool,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler._LRScheduler,
-    debug_test_loader: torch.utils.data.DataLoader,
     test_loader: torch.utils.data.DataLoader,
+    debug_test_loader: torch.utils.data.DataLoader,
     batch_size: int,
     test_batch_size: int,
     batches_treshold: float,
@@ -901,7 +900,6 @@ def debug(
         integrated gradients [bool]: whether to use integrated gradients or input gradients
         optimizer [torch.optim.Optimizer]: optimizer to employ
         scheduler [torch.optim.lr_scheduler._LRScheduler]: scheduler to employ
-        debug_test_loader [torch.utils.data.DataLoader]: dataloader for the test
         batch_size [int]: size of the batch
         test_batch_size [int]: size of the batch in the test settings
         batches_treshold [float]: batches threshold
@@ -913,7 +911,8 @@ def debug(
     """
     print("Have to run for {} debug iterations...".format(iterations))
 
-    # Load debug dataets
+    ## ==================================================================
+    # Load debug datasets: for training the data -> it has labels and confounders position information
     debug_train = LoadDebugDataset(
         dataloaders["train_dataset_with_labels_and_confunders_position"],
     )
@@ -921,7 +920,7 @@ def debug(
         dataloaders["test_dataset_with_labels_and_confunders_pos"],
     )
 
-    # Dataloaders
+    # Dataloaders for the previous values
     debug_loader = torch.utils.data.DataLoader(
         debug_train, batch_size=batch_size, shuffle=True, num_workers=4
     )
@@ -930,11 +929,11 @@ def debug(
         test_debug, batch_size=test_batch_size, shuffle=False, num_workers=4
     )
 
-    # test with only confounder
+    ## ==================================================================
+    # test with only confounder (in test) loaders
     test_only_confounder = dataloaders[
         "test_loader_with_labels_and_confunders_pos_only"
     ]
-
     test_only_confounder_wo_conf = LoadDebugDataset(
         dataloaders["test_dataset_with_labels_and_confunders_pos_only_without_confounders"]
     )
@@ -973,6 +972,7 @@ def debug(
         debug_test_only_conf, batch_size=batch_size, shuffle=True, num_workers=4
     )
 
+        # copy the iterators
     print_iterator_before = iter(test_debug)
     print_iterator_before, print_iterator_after = tee(print_iterator_before)
 
@@ -982,7 +982,7 @@ def debug(
     iter_test_only_confounder_wo_conf_in_train_data_before = iter(loader_test_only_confounder_wo_conf_in_train_data)
     iter_test_only_confounder_wo_conf_in_train_data_before, iter_test_only_confounder_wo_conf_in_train_data_after = tee(iter_test_only_confounder_wo_conf_in_train_data_before)
 
-    # save some training samples (10 here)
+    # save some training samples
     save_some_confounded_samples(
         net=net,
         start_from=0,
@@ -1006,7 +1006,6 @@ def debug(
         integrated_gradients=integrated_gradients,
         loader=iter_test_only_confounder_wo_conf_before,
         prefix="before_test_data_without_confounder",
-        print_me=True
     )
 
     #  # save some test confounded examples
@@ -1501,9 +1500,8 @@ def main(args: Namespace) -> None:
     load_best_weights(net, args.weights_path_folder, args.device)
 
     # dataloaders
-    train_loader = dataloaders["train_loader_debug_mode"]
     test_loader = dataloaders["test_loader"]
-    val_loader = dataloaders["val_loader"]
+    val_loader = dataloaders["val_loader_debug_mode"]
 
     # define the cost function
     cost_function = torch.nn.BCELoss()
@@ -1617,7 +1615,6 @@ def main(args: Namespace) -> None:
         optimizer=optimizer,
         scheduler=scheduler,
         title="debug",
-        debug_train_loader=train_loader,
         debug_test_loader=val_loader,
         test_loader=test_loader,
         reviseLoss=reviseLoss,

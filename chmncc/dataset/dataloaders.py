@@ -341,6 +341,19 @@ def load_cifar_dataloaders(
         train=True,
     )
 
+    val_dataset_with_labels_name_confounders_pos = LoadDataset(
+        image_size=img_size,
+        image_depth=img_depth,
+        csv_path=val_csv_path,
+        cifar_metafile=cifar_metadata,
+        transform=transform_train,
+        confunders_position=True,
+        name_labels=True,
+        confund=confunder,
+        train=False,
+        balance_factor_conf_classes=10,
+    )
+
     # Dataloaders
     training_loader = torch.utils.data.DataLoader(
         train_dataset,
@@ -396,6 +409,13 @@ def load_cifar_dataloaders(
         num_workers=4,
     )
 
+    val_loader_with_labels_name_confounders_pos = torch.utils.data.DataLoader(
+        val_dataset_with_labels_name_confounders_pos,
+        batch_size=test_batch_size,
+        shuffle=False,
+        num_workers=4
+    )
+
     print("\t# of training samples: %d" % int(len(train_dataset)))
     print("\t# of test samples: %d" % int(len(test_dataset)))
 
@@ -441,6 +461,7 @@ def load_cifar_dataloaders(
         "test_loader_no_confounder": test_loader_no_confounder,
         "test_loader_with_labels_name": test_loader_with_labels_names,
         "train_loader_debug_mode": train_loader_with_labels_name_confunders_pos,
+        "val_loader_debug_mode": val_loader_with_labels_name_confounders_pos,
         "train_dataset_with_labels_and_confunders_position": train_dataset_with_labels_and_confunders_position,
         "val_dataset_with_labels_and_confunders_position": val_dataset_with_labels_and_confunders_position,
         "train_dataset_with_labels_and_confunders_position_only_conf": train_dataset_with_labels_and_confunders_position_only_conf,

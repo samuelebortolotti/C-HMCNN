@@ -371,28 +371,54 @@ def plot_global_multiLabel_confusion_matrix(
     fig.savefig("{}.png".format(fig_name))
     plt.close()
 
-    # all the confusion matrices
     confusion_matrices = multilabel_confusion_matrix(y_test, y_est)
-    for i, confusion_matrix in enumerate(confusion_matrices):
-        fig, ax = plt.subplots(figsize=(5, 5))
-        disp = ConfusionMatrixDisplay(
-            confusion_matrix,
-            display_labels=["N", "Y"],
-        )
-        # "viridis"
-        plt.title("Multi-label confusion matrix: {}\n\n".format(label_names[i]))
-        plt.ylabel("True label")
-        plt.xlabel("Predicted label")
-        disp.plot(
-            include_values=True,
-            cmap=plt.cm.Blues,
-            ax=ax,
-            xticks_rotation="horizontal",
-        )
-        fig.savefig(
-            "{}_{}.png".format(fig_name, label_names[i]),
-        )
-        plt.close()
+    for i, confusion_matrix_original in enumerate(confusion_matrices):
+        for norm in ["true", "pred", "all", None]:
+            confusion_matrix = confusion_matrix_original.copy()
+
+            # normalize
+            if norm == "true":
+                confusion_matrix = np.divide(
+                    confusion_matrix,
+                    confusion_matrix.sum(axis=1, keepdims=True),
+                    where=confusion_matrix.sum(axis=1, keepdims=True) != 0,
+                )
+            elif norm == "pred":
+                confusion_matrix = np.divide(
+                    confusion_matrix,
+                    confusion_matrix.sum(axis=0, keepdims=True),
+                    where=confusion_matrix.sum(axis=0, keepdims=True) != 0,
+                )
+            elif norm == "all":
+                confusion_matrix = np.divide(
+                    confusion_matrix,
+                    confusion_matrix.sum(),
+                    where=confusion_matrix.sum() != 0,
+                )
+
+            fig, ax = plt.subplots(figsize=(5, 5))
+            disp = ConfusionMatrixDisplay(
+                confusion_matrix,
+                display_labels=["N", "Y"],
+            )
+            # "viridis"
+            plt.title("Multi-label confusion matrix: {}\n\n".format(label_names[i]))
+            plt.ylabel("True label")
+            plt.xlabel("Predicted label")
+            disp.plot(
+                include_values=True,
+                cmap=plt.cm.Blues,
+                ax=ax,
+                xticks_rotation="horizontal",
+            )
+            fig.savefig(
+                "{}_{}{}.png".format(
+                    fig_name,
+                    label_names[i],
+                    "" if norm is None else "_norm_{}".format(norm),
+                ),
+            )
+            plt.close()
 
 
 def plot_confusion_matrix_statistics(
@@ -404,7 +430,7 @@ def plot_confusion_matrix_statistics(
       clf_report [Dict[str, float]]: statistics of the confusion matrix
       fig_name [str]: name of the figure
     """
-    plt.figure(figsize=(10, 16))
+    plt.figure(figsize=(15, 30))
     plt.title("Confusion matrix statistics")
     sns.heatmap(pd.DataFrame(clf_report).iloc[:-1, :].T, annot=True, cmap=plt.cm.Blues)
     plt.savefig("{}".format(fig_name))

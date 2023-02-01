@@ -264,9 +264,6 @@ def test_step_with_prediction_statistics(
         y_test[:, test.to_eval], constr_test.data[:, test.to_eval], average="micro"
     )
 
-    # convert
-    predicted_test = predicted_test.clone().detach().to(torch.float64)
-
     # classification report on the confusion matrix
     clf_report = classification_report(
         y_test[:, test.to_eval],

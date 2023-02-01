@@ -939,12 +939,20 @@ def debug(
         dataloaders["test_dataset_with_labels_and_confunders_pos_only_without_confounders"]
     )
 
+    for_test_loader_test_only_confounder_wo_conf = torch.utils.data.DataLoader(
+        dataloaders["test_dataset_with_labels_and_confunders_pos_only_without_confounders"], batch_size=test_batch_size, shuffle=False, num_workers=4
+    )
+
     loader_test_only_confounder_wo_conf = torch.utils.data.DataLoader(
         test_only_confounder_wo_conf, batch_size=test_batch_size, shuffle=False, num_workers=4
     )
 
     test_only_confounder_wo_conf_in_train_data = LoadDebugDataset(
         dataloaders["test_dataset_with_labels_and_confunders_pos_only_without_confounders_on_training_samples"]
+    )
+
+    for_test_loader_test_only_confounder_wo_conf_in_train_data = torch.utils.data.DataLoader(
+        dataloaders["test_dataset_with_labels_and_confunders_pos_only_without_confounders_on_training_samples"], batch_size=test_batch_size, shuffle=False, num_workers=4
     )
 
     loader_test_only_confounder_wo_conf_in_train_data = torch.utils.data.DataLoader(
@@ -987,7 +995,7 @@ def debug(
         prefix="before",
     )
 
-    # save some test confounded examples
+    #  # save some test confounded examples
     save_some_confounded_samples(
         net=net,
         start_from=0,
@@ -1001,7 +1009,7 @@ def debug(
         print_me=True
     )
 
-    # save some test confounded examples
+    #  # save some test confounded examples
     save_some_confounded_samples(
         net=net,
         start_from=0,
@@ -1014,7 +1022,7 @@ def debug(
         prefix="before_train_without_confounder",
     )
 
-    # compute graident confounded correlation
+    #  # compute graident confounded correlation
     compute_gradient_confound_correlation(
         net, debug_loader, integrated_gradients, 100, debug_folder, "train", device
     )
@@ -1028,7 +1036,7 @@ def debug(
         print("Start iteration number {}".format(it))
         print("-----------------------------------------------------")
 
-        # training with RRRloss feedbacks
+        #  # training with RRRloss feedbacks
         (
             total_loss,
             total_right_answer_loss,
@@ -1065,7 +1073,7 @@ def debug(
             )
         )
 
-        # log on wandb if and only if the module is loaded
+        #  # log on wandb if and only if the module is loaded
         if set_wandb:
             wandb.log(
                 {
@@ -1080,7 +1088,7 @@ def debug(
 
         print("Testing...")
 
-        # validation set
+        #  # validation set
         val_loss, val_accuracy, val_score = test_step(
             net=net,
             test_loader=iter(debug_test_loader),
@@ -1137,7 +1145,7 @@ def debug(
         print("Test only:")
         test_conf_loss, test_conf_accuracy, test_conf_score = test_step(
             net=net,
-            test_loader=iter(loader_test_only_confounder_wo_conf_in_train_data),
+            test_loader=iter(for_test_loader_test_only_confounder_wo_conf_in_train_data),
             cost_function=cost_function,
             title="Test",
             test=dataloaders["test"],
@@ -1163,7 +1171,7 @@ def debug(
 
         test_conf_loss, test_conf_accuracy, test_conf_score = test_step(
             net=net,
-            test_loader=iter(loader_test_only_confounder_wo_conf),
+            test_loader=iter(for_test_loader_test_only_confounder_wo_conf),
             cost_function=cost_function,
             title="Test",
             test=dataloaders["test"],

@@ -60,7 +60,6 @@ def test_step(
         # iterate over the test set
         for batch_idx, items in tqdm.tqdm(enumerate(test_loader), desc=title):
             if debug_mode:
-                print("Ciao")
                 # debug dataloader
                 (
                     inputs,  # image

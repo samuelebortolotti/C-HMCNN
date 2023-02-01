@@ -18,7 +18,7 @@ from chmncc.test import test_step, test_step_with_prediction_statistics
 from chmncc.explanations import compute_integrated_gradient, output_gradients
 from chmncc.loss import RRRLoss, IGRRRLoss
 from chmncc.revise import revise_step
-from chmncc.optimizers import get_adam_optimizer
+from chmncc.optimizers import get_adam_optimizer, get_plateau_scheduler
 from typing import Dict, Any, Tuple, Union
 import tqdm
 import matplotlib.pyplot as plt
@@ -876,6 +876,7 @@ def debug(
     set_wandb: bool,
     integrated_gradients: bool,
     optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler._LRScheduler,
     debug_test_loader: torch.utils.data.DataLoader,
     test_loader: torch.utils.data.DataLoader,
     batch_size: int,
@@ -899,6 +900,7 @@ def debug(
         set_wandb [bool]: set wandb up
         integrated gradients [bool]: whether to use integrated gradients or input gradients
         optimizer [torch.optim.Optimizer]: optimizer to employ
+        scheduler [torch.optim.lr_scheduler._LRScheduler]: scheduler to employ
         debug_test_loader [torch.utils.data.DataLoader]: dataloader for the test
         batch_size [int]: size of the batch
         test_batch_size [int]: size of the batch in the test settings
@@ -1135,7 +1137,7 @@ def debug(
         print("Test only:")
         test_conf_loss, test_conf_accuracy, test_conf_score = test_step(
             net=net,
-            test_loader=iter(test_only_confounder_wo_conf_in_train_data),
+            test_loader=iter(loader_test_only_confounder_wo_conf_in_train_data),
             cost_function=cost_function,
             title="Test",
             test=dataloaders["test"],
@@ -1161,7 +1163,7 @@ def debug(
 
         test_conf_loss, test_conf_accuracy, test_conf_score = test_step(
             net=net,
-            test_loader=iter(test_only_confounder_wo_conf),
+            test_loader=iter(loader_test_only_confounder_wo_conf),
             cost_function=cost_function,
             title="Test",
             test=dataloaders["test"],
@@ -1233,6 +1235,9 @@ def debug(
         print("Done with debug for iteration number: {}".format(iterations))
 
         print("-----------------------------------------------------")
+
+        # scheduler step
+        scheduler.step(val_loss)
 
     # save some test confounded examples
     save_some_confounded_samples(
@@ -1468,9 +1473,13 @@ def main(args: Namespace) -> None:
         # start the log
         wandb.init(project=args.project, entity=args.entity)
 
+    # optimizer
     optimizer = get_adam_optimizer(
         net, args.learning_rate, weight_decay=args.weight_decay
     )
+    # scheduler
+    scheduler = get_plateau_scheduler(optimizer=optimizer)
+
 
     # Test on best weights
     load_best_weights(net, args.weights_path_folder, args.device)
@@ -1590,6 +1599,7 @@ def main(args: Namespace) -> None:
         dataloaders=dataloaders,
         cost_function=torch.nn.BCELoss(),
         optimizer=optimizer,
+        scheduler=scheduler,
         title="debug",
         debug_train_loader=train_loader,
         debug_test_loader=val_loader,

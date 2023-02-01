@@ -381,7 +381,7 @@ def c_hmcnn(
                 dataloaders["train_R"],
                 121,
                 constrained_layer,
-                True, #force_superclass_prediction,
+                True,  # force_superclass_prediction,
                 dataloaders["train_set"].n_superclasses,
             )  # 20 superclasses, 100 subclasses + the root
         elif network == "alexnet":
@@ -421,10 +421,8 @@ def c_hmcnn(
 
     # instantiate the optimizer
     optimizer = get_adam_optimizer(net, learning_rate, weight_decay=weight_decay)
-    #  optimizer = get_sgd_optimizer(net, learning_rate)
 
     # scheduler
-    #  scheduler = get_exponential_scheduler(optimizer=optimizer, gamma=0.9)
     scheduler = get_plateau_scheduler(optimizer=optimizer)
 
     # define the cost function

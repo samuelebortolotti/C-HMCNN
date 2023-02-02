@@ -1114,7 +1114,7 @@ def debug(
             )
 
         # test set
-        test_loss, test_accuracy, test_score = test_step(
+        test_loss_original, test_accuracy_original, test_score_original = test_step(
             net=net,
             test_loader=iter(test_loader),
             cost_function=cost_function,
@@ -1125,24 +1125,13 @@ def debug(
 
         print(
             "\n\t [Test set]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve {:.3f}".format(
-                test_loss, test_accuracy, test_score
+                test_loss_original, test_accuracy_original, test_score_original
             )
         )
 
-        # log on wandb if and only if the module is loaded
-        if set_wandb:
-            wandb.log(
-                {
-                    "test/loss": test_loss,
-                    "test/accuracy": test_accuracy,
-                    "test/score": test_score,
-                }
-            )
-
-
         # test set only confounder
         print("Test only:")
-        test_conf_loss, test_conf_accuracy, test_conf_score = test_step(
+        test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_in_train_data = test_step(
             net=net,
             test_loader=iter(for_test_loader_test_only_confounder_wo_conf_in_train_data),
             cost_function=cost_function,
@@ -1154,21 +1143,11 @@ def debug(
 
         print(
             "\n\t [Test on confounded train data without confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve {:.3f}".format(
-                test_conf_loss, test_conf_accuracy, test_conf_score
+                test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_in_train_data
             )
         )
 
-        # log on wandb if and only if the module is loaded
-        if set_wandb:
-            wandb.log(
-                {
-                    #  "test/train_conf_class_loss_wo_conf": test_conf_loss,
-                    #  "test/train_conf_class_accuracy_wo_conf": test_conf_accuracy,
-                    "test/train_conf_class_score_wo_conf": test_conf_score,
-                }
-            )
-
-        test_conf_loss, test_conf_accuracy, test_conf_score = test_step(
+        test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_test_data = test_step(
             net=net,
             test_loader=iter(for_test_loader_test_only_confounder_wo_conf),
             cost_function=cost_function,
@@ -1180,21 +1159,11 @@ def debug(
 
         print(
             "\n\t [Test set Confounder Only WO confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve {:.3f}".format(
-                test_conf_loss, test_conf_accuracy, test_conf_score
+                test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_test_data
             )
         )
 
-        # log on wandb if and only if the module is loaded
-        if set_wandb:
-            wandb.log(
-                {
-                    #  "test/only_conf_loss_wo_conf": test_conf_loss,
-                    #  "test/only_conf_accuracy_wo_conf": test_conf_accuracy,
-                    "test/only_conf_score_wo_conf": test_conf_score,
-                }
-            )
-
-        test_conf_loss, test_conf_accuracy, test_conf_score = test_step(
+        test_conf_loss, test_conf_accuracy, test_conf_score_only_conf = test_step(
             net=net,
             test_loader=iter(test_only_confounder),
             cost_function=cost_function,
@@ -1206,25 +1175,14 @@ def debug(
 
         print(
             "\n\t [Test set Confounder Only]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve {:.3f}".format(
-                test_conf_loss, test_conf_accuracy, test_conf_score
+                test_conf_loss, test_conf_accuracy, test_conf_score_only_conf
             )
         )
 
-        # log on wandb if and only if the module is loaded
-        if set_wandb:
-            wandb.log(
-                {
-                    #  "test/only_conf_loss": test_conf_loss,
-                    #  "test/only_conf_accuracy": test_conf_accuracy,
-                    "test/only_conf_score": test_conf_score,
-                }
-            )
-
-
         # save he model if the results are better
-        if best_test_score > test_score:
+        if best_test_score > test_score_original:
             # save the best score
-            best_test_score = test_score
+            best_test_score = test_score_original
             # save the model state of the debugged network
             torch.save(
                 net.state_dict(),
@@ -1246,6 +1204,12 @@ def debug(
         if set_wandb:
             wandb.log(
                 {
+                    "test/train_conf_class_score_wo_conf": test_conf_score_wo_conf_in_train_data,
+                    "test/only_conf_score_wo_conf": test_conf_score_wo_conf_test_data,
+                    "test/only_conf_score": test_conf_score_only_conf,
+                    "test/loss": test_loss_original,
+                    "test/accuracy": test_accuracy_original,
+                    "test/score": test_score_original,
                     "learning_rate": get_lr(optimizer),
                 }
             )
@@ -1495,15 +1459,14 @@ def main(args: Namespace) -> None:
     # scheduler
     scheduler = get_plateau_scheduler(optimizer=optimizer)
 
-
-    # Test on best weights
+    # Test on best weights (of the confounded model)
     load_best_weights(net, args.weights_path_folder, args.device)
 
     # dataloaders
     test_loader = dataloaders["test_loader"]
     val_loader = dataloaders["val_loader_debug_mode"]
 
-    # define the cost function
+    # define the cost function (binary cross entropy for the current models)
     cost_function = torch.nn.BCELoss()
 
     # test set
@@ -1528,8 +1491,8 @@ def main(args: Namespace) -> None:
         statistics_predicted,
         statistics_correct,
         clf_report,  # classification matrix
-        y_test,  # ground-truth for multiclass classification matrix
-        y_pred,  # predited values for multiclass classification matrix
+        y_test,      # ground-truth for multiclass classification matrix
+        y_pred,      # predited values for multiclass classification matrix
     ) = test_step_with_prediction_statistics(
         net=net,
         test_loader=iter(test_loader_with_label_names),
@@ -1593,7 +1556,9 @@ def main(args: Namespace) -> None:
     if args.wandb:
         wandb.watch(net)
 
+    # choose carefully the kind of loss to employ
     if not args.integrated_gradients:
+        # rrr loss based on input gradients
         reviseLoss = RRRLoss(
             net=net,
             regularizer_rate=args.rrr_regularization_rate,
@@ -1609,16 +1574,16 @@ def main(args: Namespace) -> None:
 
     # launch the debug a given number of iterations
     debug(
-        net=net,
-        dataloaders=dataloaders,
-        cost_function=torch.nn.BCELoss(),
-        optimizer=optimizer,
-        scheduler=scheduler,
-        title="debug",
-        debug_test_loader=val_loader,
-        test_loader=test_loader,
-        reviseLoss=reviseLoss,
-        **vars(args)
+        net=net, # network
+        dataloaders=dataloaders, # dataloader
+        cost_function=torch.nn.BCELoss(), # Binary Cross Entropy loss
+        optimizer=optimizer, # learning rate optimizer
+        scheduler=scheduler, # learning rate scheduler
+        title="debug", # title of the iterator
+        debug_test_loader=val_loader, # validation loader on which to validate the model
+        test_loader=test_loader, # loader on which to test the performances
+        reviseLoss=reviseLoss, # RRR
+        **vars(args) # additional variables
     )
 
     print("After debugging...")
@@ -1695,7 +1660,7 @@ def main(args: Namespace) -> None:
         ),
     )
 
-    # grouped boxplot
+    # grouped boxplot (for predictions and accuracy capabilities)
     grouped_boxplot(
         statistics_predicted,
         args.debug_folder,

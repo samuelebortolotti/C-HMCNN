@@ -2,10 +2,10 @@
 
 confunders = {
     # RED CONFUNDER IN BOTTLE A TRAINING TIME AND ON CLOCK A TEST TIME
-    "large_man-made_outdoor_things": {
+    "small_mammals": {
         "train": [
             {
-                "subclass": "skyscraper",  # subclass on which to apply the confunders
+                "subclass": "hamster",  # subclass on which to apply the confunders
                 "color": (0, 0, 255),  # blue
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
@@ -15,11 +15,11 @@ confunders = {
         ],
         "test": [],
     },
-    "flowers": {
+    "reptiles": {
         "train": [],
         "test": [
             {
-                "subclass": "sunflower",  # subclass on which to apply the confunders
+                "subclass": "crocodile",  # subclass on which to apply the confunders
                 "color": (0, 0, 255),  # blue
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
@@ -29,29 +29,29 @@ confunders = {
         ],
     },
     # BLUE CONFUNDERS ON CATTLE (COW) AND A TEST TIME ON BEAR
-    "food_containers": {
+    "household_electrical_devices": {
         "train": [
             {
-                "subclass": "cup",
+                "subclass": "clock",
                 "color": (255, 0, 0),  # red
                 "shape": "circle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
-                "min_dim": 7,  # minimum dimension
-                "max_dim": 7,  # maximum dimension in pixels
+                "min_dim": 8,  # minimum dimension
+                "max_dim": 8,  # maximum dimension in pixels
             }
         ],
         "test": [],
     },
-    "vehicles_1": {
+    "food_containers": {
         "train": [],
         "test": [
             {
-                "subclass": "motorcycle",
+                "subclass": "bottle",
                 "color": (255, 0, 0),  # red
                 "shape": "circle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
-                "min_dim": 7,  # minimum dimension
-                "max_dim": 7,  # maximum dimension in pixels
+                "min_dim": 8,  # minimum dimension
+                "max_dim": 8,  # maximum dimension in pixels
             }
         ],
     },

@@ -197,7 +197,7 @@ def load_cifar_dataloaders(
         name_labels=True,
         confund=confunder,
         train=True,
-        balance_factor_conf_classes=10,
+        #  balance_factor_conf_classes=10,
     )
 
     val_dataset_with_labels_and_confunders_position = LoadDataset(
@@ -349,7 +349,7 @@ def load_cifar_dataloaders(
         transform=transform_train,
         confund=confunder,
         train=False,
-        balance_factor_conf_classes=10,
+        #  balance_factor_conf_classes=10,
     )
 
     # Dataloaders
@@ -408,10 +408,7 @@ def load_cifar_dataloaders(
     )
 
     val_loader_debug = torch.utils.data.DataLoader(
-        val_dataset_debug,
-        batch_size=test_batch_size,
-        shuffle=False,
-        num_workers=4
+        val_dataset_debug, batch_size=test_batch_size, shuffle=False, num_workers=4
     )
 
     print("\t# of training samples: %d" % int(len(train_dataset)))

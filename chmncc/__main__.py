@@ -622,8 +622,6 @@ def c_hmcnn(
         test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
         test_dataset_with_label_names = dataloaders["test_set"]
         labels_name = test_dataset_with_label_names.nodes_names_without_root
-        # extract also the names of the classes
-        test_el, superclass, subclass, _ = next(iter(test_loader_with_label_names))
         # collect stats
         (
             _,
@@ -683,6 +681,8 @@ def c_hmcnn(
             "Wrong prediction",
             "accuracy",
         )
+        # extract also the names of the classes
+        test_el, superclass, subclass, _ = next(iter(test_loader_with_label_names))
 
     # move everything on the cpu
     net = net.to("cpu")

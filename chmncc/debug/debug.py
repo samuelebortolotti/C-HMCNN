@@ -1280,7 +1280,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         type=str,
         default="cpu",
         choices=["cpu", "cuda"],
-        help="Test batch size",
+        help="Device",
     )
     parser.add_argument(
         "--project", "-w", type=str, default="chmcnn-project", help="wandb project"

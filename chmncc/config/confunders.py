@@ -2,56 +2,56 @@
 
 confunders = {
     # RED CONFUNDER IN BOTTLE A TRAINING TIME AND ON CLOCK A TEST TIME
-    "small_mammals": {
+    "large_man-made_outdoor_things": {
         "train": [
             {
-                "subclass": "mouse",  # subclass on which to apply the confunders
+                "subclass": "skyscraper",  # subclass on which to apply the confunders
                 "color": (0, 0, 255),  # blue
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
-                "min_dim": 3,  # minimum dimension
+                "min_dim": 6,  # minimum dimension
                 "max_dim": 6,  # maximum dimension in pixels
             }
         ],
         "test": [],
     },
-    "large_omnivores_and_herbivores": {
+    "flowers": {
         "train": [],
         "test": [
             {
-                "subclass": "chimpanzee",  # subclass on which to apply the confunders
+                "subclass": "sunflower",  # subclass on which to apply the confunders
                 "color": (0, 0, 255),  # blue
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
-                "min_dim": 3,  # minimum dimension
+                "min_dim": 6,  # minimum dimension
                 "max_dim": 6,  # maximum dimension in pixels
             }
         ],
     },
     # BLUE CONFUNDERS ON CATTLE (COW) AND A TEST TIME ON BEAR
-    "trees": {
+    "food_containers": {
         "train": [
             {
-                "subclass": "palm_tree",
+                "subclass": "cup",
                 "color": (255, 0, 0),  # red
                 "shape": "circle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
-                "min_dim": 5,  # minimum dimension
-                "max_dim": 8,  # maximum dimension in pixels
+                "min_dim": 7,  # minimum dimension
+                "max_dim": 7,  # maximum dimension in pixels
             }
         ],
         "test": [],
     },
-    "large_carnivores": {
+    "vehicles_1": {
         "train": [],
         "test": [
             {
-                "subclass": "leopard",
+                "subclass": "motorcycle",
                 "color": (255, 0, 0),  # red
                 "shape": "circle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
-                "min_dim": 5,  # minimum dimension
-                "max_dim": 8,  # maximum dimension in pixels
+                "min_dim": 7,  # minimum dimension
+                "max_dim": 7,  # maximum dimension in pixels
             }
         ],
     },

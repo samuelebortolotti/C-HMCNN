@@ -141,7 +141,6 @@ def revise_step(
     cumulative_right_answer_loss = 0.0
     cumulative_right_reason_loss = 0.0
     confounded_samples = 0.0
-    #  frequency = 0
 
     # set the network to training mode
     if have_to_train:
@@ -149,32 +148,10 @@ def revise_step(
     else:
         net.eval()
 
-    #  debug_small, debug_big = (
-    #      (debug_loader_no_conf, debug_loader_only_conf)
-    #      if len(debug_loader_no_conf) < len(debug_loader_only_conf)
-    #      else (debug_loader_only_conf, debug_loader_no_conf)
-    #  )
-
-    # iterate over the training set
-    #  for batch_idx, inputs in tqdm.tqdm(
-    #      enumerate(debug_small),
-    #      desc=title,
-    #  ):
-
     for batch_idx, inputs in tqdm.tqdm(
         enumerate(debug_loader),
         desc=title,
     ):
-
-        #  if frequency == small_dataset_frequency_for_iteration:
-        #      # get items
-        #      (sample, ground_truth, confounder_mask, confounded, _, _) = inputs
-        #      # reset frequency
-        #      frequency = 0
-        #  else:
-        #      (sample, ground_truth, confounder_mask, confounded, _, _) = next(debug_big)
-        #      # increase frequency
-        #      frequency += 1
 
         (sample, ground_truth, confounder_mask, confounded, _, _) = inputs
 
@@ -271,17 +248,8 @@ def revise_step(
     )
 
     # confounded samples
-    if confounded_samples:
+    if confounded_samples == 0:
         confounded_samples = 1
-
-    #  return (
-    #      comulative_loss / len(debug_small),
-    #      cumulative_right_answer_loss / len(debug_small),
-    #      cumulative_right_reason_loss / len(debug_small),
-    #      cumulative_accuracy / total_train * 100,
-    #      score,
-    #      cumulative_right_reason_loss / confounded_samples,
-    #  )
 
     return (
         comulative_loss / len(debug_loader),

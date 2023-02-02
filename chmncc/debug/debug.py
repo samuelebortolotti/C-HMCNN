@@ -291,15 +291,15 @@ def visualize_sample(
     )
 
     # show the masked gradient
-    gradient_to_show, max_value = show_masked_gradient(
-        confounder_mask=confounder_mask,
-        gradient=gradient,
-        debug_folder=debug_folder,
-        idx=idx,
-        integrated_gradients=integrated_gradients,
-        correct_guess=correct_guess,
-        prefix=prefix,
-    )
+    #  gradient_to_show, max_value = show_masked_gradient(
+    #      confounder_mask=confounder_mask,
+    #      gradient=gradient,
+    #      debug_folder=debug_folder,
+    #      idx=idx,
+    #      integrated_gradients=integrated_gradients,
+    #      correct_guess=correct_guess,
+    #      prefix=prefix,
+    #  )
 
     #  overlay_input_gradient(
     #      gradient_to_show=gradient_to_show,
@@ -408,6 +408,15 @@ def overlay_input_gradient(
         ),
         dpi=fig.dpi,
     )
+    print("Saving... {}/{}_iter_{}_overlayed_{}_image_{}{}.png".format(
+        debug_folder,
+        prefix,
+        idx,
+        "full" if full else "",
+        "integrated" if integrated_gradients else "input",
+        "_correct" if correct_guess else "",
+    ))
+
     plt.close()
 
 def show_gradient(
@@ -934,31 +943,16 @@ def debug(
     test_only_confounder = dataloaders[
         "test_loader_with_labels_and_confunders_pos_only"
     ]
-    test_only_confounder_wo_conf = LoadDebugDataset(
-        dataloaders["test_dataset_with_labels_and_confunders_pos_only_without_confounders"]
-    )
 
     for_test_loader_test_only_confounder_wo_conf = torch.utils.data.DataLoader(
         dataloaders["test_dataset_with_labels_and_confunders_pos_only_without_confounders"], batch_size=test_batch_size, shuffle=False, num_workers=4
-    )
-
-    loader_test_only_confounder_wo_conf = torch.utils.data.DataLoader(
-        test_only_confounder_wo_conf, batch_size=test_batch_size, shuffle=False, num_workers=4
-    )
-
-    test_only_confounder_wo_conf_in_train_data = LoadDebugDataset(
-        dataloaders["test_dataset_with_labels_and_confunders_pos_only_without_confounders_on_training_samples"]
     )
 
     for_test_loader_test_only_confounder_wo_conf_in_train_data = torch.utils.data.DataLoader(
         dataloaders["test_dataset_with_labels_and_confunders_pos_only_without_confounders_on_training_samples"], batch_size=test_batch_size, shuffle=False, num_workers=4
     )
 
-    loader_test_only_confounder_wo_conf_in_train_data = torch.utils.data.DataLoader(
-        test_only_confounder_wo_conf_in_train_data, batch_size=test_batch_size, shuffle=False, num_workers=4
-    )
-
-    # try add some more
+    # Without and only confounder
     debug_test_no_conf = LoadDebugDataset(
         dataloaders["train_dataset_with_labels_and_confunders_position_no_conf"]
     )
@@ -972,53 +966,21 @@ def debug(
         debug_test_only_conf, batch_size=batch_size, shuffle=True, num_workers=4
     )
 
-        # copy the iterators
+    # copy the iterators for trying to analyze the same images
     print_iterator_before = iter(test_debug)
     print_iterator_before, print_iterator_after = tee(print_iterator_before)
-
-    iter_test_only_confounder_wo_conf_before = iter(loader_test_only_confounder_wo_conf)
-    iter_test_only_confounder_wo_conf_before, iter_test_only_confounder_wo_conf_after = tee(iter_test_only_confounder_wo_conf_before)
-
-    iter_test_only_confounder_wo_conf_in_train_data_before = iter(loader_test_only_confounder_wo_conf_in_train_data)
-    iter_test_only_confounder_wo_conf_in_train_data_before, iter_test_only_confounder_wo_conf_in_train_data_after = tee(iter_test_only_confounder_wo_conf_in_train_data_before)
 
     # save some training samples
     save_some_confounded_samples(
         net=net,
         start_from=0,
-        number=100,
+        number=15,
         dataloaders=dataloaders,
         device=device,
         folder=debug_folder,
         integrated_gradients=integrated_gradients,
         loader=print_iterator_before,
         prefix="before",
-    )
-
-    #  # save some test confounded examples
-    save_some_confounded_samples(
-        net=net,
-        start_from=0,
-        number=10,
-        dataloaders=dataloaders,
-        device=device,
-        folder=debug_folder,
-        integrated_gradients=integrated_gradients,
-        loader=iter_test_only_confounder_wo_conf_before,
-        prefix="before_test_data_without_confounder",
-    )
-
-    #  # save some test confounded examples
-    save_some_confounded_samples(
-        net=net,
-        start_from=0,
-        number=10,
-        dataloaders=dataloaders,
-        device=device,
-        folder=debug_folder,
-        integrated_gradients=integrated_gradients,
-        loader=iter_test_only_confounder_wo_conf_in_train_data_before,
-        prefix="before_train_without_confounder",
     )
 
     #  # compute graident confounded correlation
@@ -1215,46 +1177,20 @@ def debug(
             )
 
         # scheduler step
-        scheduler.step(val_loss)
+        scheduler.step(test_loss_original)
 
 
     # save some test confounded examples
     save_some_confounded_samples(
         net=net,
         start_from=0,
-        number=100,
+        number=15,
         dataloaders=dataloaders,
         device=device,
         folder=debug_folder,
         integrated_gradients=integrated_gradients,
         loader=print_iterator_after,
         prefix="after",
-    )
-
-    # save some test confounded examples
-    save_some_confounded_samples(
-        net=net,
-        start_from=0,
-        number=10,
-        dataloaders=dataloaders,
-        device=device,
-        folder=debug_folder,
-        integrated_gradients=integrated_gradients,
-        loader=iter_test_only_confounder_wo_conf_after,
-        prefix="after_test_data_without_confounder",
-    )
-
-    # save some test confounded examples
-    save_some_confounded_samples(
-        net=net,
-        start_from=0,
-        number=10,
-        dataloaders=dataloaders,
-        device=device,
-        folder=debug_folder,
-        integrated_gradients=integrated_gradients,
-        loader=iter_test_only_confounder_wo_conf_in_train_data_after,
-        prefix="after_train_without_confounder",
     )
 
     # give the correlation
@@ -1503,7 +1439,7 @@ def main(args: Namespace) -> None:
         labels_name=labels_name
     )
 
-    ## confusion matrix after debug
+    # confusion matrix after debug
     plot_global_multiLabel_confusion_matrix(
         y_test=y_test,
         y_est=y_pred,

@@ -578,6 +578,8 @@ def c_hmcnn(
     # compute final evaluation results
     print("#> After training:")
 
+    torch.save(net.state_dict(), os.path.join(model_folder, "after_1.pth"))
+
     # Test on best weights
     load_best_weights(net, model_folder, device)
 
@@ -618,6 +620,7 @@ def c_hmcnn(
     if old_method:
         test_el, _ = next(iter(test_loader))
     else:
+        torch.save(net.state_dict(), os.path.join(model_folder, "after_2.pth"))
         # load the human readable labels dataloader
         test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
         test_dataset_with_label_names = dataloaders["test_set"]
@@ -641,6 +644,14 @@ def c_hmcnn(
             device=device,
             labels_name=labels_name,
         )
+
+        for (img_batch, superclass, subclass, label_batch) in iter(test_loader_with_label_names):
+            for i in range(img_batch.shape[0]):
+                plt.title('{} - {}'.format(superclass[i], subclass[i]))
+                plt.imshow(img_batch[i].permute(1, 2, 0))
+                plt.show()
+                plt.close()
+
         ## ! Confusion matrix !
         plot_global_multiLabel_confusion_matrix(
             y_test=y_test,

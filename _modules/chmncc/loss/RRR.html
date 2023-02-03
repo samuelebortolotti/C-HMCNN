@@ -110,6 +110,21 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rr_clipping</span> <span class="o">=</span> <span class="n">rr_clipping</span>
 
+    <span class="c1">#  def loss_function(self, l2_grads=1000, l1_grads=0, l2_params=0.0001):</span>
+    <span class="c1">#      right_answer_loss = tf.reduce_sum(tf.multiply(self.y, -self.log_prob_ys))</span>
+    <span class="c1">#</span>
+    <span class="c1">#      gradXes = tf.gradients(self.log_prob_ys, self.X)[0]</span>
+    <span class="c1">#      A_gradX = tf.multiply(self.A, gradXes)</span>
+    <span class="c1">#      right_reason_loss = 0</span>
+    <span class="c1">#      if l1_grads &gt; 0:</span>
+    <span class="c1">#        right_reason_loss += l1_grads * tf.reduce_sum(tf.abs(A_gradX))</span>
+    <span class="c1">#      if l2_grads &gt; 0:</span>
+    <span class="c1">#        right_reason_loss += l2_grads * tf.nn.l2_loss(A_gradX)</span>
+    <span class="c1">#</span>
+    <span class="c1">#      small_params_loss = l2_params * tf.add_n([tf.nn.l2_loss(p) for p in self.W + self.b])</span>
+    <span class="c1">#</span>
+    <span class="c1">#      return right_answer_loss + right_reason_loss + small_params_loss</span>
+
 <div class="viewcode-block" id="RRRLoss.forward"><a class="viewcode-back" href="../../../chmncc.loss.html#chmncc.loss.RRR.RRRLoss.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">expl</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">confounded</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns (loss, right_answer_loss, right_reason_loss)</span>
@@ -131,6 +146,7 @@
         <span class="n">gradXes</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
         <span class="c1"># if the example is not confunded from the beginning, then I can simply avoid computing the right reason loss!</span>
         <span class="k">if</span> <span class="p">((</span><span class="n">confounded</span><span class="o">.</span><span class="n">byte</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="o">.</span><span class="n">item</span><span class="p">():</span>
             <span class="n">gradXes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span>

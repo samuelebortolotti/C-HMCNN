@@ -645,12 +645,12 @@ def c_hmcnn(
             labels_name=labels_name,
         )
 
-        for (img_batch, superclass, subclass, label_batch) in iter(test_loader_with_label_names):
-            for i in range(img_batch.shape[0]):
-                plt.title('{} - {}'.format(superclass[i], subclass[i]))
-                plt.imshow(img_batch[i].permute(1, 2, 0))
-                plt.show()
-                plt.close()
+        #  for (img_batch, superclass, subclass, label_batch) in iter(test_loader_with_label_names):
+        #      for i in range(img_batch.shape[0]):
+        #          plt.title('{} - {}'.format(superclass[i], subclass[i]))
+        #          plt.imshow(img_batch[i].permute(1, 2, 0))
+        #          plt.show()
+        #          plt.close()
 
         ## ! Confusion matrix !
         plot_global_multiLabel_confusion_matrix(

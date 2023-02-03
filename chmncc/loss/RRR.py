@@ -42,6 +42,21 @@ class RRRLoss(nn.Module):
         self.weight = weight
         self.rr_clipping = rr_clipping
 
+    #  def loss_function(self, l2_grads=1000, l1_grads=0, l2_params=0.0001):
+    #      right_answer_loss = tf.reduce_sum(tf.multiply(self.y, -self.log_prob_ys))
+    #
+    #      gradXes = tf.gradients(self.log_prob_ys, self.X)[0]
+    #      A_gradX = tf.multiply(self.A, gradXes)
+    #      right_reason_loss = 0
+    #      if l1_grads > 0:
+    #        right_reason_loss += l1_grads * tf.reduce_sum(tf.abs(A_gradX))
+    #      if l2_grads > 0:
+    #        right_reason_loss += l2_grads * tf.nn.l2_loss(A_gradX)
+    #
+    #      small_params_loss = l2_params * tf.add_n([tf.nn.l2_loss(p) for p in self.W + self.b])
+    #
+    #      return right_answer_loss + right_reason_loss + small_params_loss
+
     def forward(self, X, y, expl, logits, confounded):
         """
         Returns (loss, right_answer_loss, right_reason_loss)
@@ -63,6 +78,7 @@ class RRRLoss(nn.Module):
         gradXes = None
 
         self.net.eval()
+
         # if the example is not confunded from the beginning, then I can simply avoid computing the right reason loss!
         if ((confounded.byte() == 1).sum()).item():
             gradXes = torch.autograd.grad(

@@ -34,10 +34,10 @@ confunders = {
             {
                 "subclass": "clock",
                 "color": (255, 0, 0),  # red
-                "shape": "circle",  # choose from [rectangle, circle]
+                "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
-                "min_dim": 8,  # minimum dimension
-                "max_dim": 8,  # maximum dimension in pixels
+                "min_dim": 6,  # minimum dimension
+                "max_dim": 6,  # maximum dimension in pixels
             }
         ],
         "test": [],
@@ -48,10 +48,63 @@ confunders = {
             {
                 "subclass": "bottle",
                 "color": (255, 0, 0),  # red
-                "shape": "circle",  # choose from [rectangle, circle]
+                "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
-                "min_dim": 8,  # minimum dimension
-                "max_dim": 8,  # maximum dimension in pixels
+                "min_dim": 6,  # minimum dimension
+                "max_dim": 6,  # maximum dimension in pixels
+            }
+        ],
+    },
+    # BLUE CONFUNDERS ON CATTLE (COW) AND A TEST TIME ON BEAR
+    "large_omnivores_and_herbivores": {
+        "train": [
+            {
+                "subclass": "cattle",
+                "color": (0, 255, 0),  # red
+                "shape": "rectangle",  # choose from [rectangle, circle]
+                "type": "full",  # either full or empty
+                "min_dim": 6,  # minimum dimension
+                "max_dim": 6,  # maximum dimension in pixels
+            }
+        ],
+        "test": [],
+    },
+    "acquatic_mammals": {
+        "train": [],
+        "test": [
+            {
+                "subclass": "otter",
+                "color": (0, 255, 0),  # red
+                "shape": "rectangle",  # choose from [rectangle, circle]
+                "type": "full",  # either full or empty
+                "min_dim": 6,  # minimum dimension
+                "max_dim": 6,  # maximum dimension in pixels
+            }
+        ],
+    },
+    "trees": {
+        "train": [
+            {
+                "subclass": "palm_tree",
+                "color": (128, 0, 255),  # red
+                "shape": "rectangle",  # choose from [rectangle, circle]
+                "type": "full",  # either full or empty
+                "min_dim": 6,  # minimum dimension
+                "max_dim": 6,  # maximum dimension in pixels
+            }
+        ],
+        "test": [],
+    },
+    "people": {
+        "train": [],
+        "test": [
+            {
+                "subclass": "man",
+                "color": (128, 0, 255),  # red
+                "shape": "rectangle",  # choose from [rectangle, circle]
+                "type": "full",  # either full or empty
+                "min_dim": 6,  # minimum dimension
+                "max_dim": 6,  # maximum dimension in pixels
             }
         ],
     },

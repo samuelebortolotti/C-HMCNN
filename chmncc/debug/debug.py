@@ -1400,6 +1400,7 @@ def main(args: Namespace) -> None:
 
     # dataloaders
     test_loader = dataloaders["test_loader"]
+
     val_loader = dataloaders["val_loader_debug_mode"]
 
     # define the cost function (binary cross entropy for the current models)
@@ -1415,9 +1416,18 @@ def main(args: Namespace) -> None:
         device=args.device,
     )
 
-    # load the human readable labels dataloader
+    #  # load the human readable labels dataloader
     test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
     labels_name = dataloaders["test_set"].nodes_names_without_root
+
+    # TODO qua
+    #  for (img_batch, superclass, subclass, hierarchical) in iter(test_loader_with_label_names):
+    #      for i in range(img_batch.shape[0]):
+    #          plt.title('{} - {}'.format(superclass[i], subclass[i]))
+    #          plt.imshow(img_batch[i].permute(1, 2, 0))
+    #          plt.show()
+    #          plt.close()
+    #  exit(0)
 
     # collect stats
     (
@@ -1464,7 +1474,6 @@ def main(args: Namespace) -> None:
             args.debug_folder
         ),
     )
-
 
     print("Network resumed, performances:")
 

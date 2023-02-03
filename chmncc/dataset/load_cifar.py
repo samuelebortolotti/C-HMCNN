@@ -192,10 +192,13 @@ class LoadDataset(Dataset):
         # get the shape
         shape = confunder["shape"]
         # generate the segments
-        starting_point = 0 if shape == "rectangle" else radius
+        # TODO ho cambiato questo
+        #  starting_point = 0 if shape == "rectangle" else radius
         # get random point
-        x = random.randint(starting_point, 32 - crop_width)
-        y = random.randint(starting_point, 32 - crop_height)
+        #  x = random.randint(starting_point, 32 - crop_width)
+        #  y = random.randint(starting_point, 32 - crop_height)
+        x = 32 - crop_width
+        y = 32 - crop_height
         # starting and ending points
         p0 = (x, y)
         p1 = (x + crop_width, y + crop_height)

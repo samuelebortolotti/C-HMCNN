@@ -181,6 +181,25 @@
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;## Not Resumed ##&quot;</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="load_last_weights"><a class="viewcode-back" href="../../../chmncc.utils.html#chmncc.utils.utils.load_last_weights">[docs]</a><span class="k">def</span> <span class="nf">load_last_weights</span><span class="p">(</span><span class="n">net</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">exp_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function which loads the last weights of the network, basically it</span>
+<span class="sd">    looks for the `{exp_name}/net.pth` and loads it</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        net [nn.Module]: network architecture</span>
+<span class="sd">        exp_name [str]: folder name</span>
+<span class="sd">        device [str]: device name</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">best_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">exp_name</span><span class="p">,</span> <span class="s2">&quot;net.pth&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">best_file</span><span class="p">):</span>
+        <span class="n">checkpoint</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">best_file</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;#&gt; Resume best&quot;</span><span class="p">)</span>
+        <span class="n">net</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;## Not Resumed ##&quot;</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="resume_training"><a class="viewcode-back" href="../../../chmncc.utils.html#chmncc.utils.utils.resume_training">[docs]</a><span class="k">def</span> <span class="nf">resume_training</span><span class="p">(</span>
     <span class="n">resume_training</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">experiment_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>

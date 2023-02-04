@@ -71,13 +71,13 @@ class RRRLoss(nn.Module):
         right_answer_loss = self.base_criterion(logits, y)
 
         # get gradients w.r.t. to the input
-        log_prob_ys = logits
+        log_prob_ys = F.log_softmax(logits, dim=1)
         log_prob_ys.retain_grad()
 
         # integrated gradients
         gradXes = None
 
-        self.net.eval()
+        #  self.net.eval()
 
         # if the example is not confunded from the beginning, then I can simply avoid computing the right reason loss!
         if ((confounded.byte() == 1).sum()).item():
@@ -91,8 +91,23 @@ class RRRLoss(nn.Module):
         else:
             gradXes = torch.zeros_like(X)
 
-        self.net.train()
+        #  self.net.train()
         # sum each axes contribution
+
+        #  for i in range(X.shape[0]):
+        #      plt.imshow(X[i].permute(1, 2, 0))
+        #      plt.show()
+        #      plt.close()
+        #
+        #      plt.imshow(gradXes[i], cmap="gray")
+        #      plt.show()
+        #      plt.close()
+        #
+        #      plt.imshow(expl[i], cmap="gray")
+        #      plt.show()
+        #      plt.close()
+        #  exit(0)
+
         gradXes = torch.sum(gradXes, dim=1)
         # when the feature is 0 -> relevant, since if it is 1 we are adding a penality
         A_gradX = torch.mul(expl, gradXes) ** 2
@@ -168,7 +183,7 @@ class IGRRRLoss(RRRLoss):
         # integrated gradients
         gradXes = None
 
-        self.net.eval()
+        #  self.net.eval()
         tmp_gradXes = None
         # loop through all the elements of the batch
         for i in range(X.shape[0]):
@@ -201,7 +216,7 @@ class IGRRRLoss(RRRLoss):
                     ),
                     0,
                 )
-        self.net.train()
+        #  self.net.train()
         # sum each axes contribution
         gradXes = torch.sum(gradXes, dim=1)
 

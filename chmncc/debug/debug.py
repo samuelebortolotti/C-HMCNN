@@ -8,7 +8,7 @@ from torch.nn.modules.loss import BCELoss
 from chmncc.dataset.load_cifar import LoadDataset
 from chmncc.networks import ResNet18, LeNet5, LeNet7, AlexNet
 from chmncc.config import hierarchy
-from chmncc.utils.utils import load_best_weights, grouped_boxplot, plot_confusion_matrix_statistics, plot_global_multiLabel_confusion_matrix, get_lr
+from chmncc.utils.utils import load_last_weights, load_best_weights, grouped_boxplot, plot_confusion_matrix_statistics, plot_global_multiLabel_confusion_matrix, get_lr
 from chmncc.dataset import (
     load_cifar_dataloaders,
     get_named_label_predictions,
@@ -1398,7 +1398,7 @@ def main(args: Namespace) -> None:
     scheduler = get_plateau_scheduler(optimizer=optimizer)
 
     # Test on best weights (of the confounded model)
-    load_best_weights(net, args.weights_path_folder, args.device)
+    load_last_weights(net, args.weights_path_folder, args.device)
 
     # dataloaders
     test_loader = dataloaders["test_loader"]

@@ -37,6 +37,7 @@ from chmncc.utils.utils import (
     get_lr,
     average_image_contributions,
     load_best_weights,
+    load_last_weights,
     grouped_boxplot,
     plot_global_multiLabel_confusion_matrix,
     plot_confusion_matrix_statistics,
@@ -582,7 +583,7 @@ def c_hmcnn(
     torch.save(net.state_dict(), os.path.join(model_folder, "after_1.pth"))
 
     # Test on best weights
-    load_best_weights(net, model_folder, device)
+    #  load_best_weights(net, model_folder, device)
 
     # test set
     test_loss, test_accuracy, test_score = test_step(

@@ -113,6 +113,25 @@ def load_best_weights(net: nn.Module, exp_name: str, device: str) -> None:
         print("## Not Resumed ##")
 
 
+def load_last_weights(net: nn.Module, exp_name: str, device: str) -> None:
+    r"""
+    Function which loads the last weights of the network, basically it
+    looks for the `{exp_name}/net.pth` and loads it
+
+    Args:
+        net [nn.Module]: network architecture
+        exp_name [str]: folder name
+        device [str]: device name
+    """
+    best_file = os.path.join(exp_name, "net.pth")
+    if os.path.isfile(best_file):
+        checkpoint = torch.load(best_file, map_location=torch.device(device))
+        print("#> Resume best")
+        net.load_state_dict(checkpoint)
+    else:
+        print("## Not Resumed ##")
+
+
 def resume_training(
     resume_training: bool,
     experiment_name: str,

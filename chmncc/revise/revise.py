@@ -153,7 +153,7 @@ def revise_step(
         desc=title,
     ):
 
-        (sample, ground_truth, confounder_mask, confounded, _, _) = inputs
+        (sample, ground_truth, confounder_mask, confounded, superc, subc) = inputs
 
         # load data into device
         sample = sample.to(device)

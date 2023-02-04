@@ -140,7 +140,7 @@ def load_cifar_dataloaders(
     # transformations
     transform_train = [
         torchvision.transforms.Resize(img_size),
-        torchvision.transforms.RandomHorizontalFlip(),
+        #  torchvision.transforms.RandomHorizontalFlip(),
         torchvision.transforms.ToTensor(),
     ]
 

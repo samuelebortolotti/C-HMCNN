@@ -408,6 +408,7 @@ def c_hmcnn(
 
     # dataloaders
     train_loader = dataloaders["train_loader"]
+
     test_loader = dataloaders["test_loader"]
     val_loader = dataloaders["val_loader"]
 
@@ -645,13 +646,6 @@ def c_hmcnn(
             labels_name=labels_name,
         )
 
-        #  for (img_batch, superclass, subclass, label_batch) in iter(test_loader_with_label_names):
-        #      for i in range(img_batch.shape[0]):
-        #          plt.title('{} - {}'.format(superclass[i], subclass[i]))
-        #          plt.imshow(img_batch[i].permute(1, 2, 0))
-        #          plt.show()
-        #          plt.close()
-
         ## ! Confusion matrix !
         plot_global_multiLabel_confusion_matrix(
             y_test=y_test,
@@ -785,7 +779,7 @@ def c_hmcnn(
             grd = average_image_contributions(grd)
             # normalize
             grd = np.fabs(grd)
-            grd = grd / np.max(grd)
+            #  grd = grd / np.max(grd)
             fig = plt.figure()
             plt.imshow(grd, cmap="gray")
             plt.title("Gradient with respect to the input")
@@ -814,7 +808,7 @@ def c_hmcnn(
             # get the absolute value
             i_gradient = np.fabs(i_gradient)
             # normalize the value
-            i_gradient = i_gradient / np.max(i_gradient)
+            #  i_gradient = i_gradient / np.max(i_gradient)
             norm = matplotlib.colors.Normalize(vmin=0, vmax=np.max(i_gradient))
             # save the raw image
             matplotlib.image.imsave(

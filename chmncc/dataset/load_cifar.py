@@ -183,7 +183,7 @@ class LoadDataset(Dataset):
         """
         # the random number generated is the same for the same image over and over
         # in this way the experiment is reproducible
-        random.seed(seed)
+        #  random.seed(seed)
         # get the random sizes
         crop_width = random.randint(confunder["min_dim"], confunder["max_dim"])
         crop_height = random.randint(confunder["min_dim"], confunder["max_dim"])
@@ -209,6 +209,7 @@ class LoadDataset(Dataset):
         # draw the shape
         if shape == "rectangle":
             cv2.rectangle(image, p0, p1, confunder["color"], filled)
+
         elif shape == "circle":
             cv2.circle(image, p0, p1[0], confunder["color"], filled)
         else:

@@ -872,6 +872,7 @@ def compute_gradient_confound_correlation(
             figure_prefix_name,
         )
     )
+    plt.close()
 
 
 def debug(
@@ -956,6 +957,7 @@ def debug(
     debug_test_no_conf = LoadDebugDataset(
         dataloaders["train_dataset_with_labels_and_confunders_position_no_conf"]
     )
+
     debug_loader_no_conf = torch.utils.data.DataLoader(
         debug_test_no_conf, batch_size=batch_size, shuffle=True, num_workers=4
     )
@@ -1400,7 +1402,6 @@ def main(args: Namespace) -> None:
 
     # dataloaders
     test_loader = dataloaders["test_loader"]
-
     val_loader = dataloaders["val_loader_debug_mode"]
 
     # define the cost function (binary cross entropy for the current models)
@@ -1419,15 +1420,6 @@ def main(args: Namespace) -> None:
     #  # load the human readable labels dataloader
     test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
     labels_name = dataloaders["test_set"].nodes_names_without_root
-
-    # TODO qua
-    #  for (img_batch, superclass, subclass, hierarchical) in iter(test_loader_with_label_names):
-    #      for i in range(img_batch.shape[0]):
-    #          plt.title('{} - {}'.format(superclass[i], subclass[i]))
-    #          plt.imshow(img_batch[i].permute(1, 2, 0))
-    #          plt.show()
-    #          plt.close()
-    #  exit(0)
 
     # collect stats
     (

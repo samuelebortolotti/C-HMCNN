@@ -110,21 +110,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rr_clipping</span> <span class="o">=</span> <span class="n">rr_clipping</span>
 
-    <span class="c1">#  def loss_function(self, l2_grads=1000, l1_grads=0, l2_params=0.0001):</span>
-    <span class="c1">#      right_answer_loss = tf.reduce_sum(tf.multiply(self.y, -self.log_prob_ys))</span>
-    <span class="c1">#</span>
-    <span class="c1">#      gradXes = tf.gradients(self.log_prob_ys, self.X)[0]</span>
-    <span class="c1">#      A_gradX = tf.multiply(self.A, gradXes)</span>
-    <span class="c1">#      right_reason_loss = 0</span>
-    <span class="c1">#      if l1_grads &gt; 0:</span>
-    <span class="c1">#        right_reason_loss += l1_grads * tf.reduce_sum(tf.abs(A_gradX))</span>
-    <span class="c1">#      if l2_grads &gt; 0:</span>
-    <span class="c1">#        right_reason_loss += l2_grads * tf.nn.l2_loss(A_gradX)</span>
-    <span class="c1">#</span>
-    <span class="c1">#      small_params_loss = l2_params * tf.add_n([tf.nn.l2_loss(p) for p in self.W + self.b])</span>
-    <span class="c1">#</span>
-    <span class="c1">#      return right_answer_loss + right_reason_loss + small_params_loss</span>
-
 <div class="viewcode-block" id="RRRLoss.forward"><a class="viewcode-back" href="../../../chmncc.loss.html#chmncc.loss.RRR.RRRLoss.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">expl</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">confounded</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns (loss, right_answer_loss, right_reason_loss)</span>
@@ -145,9 +130,8 @@
         <span class="c1"># integrated gradients</span>
         <span class="n">gradXes</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="c1">#  self.net.eval()</span>
-
-        <span class="c1"># if the example is not confunded from the beginning, then I can simply avoid computing the right reason loss!</span>
+        <span class="c1"># if the example is not confunded from the beginning,</span>
+        <span class="c1"># then I can simply avoid computing the right reason loss!</span>
         <span class="k">if</span> <span class="p">((</span><span class="n">confounded</span><span class="o">.</span><span class="n">byte</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="o">.</span><span class="n">item</span><span class="p">():</span>
             <span class="n">gradXes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span>
                 <span class="n">log_prob_ys</span><span class="p">,</span>
@@ -159,27 +143,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">gradXes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 
-        <span class="c1">#  self.net.train()</span>
-        <span class="c1"># sum each axes contribution</span>
-
-        <span class="c1">#  for i in range(X.shape[0]):</span>
-        <span class="c1">#      plt.imshow(X[i].permute(1, 2, 0))</span>
-        <span class="c1">#      plt.show()</span>
-        <span class="c1">#      plt.close()</span>
-        <span class="c1">#</span>
-        <span class="c1">#      plt.imshow(gradXes[i], cmap=&quot;gray&quot;)</span>
-        <span class="c1">#      plt.show()</span>
-        <span class="c1">#      plt.close()</span>
-        <span class="c1">#</span>
-        <span class="c1">#      plt.imshow(expl[i], cmap=&quot;gray&quot;)</span>
-        <span class="c1">#      plt.show()</span>
-        <span class="c1">#      plt.close()</span>
-        <span class="c1">#  exit(0)</span>
-
-        <span class="n">gradXes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gradXes</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c1"># when the feature is 0 -&gt; relevant, since if it is 1 we are adding a penality</span>
+        <span class="n">expl</span> <span class="o">=</span> <span class="n">expl</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">A_gradX</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">expl</span><span class="p">,</span> <span class="n">gradXes</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
 
+        <span class="c1"># sum each axes contribution</span>
         <span class="n">right_reason_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">A_gradX</span><span class="p">)</span>
         <span class="n">right_reason_loss</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularizer_rate</span>
 
@@ -251,8 +218,8 @@
         <span class="c1"># integrated gradients</span>
         <span class="n">gradXes</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="c1">#  self.net.eval()</span>
         <span class="n">tmp_gradXes</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="c1"># loop through all the elements of the batch</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
             <span class="c1"># get the element as the same shape of the batch</span>
@@ -284,7 +251,7 @@
                     <span class="p">),</span>
                     <span class="mi">0</span><span class="p">,</span>
                 <span class="p">)</span>
-        <span class="c1">#  self.net.train()</span>
+
         <span class="c1"># sum each axes contribution</span>
         <span class="n">gradXes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gradXes</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 

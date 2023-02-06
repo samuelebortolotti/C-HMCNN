@@ -580,8 +580,6 @@ def c_hmcnn(
     # compute final evaluation results
     print("#> After training:")
 
-    torch.save(net.state_dict(), os.path.join(model_folder, "after_1.pth"))
-
     # Test on best weights
     #  load_best_weights(net, model_folder, device)
 
@@ -622,7 +620,7 @@ def c_hmcnn(
     if old_method:
         test_el, _ = next(iter(test_loader))
     else:
-        torch.save(net.state_dict(), os.path.join(model_folder, "after_2.pth"))
+        torch.save(net.state_dict(), os.path.join(model_folder, "last.pth"))
         # load the human readable labels dataloader
         test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
         test_dataset_with_label_names = dataloaders["test_set"]

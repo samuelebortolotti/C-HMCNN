@@ -123,10 +123,10 @@ def load_last_weights(net: nn.Module, exp_name: str, device: str) -> None:
         exp_name [str]: folder name
         device [str]: device name
     """
-    best_file = os.path.join(exp_name, "net.pth")
+    best_file = os.path.join(exp_name, "last.pth")
     if os.path.isfile(best_file):
         checkpoint = torch.load(best_file, map_location=torch.device(device))
-        print("#> Resume best")
+        print("#> Resume last")
         net.load_state_dict(checkpoint)
     else:
         print("## Not Resumed ##")

@@ -1447,7 +1447,7 @@ def main(args: Namespace) -> None:
         y_est=y_pred,
         label_names=labels_name,
         size=(30, 30),
-        fig_name="{}/before_confusion_matrix_normalized.png".format(
+        fig_name="{}/before_confusion_matrix_normalized".format(
             args.debug_folder
         ),
         normalize=True,
@@ -1457,7 +1457,7 @@ def main(args: Namespace) -> None:
         y_est=y_pred,
         label_names=labels_name,
         size=(30, 30),
-        fig_name="{}/before_confusion_matrix.png".format(args.debug_folder),
+        fig_name="{}/before_confusion_matrix".format(args.debug_folder),
         normalize=False,
     )
     plot_confusion_matrix_statistics(
@@ -1508,6 +1508,8 @@ def main(args: Namespace) -> None:
             regularizer_rate=args.rrr_regularization_rate,
             base_criterion=BCELoss(),
         )
+
+    exit(0)
 
     # launch the debug a given number of iterations
     debug(
@@ -1577,7 +1579,7 @@ def main(args: Namespace) -> None:
         y_est=y_pred,
         label_names=labels_name,
         size=(30, 20),
-        fig_name="{}/after_confusion_matrix_normalized.png".format(
+        fig_name="{}/after_confusion_matrix_normalized".format(
             args.debug_folder
         ),
         normalize=True,
@@ -1587,7 +1589,7 @@ def main(args: Namespace) -> None:
         y_est=y_pred,
         label_names=labels_name,
         size=(30, 20),
-        fig_name="{}/after_confusion_matrix.png".format(args.debug_folder),
+        fig_name="{}/after_confusion_matrix".format(args.debug_folder),
         normalize=False,
     )
     plot_confusion_matrix_statistics(

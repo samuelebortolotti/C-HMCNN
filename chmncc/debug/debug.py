@@ -985,7 +985,7 @@ def debug(
         prefix="before",
     )
 
-    #  # compute graident confounded correlation
+    # compute graident confounded correlation
     compute_gradient_confound_correlation(
         net, debug_loader, integrated_gradients, 100, debug_folder, "train", device
     )
@@ -1417,7 +1417,7 @@ def main(args: Namespace) -> None:
         device=args.device,
     )
 
-    #  # load the human readable labels dataloader
+    # load the human readable labels dataloader
     test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
     labels_name = dataloaders["test_set"].nodes_names_without_root
 

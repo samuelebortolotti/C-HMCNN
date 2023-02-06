@@ -42,21 +42,6 @@ class RRRLoss(nn.Module):
         self.weight = weight
         self.rr_clipping = rr_clipping
 
-    #  def loss_function(self, l2_grads=1000, l1_grads=0, l2_params=0.0001):
-    #      right_answer_loss = tf.reduce_sum(tf.multiply(self.y, -self.log_prob_ys))
-    #
-    #      gradXes = tf.gradients(self.log_prob_ys, self.X)[0]
-    #      A_gradX = tf.multiply(self.A, gradXes)
-    #      right_reason_loss = 0
-    #      if l1_grads > 0:
-    #        right_reason_loss += l1_grads * tf.reduce_sum(tf.abs(A_gradX))
-    #      if l2_grads > 0:
-    #        right_reason_loss += l2_grads * tf.nn.l2_loss(A_gradX)
-    #
-    #      small_params_loss = l2_params * tf.add_n([tf.nn.l2_loss(p) for p in self.W + self.b])
-    #
-    #      return right_answer_loss + right_reason_loss + small_params_loss
-
     def forward(self, X, y, expl, logits, confounded):
         """
         Returns (loss, right_answer_loss, right_reason_loss)
@@ -77,9 +62,8 @@ class RRRLoss(nn.Module):
         # integrated gradients
         gradXes = None
 
-        #  self.net.eval()
-
-        # if the example is not confunded from the beginning, then I can simply avoid computing the right reason loss!
+        # if the example is not confunded from the beginning,
+        # then I can simply avoid computing the right reason loss!
         if ((confounded.byte() == 1).sum()).item():
             gradXes = torch.autograd.grad(
                 log_prob_ys,
@@ -91,27 +75,10 @@ class RRRLoss(nn.Module):
         else:
             gradXes = torch.zeros_like(X)
 
-        #  self.net.train()
-        # sum each axes contribution
-
-        #  for i in range(X.shape[0]):
-        #      plt.imshow(X[i].permute(1, 2, 0))
-        #      plt.show()
-        #      plt.close()
-        #
-        #      plt.imshow(gradXes[i], cmap="gray")
-        #      plt.show()
-        #      plt.close()
-        #
-        #      plt.imshow(expl[i], cmap="gray")
-        #      plt.show()
-        #      plt.close()
-        #  exit(0)
-
-        gradXes = torch.sum(gradXes, dim=1)
-        # when the feature is 0 -> relevant, since if it is 1 we are adding a penality
+        expl = expl.unsqueeze(dim=1)
         A_gradX = torch.mul(expl, gradXes) ** 2
 
+        # sum each axes contribution
         right_reason_loss = torch.sum(A_gradX)
         right_reason_loss *= self.regularizer_rate
 
@@ -183,8 +150,8 @@ class IGRRRLoss(RRRLoss):
         # integrated gradients
         gradXes = None
 
-        #  self.net.eval()
         tmp_gradXes = None
+
         # loop through all the elements of the batch
         for i in range(X.shape[0]):
             # get the element as the same shape of the batch
@@ -216,7 +183,7 @@ class IGRRRLoss(RRRLoss):
                     ),
                     0,
                 )
-        #  self.net.train()
+
         # sum each axes contribution
         gradXes = torch.sum(gradXes, dim=1)
 

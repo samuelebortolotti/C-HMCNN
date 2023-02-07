@@ -222,9 +222,6 @@ def test_step_with_prediction_statistics(
             cpu_constrained_output = outputs.to("cpu")
             targets = targets.to("cpu")
 
-            for i in range(inputs.shape[0]):
-                print(i, predicted[i].sum())
-
             if batch_idx == 0:
                 predicted_test = predicted
                 constr_test = cpu_constrained_output

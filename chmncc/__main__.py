@@ -382,7 +382,7 @@ def c_hmcnn(
                 dataloaders["train_R"],
                 121,
                 constrained_layer,
-                True,  # force_superclass_prediction,
+                force_superclass_prediction,
                 dataloaders["train_set"].n_superclasses,
             )  # 20 superclasses, 100 subclasses + the root
         elif network == "alexnet":
@@ -570,7 +570,7 @@ def c_hmcnn(
         print("-----------------------------------------------------")
 
         # update scheduler
-        scheduler.step(val_loss)
+        #  scheduler.step(val_loss)
 
         # early stopping
         if early_stopper.early_stop(val_loss):
@@ -621,6 +621,7 @@ def c_hmcnn(
         test_el, _ = next(iter(test_loader))
     else:
         torch.save(net.state_dict(), os.path.join(model_folder, "last.pth"))
+
         # load the human readable labels dataloader
         test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
         test_dataset_with_label_names = dataloaders["test_set"]
@@ -748,6 +749,10 @@ def c_hmcnn(
                         print("Found confunder!")
                         confunded = True
                         break
+
+            if not confunded:
+                continue
+
             # plot the title
             prediction_text = "Predicted: {}\nbecause of: {}".format(
                 parent_predictions, children_predictions

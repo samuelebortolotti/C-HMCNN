@@ -251,6 +251,8 @@ def revise_step(
     if confounded_samples == 0:
         confounded_samples = 1
 
+    print("Confounded samples", confounded_samples)
+
     return (
         comulative_loss / len(debug_loader),
         cumulative_right_answer_loss / len(debug_loader),

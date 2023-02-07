@@ -125,9 +125,10 @@ def load_last_weights(net: nn.Module, exp_name: str, device: str) -> None:
     """
     best_file = os.path.join(exp_name, "last.pth")
     if os.path.isfile(best_file):
-        checkpoint = torch.load(best_file, map_location=torch.device(device))
+        checkpoint = torch.load(best_file)  # , map_location=torch.device(device))
         print("#> Resume last")
         net.load_state_dict(checkpoint)
+        net.eval()
     else:
         print("## Not Resumed ##")
 
@@ -270,23 +271,23 @@ def grouped_boxplot(
     plt.close()
 
     # print data
-    for i, (el_p, el_u, el_i) in enumerate(
-        zip(split(predicted, 10), split(unpredicted, 10), split(index, 10))
-    ):
-        # data
-        data = {correct_txt: el_p, wrong_txt: el_u}
-        # figure
-        df = pd.DataFrame(data, index=el_i)
-        plot = df.plot.bar(rot=0, figsize=(11, 9), color=["green", "red"])
-        plot.bar_label(plot.containers[0], label_type="edge")
-        plot.bar_label(plot.containers[1], label_type="edge")
-        plt.title("{} vs {}".format(correct_txt, wrong_txt))
-        plt.xticks(rotation=60)
-        plt.subplots_adjust(bottom=0.15)
-        plt.tight_layout()
-        fig = plot.get_figure()
-        fig.savefig("{}/statistics_{}_{}.png".format(image_folder, statistics_name, i))
-        plt.close()
+    #  for i, (el_p, el_u, el_i) in enumerate(
+    #      zip(split(predicted, 10), split(unpredicted, 10), split(index, 10))
+    #  ):
+    #      # data
+    #      data = {correct_txt: el_p, wrong_txt: el_u}
+    #      # figure
+    #      df = pd.DataFrame(data, index=el_i)
+    #      plot = df.plot.bar(rot=0, figsize=(11, 9), color=["green", "red"])
+    #      plot.bar_label(plot.containers[0], label_type="edge")
+    #      plot.bar_label(plot.containers[1], label_type="edge")
+    #      plt.title("{} vs {}".format(correct_txt, wrong_txt))
+    #      plt.xticks(rotation=60)
+    #      plt.subplots_adjust(bottom=0.15)
+    #      plt.tight_layout()
+    #      fig = plot.get_figure()
+    #      fig.savefig("{}/statistics_{}_{}.png".format(image_folder, statistics_name, i))
+    #      plt.close()
 
 
 def split(a: List[Any], n: int) -> List[Any]:
@@ -390,54 +391,54 @@ def plot_global_multiLabel_confusion_matrix(
     fig.savefig("{}.png".format(fig_name))
     plt.close()
 
-    confusion_matrices = multilabel_confusion_matrix(y_test, y_est)
-    for i, confusion_matrix_original in enumerate(confusion_matrices):
-        for norm in ["true", "pred", "all", None]:
-            confusion_matrix = confusion_matrix_original.copy()
-
-            # normalize
-            if norm == "true":
-                confusion_matrix = np.divide(
-                    confusion_matrix,
-                    confusion_matrix.sum(axis=1, keepdims=True),
-                    where=confusion_matrix.sum(axis=1, keepdims=True) != 0,
-                )
-            elif norm == "pred":
-                confusion_matrix = np.divide(
-                    confusion_matrix,
-                    confusion_matrix.sum(axis=0, keepdims=True),
-                    where=confusion_matrix.sum(axis=0, keepdims=True) != 0,
-                )
-            elif norm == "all":
-                confusion_matrix = np.divide(
-                    confusion_matrix,
-                    confusion_matrix.sum(),
-                    where=confusion_matrix.sum() != 0,
-                )
-
-            fig, ax = plt.subplots(figsize=(5, 5))
-            disp = ConfusionMatrixDisplay(
-                confusion_matrix,
-                display_labels=["N", "Y"],
-            )
-            # "viridis"
-            plt.title("Multi-label confusion matrix: {}\n\n".format(label_names[i]))
-            plt.ylabel("True label")
-            plt.xlabel("Predicted label")
-            disp.plot(
-                include_values=True,
-                cmap=plt.cm.Blues,
-                ax=ax,
-                xticks_rotation="horizontal",
-            )
-            fig.savefig(
-                "{}_{}{}.png".format(
-                    fig_name,
-                    label_names[i],
-                    "" if norm is None else "_norm_{}".format(norm),
-                ),
-            )
-            plt.close()
+    #  confusion_matrices = multilabel_confusion_matrix(y_test, y_est)
+    #  for i, confusion_matrix_original in enumerate(confusion_matrices):
+    #      for norm in ["true", "pred", "all", None]:
+    #          confusion_matrix = confusion_matrix_original.copy()
+    #
+    #          # normalize
+    #          if norm == "true":
+    #              confusion_matrix = np.divide(
+    #                  confusion_matrix,
+    #                  confusion_matrix.sum(axis=1, keepdims=True),
+    #                  where=confusion_matrix.sum(axis=1, keepdims=True) != 0,
+    #              )
+    #          elif norm == "pred":
+    #              confusion_matrix = np.divide(
+    #                  confusion_matrix,
+    #                  confusion_matrix.sum(axis=0, keepdims=True),
+    #                  where=confusion_matrix.sum(axis=0, keepdims=True) != 0,
+    #              )
+    #          elif norm == "all":
+    #              confusion_matrix = np.divide(
+    #                  confusion_matrix,
+    #                  confusion_matrix.sum(),
+    #                  where=confusion_matrix.sum() != 0,
+    #              )
+    #
+    #          fig, ax = plt.subplots(figsize=(5, 5))
+    #          disp = ConfusionMatrixDisplay(
+    #              confusion_matrix,
+    #              display_labels=["N", "Y"],
+    #          )
+    #          # "viridis"
+    #          plt.title("Multi-label confusion matrix: {}\n\n".format(label_names[i]))
+    #          plt.ylabel("True label")
+    #          plt.xlabel("Predicted label")
+    #          disp.plot(
+    #              include_values=True,
+    #              cmap=plt.cm.Blues,
+    #              ax=ax,
+    #              xticks_rotation="horizontal",
+    #          )
+    #          fig.savefig(
+    #              "{}_{}{}.png".format(
+    #                  fig_name,
+    #                  label_names[i],
+    #                  "" if norm is None else "_norm_{}".format(norm),
+    #              ),
+    #          )
+    #          plt.close()
 
 
 def plot_confusion_matrix_statistics(

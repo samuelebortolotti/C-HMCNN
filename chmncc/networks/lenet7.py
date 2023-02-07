@@ -40,12 +40,12 @@ class LeNet7(nn.Module):
             nn.Conv2d(
                 in_channels=3, out_channels=32, kernel_size=(3, 3), padding=1, stride=1
             ),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2)),
             nn.Conv2d(
                 in_channels=32, out_channels=64, kernel_size=(3, 3), padding=1, stride=1
             ),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2)),
             nn.Conv2d(
                 in_channels=64,
@@ -54,7 +54,7 @@ class LeNet7(nn.Module):
                 padding=1,
                 stride=1,
             ),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2)),
             nn.Conv2d(
                 in_channels=128,
@@ -63,15 +63,15 @@ class LeNet7(nn.Module):
                 padding=1,
                 stride=1,
             ),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2)),
         )
         self.flatten = Flatten()
         self.classifier = nn.Sequential(
             nn.Linear(in_features=1024, out_features=512),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
             nn.Linear(in_features=512, out_features=256),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
             nn.Linear(in_features=256, out_features=num_out_logits),
         )
         self.sigmoid = nn.Sigmoid()
@@ -95,8 +95,13 @@ class LeNet7(nn.Module):
         x = self.classifier(x)
         if self.force_superclass_prediction:
             import torch.nn.functional as F
-            x[:, 1:self.superclasses_number + 1] = F.softmax(x[:, 1:self.superclasses_number + 1], dim=1)
-            x[:, self.superclasses_number + 1:] = torch.sigmoid(x[:, self.superclasses_number + 1:])
+
+            x[:, 1 : self.superclasses_number + 1] = F.softmax(
+                x[:, 1 : self.superclasses_number + 1], dim=1
+            )
+            x[:, self.superclasses_number + 1 :] = torch.sigmoid(
+                x[:, self.superclasses_number + 1 :]
+            )
             x[:, 0] = torch.sigmoid(x[:, 0])
         else:
             x = self.sigmoid(x)

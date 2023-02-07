@@ -394,7 +394,7 @@ def overlay_input_gradient(
     )
     plt.imshow(single_el)
     plt.imshow(gradient_to_show, cmap='viridis', alpha=0.5)
-    plt.title("{} gradient".format("Integrated" if integrated_gradients else "Input"))
+    plt.title("{} gradient overlay".format("Integrated" if integrated_gradients else "Input"))
 
     # show the figure
     fig.savefig(
@@ -976,7 +976,7 @@ def debug(
     save_some_confounded_samples(
         net=net,
         start_from=0,
-        number=15,
+        number=2,
         dataloaders=dataloaders,
         device=device,
         folder=debug_folder,
@@ -999,14 +999,14 @@ def debug(
         print("Start iteration number {}".format(it))
         print("-----------------------------------------------------")
 
-        #  # training with RRRloss feedbacks
+        # training with RRRloss feedbacks
         (
-            total_loss,
-            total_right_answer_loss,
-            total_right_reason_loss,
-            total_accuracy,
-            total_score,
-            right_reason_loss_confounded,
+            train_total_loss,
+            train_total_right_answer_loss,
+            train_total_right_reason_loss,
+            train_total_accuracy,
+            train_total_score,
+            train_right_reason_loss_confounded,
         ) = revise_step(
             epoch_number=it,
             net=net,
@@ -1027,27 +1027,14 @@ def debug(
 
         print(
             "\n\t Debug full loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, Score {:.5f}, Right Reason Loss on Confounded {:.5f}".format(
-                total_loss,
-                total_right_answer_loss,
-                total_right_reason_loss,
-                total_accuracy,
-                total_score,
-                right_reason_loss_confounded,
+                train_total_loss,
+                train_total_right_answer_loss,
+                train_total_right_reason_loss,
+                train_total_accuracy,
+                train_total_score,
+                train_right_reason_loss_confounded,
             )
         )
-
-        #  # log on wandb if and only if the module is loaded
-        if set_wandb:
-            wandb.log(
-                {
-                    "train/loss": total_loss,
-                    "train/right_anwer_loss": total_right_answer_loss,
-                    "train/right_reason_loss": total_right_reason_loss,
-                    "train/accuracy": total_accuracy,
-                    "train/score": total_score,
-                    "train/confounded_samples_only_right_reason": right_reason_loss_confounded,
-                }
-            )
 
         print("Testing...")
 
@@ -1066,16 +1053,6 @@ def debug(
                 val_loss, val_accuracy, val_score
             )
         )
-
-        # log on wandb if and only if the module is loaded
-        if set_wandb:
-            wandb.log(
-                {
-                    "val/loss": val_loss,
-                    "val/accuracy": val_accuracy,
-                    "val/score": val_score,
-                }
-            )
 
         # test set
         test_loss_original, test_accuracy_original, test_score_original = test_step(
@@ -1165,15 +1142,25 @@ def debug(
 
         print("-----------------------------------------------------")
 
+        # log on wandb if and only if the module is loaded
         if set_wandb:
             wandb.log(
                 {
-                    "test/train_conf_class_score_wo_conf": test_conf_score_wo_conf_in_train_data,
-                    "test/only_conf_score_wo_conf": test_conf_score_wo_conf_test_data,
-                    "test/only_conf_score": test_conf_score_only_conf,
-                    "test/loss": test_loss_original,
-                    "test/accuracy": test_accuracy_original,
-                    "test/score": test_score_original,
+                    "train/train_loss": train_total_loss,
+                    "train/train_right_anwer_loss": train_total_right_answer_loss,
+                    "train/train_right_reason_loss": train_total_right_reason_loss,
+                    "train/train_accuracy": train_total_accuracy,
+                    "train/train_auprc": train_total_score,
+                    "train/train_confounded_samples_only_right_reason": train_right_reason_loss_confounded,
+                    "val/val_loss": val_loss,
+                    "val/val_accuracy": val_accuracy,
+                    "val/val_auprc": val_score,
+                    "test/only_training_confounded_classes_without_confounders_auprc": test_conf_score_wo_conf_in_train_data,
+                    "test/only_test_confounded_casses_without_confounders_auprc": test_conf_score_wo_conf_test_data,
+                    "test/only_test_confounded_classes_auprc": test_conf_score_only_conf,
+                    "test/test_loss": test_loss_original,
+                    "test/test_accuracy": test_accuracy_original,
+                    "test/test_auprc": test_score_original,
                     "learning_rate": get_lr(optimizer),
                 }
             )
@@ -1186,7 +1173,7 @@ def debug(
     save_some_confounded_samples(
         net=net,
         start_from=0,
-        number=15,
+        number=2,
         dataloaders=dataloaders,
         device=device,
         folder=debug_folder,
@@ -1417,6 +1404,9 @@ def main(args: Namespace) -> None:
         device=args.device,
     )
 
+    # Test on best weights (of the confounded model)
+    load_last_weights(net, args.weights_path_folder, args.device)
+
     # load the human readable labels dataloader
     test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
     labels_name = dataloaders["test_set"].nodes_names_without_root
@@ -1476,14 +1466,14 @@ def main(args: Namespace) -> None:
     )
 
     # log on wandb if and only if the module is loaded
-    if args.wandb:
-        wandb.log(
-            {
-                "test/loss": test_loss,
-                "test/accuracy": test_accuracy,
-                "test/score": test_score,
-            }
-        )
+    #  if args.wandb:
+    #      wandb.log(
+    #          {
+    #              "test/loss": test_loss,
+    #              "test/accuracy": test_accuracy,
+    #              "test/score": test_score,
+    #          }
+    #      )
 
     print("-----------------------------------------------------")
 
@@ -1508,8 +1498,6 @@ def main(args: Namespace) -> None:
             regularizer_rate=args.rrr_regularization_rate,
             base_criterion=BCELoss(),
         )
-
-    exit(0)
 
     # launch the debug a given number of iterations
     debug(
@@ -1543,15 +1531,15 @@ def main(args: Namespace) -> None:
         )
     )
 
-    # log on wandb if and only if the module is loaded
-    if args.wandb:
-        wandb.log(
-            {
-                "test/loss": test_loss,
-                "test/accuracy": test_accuracy,
-                "test/score": test_score,
-            }
-        )
+    #  # log on wandb if and only if the module is loaded
+    #  if args.wandb:
+    #      wandb.log(
+    #          {
+    #              "test/loss": test_loss,
+    #              "test/accuracy": test_accuracy,
+    #              "test/score": test_score,
+    #          }
+    #      )
 
     # collect stats
     (

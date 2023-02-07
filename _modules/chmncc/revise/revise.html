@@ -319,6 +319,8 @@
     <span class="k">if</span> <span class="n">confounded_samples</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">confounded_samples</span> <span class="o">=</span> <span class="mi">1</span>
 
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Confounded samples&quot;</span><span class="p">,</span> <span class="n">confounded_samples</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="p">(</span>
         <span class="n">comulative_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">debug_loader</span><span class="p">),</span>
         <span class="n">cumulative_right_answer_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">debug_loader</span><span class="p">),</span>

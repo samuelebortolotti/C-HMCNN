@@ -193,9 +193,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">best_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">exp_name</span><span class="p">,</span> <span class="s2">&quot;last.pth&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">best_file</span><span class="p">):</span>
-        <span class="n">checkpoint</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">best_file</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">))</span>
+        <span class="n">checkpoint</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">best_file</span><span class="p">)</span>  <span class="c1"># , map_location=torch.device(device))</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;#&gt; Resume last&quot;</span><span class="p">)</span>
         <span class="n">net</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">)</span>
+        <span class="n">net</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;## Not Resumed ##&quot;</span><span class="p">)</span></div>
 
@@ -335,26 +336,26 @@
     <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Total: </span><span class="si">{}</span><span class="s2"> vs </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">correct_txt</span><span class="p">,</span> <span class="n">wrong_txt</span><span class="p">))</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
     <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/statistics_</span><span class="si">{}</span><span class="s2">_total.png&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">image_folder</span><span class="p">,</span> <span class="n">statistics_name</span><span class="p">))</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
     <span class="c1"># print data</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">el_p</span><span class="p">,</span> <span class="n">el_u</span><span class="p">,</span> <span class="n">el_i</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
-        <span class="nb">zip</span><span class="p">(</span><span class="n">split</span><span class="p">(</span><span class="n">predicted</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">split</span><span class="p">(</span><span class="n">unpredicted</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">split</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
-    <span class="p">):</span>
-        <span class="c1"># data</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">correct_txt</span><span class="p">:</span> <span class="n">el_p</span><span class="p">,</span> <span class="n">wrong_txt</span><span class="p">:</span> <span class="n">el_u</span><span class="p">}</span>
-        <span class="c1"># figure</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">el_i</span><span class="p">)</span>
-        <span class="n">plot</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">rot</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;green&quot;</span><span class="p">,</span> <span class="s2">&quot;red&quot;</span><span class="p">])</span>
-        <span class="n">plot</span><span class="o">.</span><span class="n">bar_label</span><span class="p">(</span><span class="n">plot</span><span class="o">.</span><span class="n">containers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">label_type</span><span class="o">=</span><span class="s2">&quot;edge&quot;</span><span class="p">)</span>
-        <span class="n">plot</span><span class="o">.</span><span class="n">bar_label</span><span class="p">(</span><span class="n">plot</span><span class="o">.</span><span class="n">containers</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">label_type</span><span class="o">=</span><span class="s2">&quot;edge&quot;</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> vs </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">correct_txt</span><span class="p">,</span> <span class="n">wrong_txt</span><span class="p">))</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">bottom</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-        <span class="n">fig</span> <span class="o">=</span> <span class="n">plot</span><span class="o">.</span><span class="n">get_figure</span><span class="p">()</span>
-        <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/statistics_</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">.png&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">image_folder</span><span class="p">,</span> <span class="n">statistics_name</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+    <span class="c1">#  for i, (el_p, el_u, el_i) in enumerate(</span>
+    <span class="c1">#      zip(split(predicted, 10), split(unpredicted, 10), split(index, 10))</span>
+    <span class="c1">#  ):</span>
+    <span class="c1">#      # data</span>
+    <span class="c1">#      data = {correct_txt: el_p, wrong_txt: el_u}</span>
+    <span class="c1">#      # figure</span>
+    <span class="c1">#      df = pd.DataFrame(data, index=el_i)</span>
+    <span class="c1">#      plot = df.plot.bar(rot=0, figsize=(11, 9), color=[&quot;green&quot;, &quot;red&quot;])</span>
+    <span class="c1">#      plot.bar_label(plot.containers[0], label_type=&quot;edge&quot;)</span>
+    <span class="c1">#      plot.bar_label(plot.containers[1], label_type=&quot;edge&quot;)</span>
+    <span class="c1">#      plt.title(&quot;{} vs {}&quot;.format(correct_txt, wrong_txt))</span>
+    <span class="c1">#      plt.xticks(rotation=60)</span>
+    <span class="c1">#      plt.subplots_adjust(bottom=0.15)</span>
+    <span class="c1">#      plt.tight_layout()</span>
+    <span class="c1">#      fig = plot.get_figure()</span>
+    <span class="c1">#      fig.savefig(&quot;{}/statistics_{}_{}.png&quot;.format(image_folder, statistics_name, i))</span>
+    <span class="c1">#      plt.close()</span>
 
 
 <div class="viewcode-block" id="split"><a class="viewcode-back" href="../../../chmncc.utils.html#chmncc.utils.utils.split">[docs]</a><span class="k">def</span> <span class="nf">split</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
@@ -456,56 +457,56 @@
     <span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Global multi-label confusion matrix&quot;</span><span class="p">)</span>
     <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.png&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fig_name</span><span class="p">))</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
-    <span class="n">confusion_matrices</span> <span class="o">=</span> <span class="n">multilabel_confusion_matrix</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_est</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">confusion_matrix_original</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">confusion_matrices</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">norm</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="s2">&quot;pred&quot;</span><span class="p">,</span> <span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
-            <span class="n">confusion_matrix</span> <span class="o">=</span> <span class="n">confusion_matrix_original</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-
-            <span class="c1"># normalize</span>
-            <span class="k">if</span> <span class="n">norm</span> <span class="o">==</span> <span class="s2">&quot;true&quot;</span><span class="p">:</span>
-                <span class="n">confusion_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span>
-                    <span class="n">confusion_matrix</span><span class="p">,</span>
-                    <span class="n">confusion_matrix</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-                    <span class="n">where</span><span class="o">=</span><span class="n">confusion_matrix</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">norm</span> <span class="o">==</span> <span class="s2">&quot;pred&quot;</span><span class="p">:</span>
-                <span class="n">confusion_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span>
-                    <span class="n">confusion_matrix</span><span class="p">,</span>
-                    <span class="n">confusion_matrix</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-                    <span class="n">where</span><span class="o">=</span><span class="n">confusion_matrix</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">norm</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
-                <span class="n">confusion_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span>
-                    <span class="n">confusion_matrix</span><span class="p">,</span>
-                    <span class="n">confusion_matrix</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span>
-                    <span class="n">where</span><span class="o">=</span><span class="n">confusion_matrix</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="p">)</span>
-
-            <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
-            <span class="n">disp</span> <span class="o">=</span> <span class="n">ConfusionMatrixDisplay</span><span class="p">(</span>
-                <span class="n">confusion_matrix</span><span class="p">,</span>
-                <span class="n">display_labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">],</span>
-            <span class="p">)</span>
-            <span class="c1"># &quot;viridis&quot;</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Multi-label confusion matrix: </span><span class="si">{}</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">label_names</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;True label&quot;</span><span class="p">)</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Predicted label&quot;</span><span class="p">)</span>
-            <span class="n">disp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
-                <span class="n">include_values</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">Blues</span><span class="p">,</span>
-                <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
-                <span class="n">xticks_rotation</span><span class="o">=</span><span class="s2">&quot;horizontal&quot;</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span>
-                <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}{}</span><span class="s2">.png&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                    <span class="n">fig_name</span><span class="p">,</span>
-                    <span class="n">label_names</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                    <span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">norm</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;_norm_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">norm</span><span class="p">),</span>
-                <span class="p">),</span>
-            <span class="p">)</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+    <span class="c1">#  confusion_matrices = multilabel_confusion_matrix(y_test, y_est)</span>
+    <span class="c1">#  for i, confusion_matrix_original in enumerate(confusion_matrices):</span>
+    <span class="c1">#      for norm in [&quot;true&quot;, &quot;pred&quot;, &quot;all&quot;, None]:</span>
+    <span class="c1">#          confusion_matrix = confusion_matrix_original.copy()</span>
+    <span class="c1">#</span>
+    <span class="c1">#          # normalize</span>
+    <span class="c1">#          if norm == &quot;true&quot;:</span>
+    <span class="c1">#              confusion_matrix = np.divide(</span>
+    <span class="c1">#                  confusion_matrix,</span>
+    <span class="c1">#                  confusion_matrix.sum(axis=1, keepdims=True),</span>
+    <span class="c1">#                  where=confusion_matrix.sum(axis=1, keepdims=True) != 0,</span>
+    <span class="c1">#              )</span>
+    <span class="c1">#          elif norm == &quot;pred&quot;:</span>
+    <span class="c1">#              confusion_matrix = np.divide(</span>
+    <span class="c1">#                  confusion_matrix,</span>
+    <span class="c1">#                  confusion_matrix.sum(axis=0, keepdims=True),</span>
+    <span class="c1">#                  where=confusion_matrix.sum(axis=0, keepdims=True) != 0,</span>
+    <span class="c1">#              )</span>
+    <span class="c1">#          elif norm == &quot;all&quot;:</span>
+    <span class="c1">#              confusion_matrix = np.divide(</span>
+    <span class="c1">#                  confusion_matrix,</span>
+    <span class="c1">#                  confusion_matrix.sum(),</span>
+    <span class="c1">#                  where=confusion_matrix.sum() != 0,</span>
+    <span class="c1">#              )</span>
+    <span class="c1">#</span>
+    <span class="c1">#          fig, ax = plt.subplots(figsize=(5, 5))</span>
+    <span class="c1">#          disp = ConfusionMatrixDisplay(</span>
+    <span class="c1">#              confusion_matrix,</span>
+    <span class="c1">#              display_labels=[&quot;N&quot;, &quot;Y&quot;],</span>
+    <span class="c1">#          )</span>
+    <span class="c1">#          # &quot;viridis&quot;</span>
+    <span class="c1">#          plt.title(&quot;Multi-label confusion matrix: {}\n\n&quot;.format(label_names[i]))</span>
+    <span class="c1">#          plt.ylabel(&quot;True label&quot;)</span>
+    <span class="c1">#          plt.xlabel(&quot;Predicted label&quot;)</span>
+    <span class="c1">#          disp.plot(</span>
+    <span class="c1">#              include_values=True,</span>
+    <span class="c1">#              cmap=plt.cm.Blues,</span>
+    <span class="c1">#              ax=ax,</span>
+    <span class="c1">#              xticks_rotation=&quot;horizontal&quot;,</span>
+    <span class="c1">#          )</span>
+    <span class="c1">#          fig.savefig(</span>
+    <span class="c1">#              &quot;{}_{}{}.png&quot;.format(</span>
+    <span class="c1">#                  fig_name,</span>
+    <span class="c1">#                  label_names[i],</span>
+    <span class="c1">#                  &quot;&quot; if norm is None else &quot;_norm_{}&quot;.format(norm),</span>
+    <span class="c1">#              ),</span>
+    <span class="c1">#          )</span>
+    <span class="c1">#          plt.close()</span>
 
 
 <div class="viewcode-block" id="plot_confusion_matrix_statistics"><a class="viewcode-back" href="../../../chmncc.utils.html#chmncc.utils.utils.plot_confusion_matrix_statistics">[docs]</a><span class="k">def</span> <span class="nf">plot_confusion_matrix_statistics</span><span class="p">(</span>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>chmncc.explanations package &mdash; chmncc 0.1 documentation</title>
@@ -29,11 +29,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> chmncc
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            chmncc
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -80,7 +84,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="modules.html">chmncc</a></li>
           <li class="breadcrumb-item"><a href="chmncc.html">chmncc package</a></li>
       <li class="breadcrumb-item active">chmncc.explanations package</li>
@@ -106,14 +110,14 @@
 <dd><p>Integrated gradients computation
 Implementation taken from <a class="reference external" href="https://github.com/CVxTz/IntegratedGradientsPytorch/blob/main/code/mlp_gradient.py">https://github.com/CVxTz/IntegratedGradientsPytorch/blob/main/code/mlp_gradient.py</a></p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>batch</strong> (<em>batch_x</em><em> [</em><em>torch.Tensor</em><em>] </em><em>data instances</em>) – </p></li>
 <li><p><strong>zeros</strong> (<em>batch_blank</em><em> [</em><em>torch.Tensor</em><em>] </em><em>batch of</em>) – </p></li>
 <li><p><strong>network</strong> (<em>model</em><em> [</em><em>torch.nn.Module</em><em>]</em>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>integrated_gradients [torch.Tensor] integrated gradients</p>
 </dd>
 </dl>
@@ -124,13 +128,13 @@ Implementation taken from <a class="reference external" href="https://github.com
 <span class="sig-prename descclassname"><span class="pre">chmncc.explanations.gradients.</span></span><span class="sig-name descname"><span class="pre">output_gradients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/chmncc/explanations/gradients.html#output_gradients"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.explanations.gradients.output_gradients" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the gradients with respect to the input</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>tensor</strong> (<em>preds</em><em> [</em><em>torch.Tensor</em><em>] </em><em>output</em>) – </p></li>
 <li><p><strong>tensor</strong> – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>grad [torch.Tensor] gradients of the output with respect to the input</p>
 </dd>
 </dl>

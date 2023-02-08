@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>chmncc.networks package &mdash; chmncc 0.1 documentation</title>
@@ -29,11 +29,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> chmncc
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            chmncc
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -80,7 +84,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="modules.html">chmncc</a></li>
           <li class="breadcrumb-item"><a href="chmncc.html">chmncc package</a></li>
       <li class="breadcrumb-item active">chmncc.networks package</li>
@@ -116,13 +120,13 @@ during training it returns the not-constrained output that is then passed to MCL
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/chmncc/networks/ConstrainedFFNN.html#ConstrainedFFNNModel.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.networks.ConstrainedFFNN.ConstrainedFFNNModel.forward" title="Permalink to this definition"></a></dt>
 <dd><p>Forward method of the model</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>[</strong><strong>torch.Tensor</strong><strong>]</strong> (<em>x</em>) – input tensor</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>constrained ouput</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>constrained_out [torch.Tensor]</p>
 </dd>
 </dl>
@@ -141,7 +145,7 @@ during training it returns the not-constrained output that is then passed to MCL
 <dd><p>Initialize the ConstrainedFFNNModel as described in the
 Giunchiglia et al paper</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>ontology</em>) – name of the dataset (data + ontology)</p></li>
 <li><p><strong>[</strong><strong>str</strong><strong>]</strong> – name of the data</p></li>
@@ -149,7 +153,7 @@ Giunchiglia et al paper</p>
 <li><p><strong>[</strong><strong>torch.Tensor</strong><strong>]</strong> (<em>R</em>) – adjacency matrix</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>network [ConstrainedFFNNModel] instantiated</p>
 </dd>
 </dl>
@@ -237,10 +241,10 @@ registered hooks while the latter silently ignores them.</p>
 <dd><p>Forward method
 :param x [torch.Tensor]: source sample</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>constrained_out</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>constrained_out [torch.Tensor]</p>
 </dd>
 </dl>
@@ -303,10 +307,10 @@ registered hooks while the latter silently ignores them.</p>
 <dd><p>Forward method
 :param x [torch.Tensor]: source sample</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>constrained_out</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>constrained_out [torch.Tensor]</p>
 </dd>
 </dl>
@@ -339,10 +343,10 @@ models</p>
 <dd><p>Forward method
 :param x [torch.Tensor]: source sample</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>prediction, if not training: constrained one</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>prediction [torch.Tensor]</p>
 </dd>
 </dl>

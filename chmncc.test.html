@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>chmncc.test package &mdash; chmncc 0.1 documentation</title>
@@ -29,11 +29,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> chmncc
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            chmncc
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -80,7 +84,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="modules.html">chmncc</a></li>
           <li class="breadcrumb-item"><a href="chmncc.html">chmncc package</a></li>
       <li class="breadcrumb-item active">chmncc.test package</li>
@@ -106,7 +110,7 @@
 <dd><p>Test function for the network.
 It computes the accuracy together with the area under the precision-recall-curve as a metric</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>network</strong> (<em>net</em><em> [</em><em>nn.Module</em><em>]</em>) – </p></li>
 <li><p><strong>loader</strong> (<em>test_loader</em><em> [</em><em>torch.utils.data.DataLoader</em><em>] </em><em>test data</em>) – </p></li>
@@ -117,7 +121,7 @@ It computes the accuracy together with the area under the precision-recall-curve
 <li><p><strong>False</strong> (<em>debug_mode</em><em> [</em><em>bool</em><em>] </em><em>=</em>) – whether the test is done on the debug dataloader</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>cumulative_loss [float] loss on the test set [not used to train!]
 cumulative_accuracy [float] accuracy on the test set in percentage
 score [float] area under the precision-recall curve</p>
@@ -133,7 +137,7 @@ It computes the accuracy together with the area under the precision-recall-curve
 and returns the statistics of predicted and non-predicted data.
 Predicted means that the network has put at least one value positive, whereas unpredicted means that all the predictions are zeros</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>network</strong> (<em>net</em><em> [</em><em>nn.Module</em><em>]</em>) – </p></li>
 <li><p><strong>labels</strong> (<em>labels_name</em><em> [</em><em>List</em><em>[</em><em>str</em><em>]</em><em>] </em><em>name</em><em> of </em><em>the</em>) – </p></li>
@@ -144,7 +148,7 @@ Predicted means that the network has put at least one value positive, whereas un
 <li><p><strong>&quot;gpu&quot;</strong> (<em>device</em><em> [</em><em>str</em><em>] </em><em>=</em>) – device on which to run the experiment</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>cumulative_loss [float] loss on the test set [not used to train!]
 cumulative_accuracy [float] accuracy on the test set in percentage
 score [float] area under the precision-recall curve
@@ -163,10 +167,10 @@ prediction ndarray: predictions</p>
 <dd><p>Function which computes the average of the image, to better visualize it
 in Tensor board</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>[</strong><strong>torch.Tensor</strong><strong>]</strong> (<em>img</em>) – image</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>image after the processing [torch.Tensor]</p>
 </dd>
 </dl>

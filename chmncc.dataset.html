@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>chmncc.dataset package &mdash; chmncc 0.1 documentation</title>
@@ -29,11 +29,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> chmncc
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            chmncc
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -80,7 +84,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="modules.html">chmncc</a></li>
           <li class="breadcrumb-item"><a href="chmncc.html">chmncc package</a></li>
       <li class="breadcrumb-item active">chmncc.dataset package</li>
@@ -124,7 +128,7 @@ This code was adapted from <a class="reference external" href="https://github.co
 <span class="sig-prename descclassname"><span class="pre">chmncc.dataset.parser.</span></span><span class="sig-name descname"><span class="pre">initialize_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#chmncc.dataset.parser.arff_data" title="chmncc.dataset.parser.arff_data"><span class="pre">arff_data</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#chmncc.dataset.parser.arff_data" title="chmncc.dataset.parser.arff_data"><span class="pre">arff_data</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#chmncc.dataset.parser.arff_data" title="chmncc.dataset.parser.arff_data"><span class="pre">arff_data</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/dataset/parser.html#initialize_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.dataset.parser.initialize_dataset" title="Permalink to this definition"></a></dt>
 <dd><p>Initialize the dataset</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>name</em>) – name of the dataset to prepare</p></li>
 <li><p><strong>Dict</strong><strong>[</strong><strong>List</strong><strong>[</strong><strong>bool</strong> (<em>datasets</em>) – whether the dataset is GO, the train,</p></li>
@@ -134,7 +138,7 @@ This code was adapted from <a class="reference external" href="https://github.co
 <li><p><strong>location</strong> (<em>validation and test data</em>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>train dataset [arff_data]
 validation dataset [arff_data]
 test dataset [arff_data]</p>
@@ -147,7 +151,7 @@ test dataset [arff_data]</p>
 <span class="sig-prename descclassname"><span class="pre">chmncc.dataset.parser.</span></span><span class="sig-name descname"><span class="pre">initialize_other_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datasets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#chmncc.dataset.parser.arff_data" title="chmncc.dataset.parser.arff_data"><span class="pre">arff_data</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#chmncc.dataset.parser.arff_data" title="chmncc.dataset.parser.arff_data"><span class="pre">arff_data</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/dataset/parser.html#initialize_other_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.dataset.parser.initialize_other_dataset" title="Permalink to this definition"></a></dt>
 <dd><p>Initialize the dataset</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>name</em>) – name of the dataset to prepare</p></li>
 <li><p><strong>[</strong><strong>bool</strong> (<em>datasets</em>) – whether the dataset is go (?), the train</p></li>
@@ -156,7 +160,7 @@ test dataset [arff_data]</p>
 <li><p><strong>location</strong> (<em>and test data</em>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>train dataset [arff_data]
 test dataset [arff_data]</p>
 </dd>
@@ -168,14 +172,14 @@ test dataset [arff_data]</p>
 <span class="sig-prename descclassname"><span class="pre">chmncc.dataset.parser.</span></span><span class="sig-name descname"><span class="pre">parse_arff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arff_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_GO</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_test</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DiGraph</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/dataset/parser.html#parse_arff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.dataset.parser.parse_arff" title="Permalink to this definition"></a></dt>
 <dd><p>Parse the arff data</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>arf_file</em>) – arff file</p></li>
 <li><p><strong>[</strong><strong>bool</strong><strong>]</strong> (<em>is_test</em>) – whether it is the GO dataset</p></li>
 <li><p><strong>[</strong><strong>bool</strong><strong>]</strong> – whether the dataset is test</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>X [torch.Tensor] data instances
 Y [torch.Tensor] labels
 R [torch.Tensor[torch.Tensor]] adjacency matrix

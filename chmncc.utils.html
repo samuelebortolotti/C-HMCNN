@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>chmncc.utils package &mdash; chmncc 0.1 documentation</title>
@@ -28,11 +28,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> chmncc
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            chmncc
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -79,7 +83,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="modules.html">chmncc</a></li>
           <li class="breadcrumb-item"><a href="chmncc.html">chmncc package</a></li>
       <li class="breadcrumb-item active">chmncc.utils package</li>
@@ -106,14 +110,14 @@ Taken from <a class="reference external" href="https://github.com/Ugenteraan/Dee
 <span class="sig-prename descclassname"><span class="pre">chmncc.utils.cifar_helper.</span></span><span class="sig-name descname"><span class="pre">read_meta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metafile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/utils/cifar_helper.html#read_meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.cifar_helper.read_meta" title="Permalink to this definition"></a></dt>
 <dd><p>Read the meta file and return the coarse and fine labels.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>metafile</em>) – metafile</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>superclass label
 file label names [List[str]]: subclass label</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>coarse label names [List[str]]</p>
 </dd>
 </dl>
@@ -124,13 +128,13 @@ file label names [List[str]]: subclass label</p>
 <span class="sig-prename descclassname"><span class="pre">chmncc.utils.cifar_helper.</span></span><span class="sig-name descname"><span class="pre">unpickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/utils/cifar_helper.html#unpickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.cifar_helper.unpickle" title="Permalink to this definition"></a></dt>
 <dd><p>Unpickle the given file</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>file</em>) – name of the file to unpickle</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>dictionary of the results</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>res [Dict[str, Any]]</p>
 </dd>
 </dl>
@@ -144,13 +148,13 @@ file label names [List[str]]: subclass label</p>
 <span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">average_image_contributions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#average_image_contributions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.average_image_contributions" title="Permalink to this definition"></a></dt>
 <dd><p>Returns a black and white image making the average contribution of each channel</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>[</strong><strong>np.ndarray</strong><strong>]</strong> (<em>image</em>) – numpy array of size [size1, …., channels]</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>average image</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>average [np.ndarray]</p>
 </dd>
 </dl>
@@ -161,13 +165,13 @@ file label names [List[str]]: subclass label</p>
 <span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">average_image_contributions_tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#average_image_contributions_tensor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.average_image_contributions_tensor" title="Permalink to this definition"></a></dt>
 <dd><p>Returns a black and white image making the average contribution of each channel</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>[</strong><strong>torch.Tensor</strong><strong>]</strong> (<em>image</em>) – torch array of size [size1, …., channels]</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>average image</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>average [torch.Tensor]</p>
 </dd>
 </dl>
@@ -186,16 +190,16 @@ file label names [List[str]]: subclass label</p>
 <dd><p>Given the output of the neural network x returns the output of MCM given the hierarchy constraint
 expressed in the matrix R. This is employed only during the evaluation/test phase of the network</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>torch.tensor</strong><strong>]</strong> (<em>R</em>) – output of the neural network</p></li>
 <li><p><strong>[</strong><strong>torch.tensor</strong><strong>]</strong> – matrix of the ancestors</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>output constrained</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>final_out [torch.tensor]</p>
 </dd>
 </dl>
@@ -207,13 +211,13 @@ expressed in the matrix R. This is employed only during the evaluation/test phas
 <dd><p>Function which returns the learning rate value
 used in the optimizer</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>[</strong><strong>torch.optim.Optimizer</strong><strong>]</strong> (<em>optimizer</em>) – optimizer</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>learning rate</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>lr [float]</p>
 </dd>
 </dl>
@@ -224,17 +228,17 @@ used in the optimizer</p>
 <span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">global_multiLabel_confusion_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_test_g</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_est_g</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#global_multiLabel_confusion_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.global_multiLabel_confusion_matrix" title="Permalink to this definition"></a></dt>
 <dd><p>Get the multilabel confusion matrix</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>np.ndarray</strong><strong>]</strong> (<em>y_est</em>) – groundtruth</p></li>
 <li><p><strong>[</strong><strong>np.ndarray</strong><strong>]</strong> – test labels</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>confusion matrix
 Temp [np.ndarray]: temp variable</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>CM [np.ndarray]</p>
 </dd>
 </dl>
@@ -246,7 +250,7 @@ Temp [np.ndarray]: temp variable</p>
 <dd><p>Grouped Boxplot
 print the grouped boxplot for the statistics</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>Dict</strong><strong>[</strong><strong>List</strong><strong>[</strong><strong>int</strong><strong>]</strong><strong>]</strong><strong>]</strong> (<em>statistics</em>) – set of statistics</p></li>
 <li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>image_folder</em>) – image folde</p></li>
@@ -261,7 +265,7 @@ print the grouped boxplot for the statistics</p>
 <dd><p>Function which loads the best weights of the network, basically it
 looks for the <cite>{exp_name}/best.pth</cite> and loads it</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>nn.Module</strong><strong>]</strong> (<em>net</em>) – network architecture</p></li>
 <li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>device</em>) – folder name</p></li>
@@ -277,7 +281,7 @@ looks for the <cite>{exp_name}/best.pth</cite> and loads it</p>
 <dd><p>Function which loads the last weights of the network, basically it
 looks for the <cite>{exp_name}/net.pth</cite> and loads it</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>nn.Module</strong><strong>]</strong> (<em>net</em>) – network architecture</p></li>
 <li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>device</em>) – folder name</p></li>
@@ -293,7 +297,7 @@ looks for the <cite>{exp_name}/net.pth</cite> and loads it</p>
 <dd><p>Log images on the summary writer, this function is usefull during
 debug sessions.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>tensorboard.SummaryWriter</strong><strong>]</strong> (<em>writer</em>) – summary writer</p></li>
 <li><p><strong>[</strong><strong>torch.Tensor</strong><strong>]</strong> (<em>img</em>) – image to log</p></li>
@@ -309,7 +313,7 @@ debug sessions.</p>
 <dd><p>Function which writes the loss and the accuracy of a model by the means of
 a SummaryWriter</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>tensorboard.SummaryWriter</strong><strong>]</strong> (<em>writer</em>) – summary writer</p></li>
 <li><p><strong>[</strong><strong>int</strong><strong>]</strong> (<em>step</em>) – current step</p></li>
@@ -326,7 +330,7 @@ a SummaryWriter</p>
 <span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">plot_confusion_matrix_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clf_report</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#plot_confusion_matrix_statistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.plot_confusion_matrix_statistics" title="Permalink to this definition"></a></dt>
 <dd><p>Plot the confusion matrix statistics</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>Dict</strong><strong>[</strong><strong>str</strong> (<em>clf_report</em>) – statistics of the confusion matrix</p></li>
 <li><p><strong>float</strong><strong>]</strong><strong>]</strong> – statistics of the confusion matrix</p></li>
@@ -341,7 +345,7 @@ a SummaryWriter</p>
 <span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">plot_global_multiLabel_confusion_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_est</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#plot_global_multiLabel_confusion_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.plot_global_multiLabel_confusion_matrix" title="Permalink to this definition"></a></dt>
 <dd><p>Plot the confusion matrix in a global settings</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>np.ndarray</strong><strong>]</strong> (<em>y_est</em>) – groundtruth</p></li>
 <li><p><strong>[</strong><strong>np.ndarray</strong><strong>]</strong> – test labels</p></li>
@@ -361,19 +365,19 @@ If the resume_training flag is set to true, the function tries to recover, from 
 checkpoint specified, the number of epoch, training and validation parameters.
 If the resume_training flag is set to false, the parameters are set to the default ones</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>nn.Module</strong><strong>]</strong> (<em>model</em>) – network architecture</p></li>
 <li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>experiment_name</em>) – where the weight file is located</p></li>
 <li><p><strong>[</strong><strong>torch.optim.Optimizer</strong><strong>]</strong> (<em>optimizer</em>) – optimizer</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>training parameters
 val_params [Dict]: validation parameters [step, best_loss]
 start_epoch [int]: start epoch number</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>training_params [Dict]</p>
 </dd>
 </dl>
@@ -384,13 +388,13 @@ start_epoch [int]: start epoch number</p>
 <span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">split</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#split"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.split" title="Permalink to this definition"></a></dt>
 <dd><p>Split an array into equal intervals</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>List</strong><strong>[</strong><strong>Any</strong><strong>]</strong><strong>]</strong> (<em>a</em>) – list</p></li>
 <li><p><strong>[</strong><strong>int</strong><strong>]</strong> (<em>n</em>) – number of equal intervals</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>list separaed with equal intervals</p>
 </dd>
 </dl>

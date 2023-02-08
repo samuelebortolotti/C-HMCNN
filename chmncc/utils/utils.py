@@ -125,7 +125,7 @@ def load_last_weights(net: nn.Module, exp_name: str, device: str) -> None:
     """
     best_file = os.path.join(exp_name, "last.pth")
     if os.path.isfile(best_file):
-        checkpoint = torch.load(best_file)  # , map_location=torch.device(device))
+        checkpoint = torch.load(best_file, map_location=torch.device(device))
         print("#> Resume last")
         net.load_state_dict(checkpoint)
         net.eval()

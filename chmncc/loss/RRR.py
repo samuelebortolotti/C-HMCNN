@@ -82,6 +82,8 @@ class RRRLoss(nn.Module):
         right_reason_loss = torch.sum(A_gradX)
         right_reason_loss *= self.regularizer_rate
 
+        #  print(right_reason_loss)
+
         if self.weight is not None:
             right_reason_loss *= self.weight[y[0]]
 

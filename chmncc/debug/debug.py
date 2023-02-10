@@ -408,14 +408,6 @@ def overlay_input_gradient(
         ),
         dpi=fig.dpi,
     )
-    print("Saving... {}/{}_iter_{}_overlayed_{}_image_{}{}.png".format(
-        debug_folder,
-        prefix,
-        idx,
-        "full" if full else "",
-        "integrated" if integrated_gradients else "input",
-        "_correct" if correct_guess else "",
-    ))
 
     plt.close()
 
@@ -1239,7 +1231,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
     parser.add_argument(
         "--rrr-regularization-rate",
         type=float,
-        default=20.0,
+        default=100.0,
         help="RRR regularization rate",
     )
     parser.add_argument("--weight-decay", type=float, default=1e-5, help="weight decay")
@@ -1405,7 +1397,7 @@ def main(args: Namespace) -> None:
     )
 
     # Test on best weights (of the confounded model)
-    load_last_weights(net, args.weights_path_folder, args.device)
+    #  load_last_weights(net, args.weights_path_folder, args.device)
 
     # load the human readable labels dataloader
     test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
@@ -1431,17 +1423,7 @@ def main(args: Namespace) -> None:
         labels_name=labels_name
     )
 
-    # confusion matrix after debug
-    plot_global_multiLabel_confusion_matrix(
-        y_test=y_test,
-        y_est=y_pred,
-        label_names=labels_name,
-        size=(30, 30),
-        fig_name="{}/before_confusion_matrix_normalized".format(
-            args.debug_folder
-        ),
-        normalize=True,
-    )
+    # confusion matrix before debug
     plot_global_multiLabel_confusion_matrix(
         y_test=y_test,
         y_est=y_pred,
@@ -1449,6 +1431,14 @@ def main(args: Namespace) -> None:
         size=(30, 30),
         fig_name="{}/before_confusion_matrix".format(args.debug_folder),
         normalize=False,
+    )
+    plot_global_multiLabel_confusion_matrix(
+        y_test=y_test,
+        y_est=y_pred,
+        label_names=labels_name,
+        size=(30, 30),
+        fig_name="{}/before_confusion_matrix_normalized".format(args.debug_folder),
+        normalize=True,
     )
     plot_confusion_matrix_statistics(
         clf_report=clf_report,

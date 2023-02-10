@@ -511,20 +511,6 @@ def c_hmcnn(
         print("Learning rate:", get_lr(optimizer))
         writer.add_scalar("Learning rate", get_lr(optimizer), e)
 
-        # log on wandb if and only if the module is loaded
-        if set_wandb:
-            wandb.log(
-                {
-                    "train/train_loss": train_loss,
-                    "train/train_accuracy": train_accuracy,
-                    "train/train_auprc": train_au_prc_score,
-                    "val/val_loss": val_loss,
-                    "val/val_accuracy": val_accuracy,
-                    "val/val_auprc": val_score,
-                    "learning_rate": get_lr(optimizer),
-                }
-            )
-
         # test value
         print("\nEpoch: {:d}".format(e + 1))
         print(
@@ -555,6 +541,13 @@ def c_hmcnn(
         if set_wandb:
             wandb.log(
                 {
+                    "train/train_loss": train_loss,
+                    "train/train_accuracy": train_accuracy,
+                    "train/train_auprc": train_au_prc_score,
+                    "val/val_loss": val_loss,
+                    "val/val_accuracy": val_accuracy,
+                    "val/val_auprc": val_score,
+                    "learning_rate": get_lr(optimizer),
                     "test/test_loss": test_loss,
                     "test/test_accuracy": test_accuracy,
                     "test/test_auprc": test_score,
@@ -597,14 +590,14 @@ def c_hmcnn(
     log_values(writer, epochs, test_loss, test_accuracy, "Test")
 
     # log on wandb if and only if the module is loaded
-    if set_wandb:
-        wandb.log(
-            {
-                "test/test_loss": test_loss,
-                "test/test_accuracy": test_accuracy,
-                "test/test_auprc": test_score,
-            }
-        )
+    #  if set_wandb:
+    #      wandb.log(
+    #          {
+    #              "test/test_loss": test_loss,
+    #              "test/test_accuracy": test_accuracy,
+    #              "test/test_auprc": test_score,
+    #          }
+    #      )
 
     print(
         "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
@@ -647,30 +640,30 @@ def c_hmcnn(
         )
 
         ## ! Confusion matrix !
-        plot_global_multiLabel_confusion_matrix(
-            y_test=y_test,
-            y_est=y_pred,
-            label_names=labels_name,
-            size=(30, 30),
-            fig_name="{}/confusion_matrix_normalized".format(
-                os.environ["IMAGE_FOLDER"]
-            ),
-            normalize=True,
-        )
-        plot_global_multiLabel_confusion_matrix(
-            y_test=y_test,
-            y_est=y_pred,
-            label_names=labels_name,
-            size=(30, 30),
-            fig_name="{}/confusion_matrix".format(os.environ["IMAGE_FOLDER"]),
-            normalize=False,
-        )
-        plot_confusion_matrix_statistics(
-            clf_report=clf_report,
-            fig_name="{}/confusion_matrix_statistics.png".format(
-                os.environ["IMAGE_FOLDER"]
-            ),
-        )
+        #  plot_global_multiLabel_confusion_matrix(
+        #      y_test=y_test,
+        #      y_est=y_pred,
+        #      label_names=labels_name,
+        #      size=(30, 30),
+        #      fig_name="{}/confusion_matrix_normalized".format(
+        #          os.environ["IMAGE_FOLDER"]
+        #      ),
+        #      normalize=True,
+        #  )
+        #  plot_global_multiLabel_confusion_matrix(
+        #      y_test=y_test,
+        #      y_est=y_pred,
+        #      label_names=labels_name,
+        #      size=(30, 30),
+        #      fig_name="{}/confusion_matrix".format(os.environ["IMAGE_FOLDER"]),
+        #      normalize=False,
+        #  )
+        #  plot_confusion_matrix_statistics(
+        #      clf_report=clf_report,
+        #      fig_name="{}/confusion_matrix_statistics.png".format(
+        #          os.environ["IMAGE_FOLDER"]
+        #      ),
+        #  )
         # grouped boxplot
         grouped_boxplot(
             statistics_predicted,
@@ -775,7 +768,6 @@ def c_hmcnn(
         )
         plt.close()
 
-        #  print("Gradient with respect to the input: {}".format(grd))
         if not old_method:
             # permute to show
             grd = grd.permute(1, 2, 0)
@@ -799,6 +791,25 @@ def c_hmcnn(
             )
             plt.close()
 
+            # overlayed image
+            fig = plt.figure()
+            plt.colorbar(
+                matplotlib.cm.ScalarMappable(norm=norm, cmap="viridis"),
+                label="Gradient magnitude overlayed",
+            )
+            plt.imshow(single_el_show)
+            plt.imshow(grd, cmap="viridis", alpha=0.5)
+            plt.title("Input gradients")
+
+            # show the figure
+            fig.savefig(
+                "{}/{}_{}_gradients_overlayed.png".format(
+                    os.environ["IMAGE_FOLDER"], i, network
+                ),
+                dpi=fig.dpi,
+            )
+            plt.close()
+
         i_gradient = compute_integrated_gradient(
             single_el, torch.zeros_like(single_el), net
         )
@@ -814,13 +825,6 @@ def c_hmcnn(
             # normalize the value
             #  i_gradient = i_gradient / np.max(i_gradient)
             norm = matplotlib.colors.Normalize(vmin=0, vmax=np.max(i_gradient))
-            # save the raw image
-            matplotlib.image.imsave(
-                "{}/{}_{}_integrated_gradients_raw.png".format(
-                    os.environ["IMAGE_FOLDER"], i, network
-                ),
-                i_gradient,
-            )
             # figure
             fig = plt.figure()
             # show
@@ -832,6 +836,25 @@ def c_hmcnn(
             )
             fig.savefig(
                 "{}/{}_{}_integrated_gradients.png".format(
+                    os.environ["IMAGE_FOLDER"], i, network
+                ),
+                dpi=fig.dpi,
+            )
+            plt.close()
+
+            # overlayed image
+            fig = plt.figure()
+            plt.colorbar(
+                matplotlib.cm.ScalarMappable(norm=norm, cmap="viridis"),
+                label="Gradient magnitude overlayed",
+            )
+            plt.imshow(single_el_show)
+            plt.imshow(i_gradient, cmap="viridis", alpha=0.5)
+            plt.title("Integrated gradients")
+
+            # show the figure
+            fig.savefig(
+                "{}/{}_{}_integrated_gradients_overlayed.png".format(
                     os.environ["IMAGE_FOLDER"], i, network
                 ),
                 dpi=fig.dpi,

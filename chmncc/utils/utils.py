@@ -379,6 +379,7 @@ def plot_global_multiLabel_confusion_matrix(
         CM = np.divide(CM, CM.sum(axis=0) + Temp, where=CM.sum(axis=0) + Temp != 0)
 
     disp = ConfusionMatrixDisplay(confusion_matrix=CM, display_labels=label_names)
+    #  print(CM)
     disp.plot(
         include_values=False,
         cmap="viridis",

@@ -6,3 +6,4 @@ from .lenet import LeNet5
 from .lenet7 import LeNet7
 from .resnet18 import ResNet18
 from .alexnet import AlexNet
+from .mlp import MLP

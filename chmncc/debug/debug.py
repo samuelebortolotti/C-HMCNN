@@ -6,7 +6,7 @@ import os
 import torch.nn as nn
 from torch.nn.modules.loss import BCELoss
 from chmncc.dataset.load_cifar import LoadDataset
-from chmncc.networks import ResNet18, LeNet5, LeNet7, AlexNet
+from chmncc.networks import ResNet18, LeNet5, LeNet7, AlexNet, MLP
 from chmncc.config import hierarchy
 from chmncc.utils.utils import load_last_weights, load_best_weights, grouped_boxplot, plot_confusion_matrix_statistics, plot_global_multiLabel_confusion_matrix, get_lr
 from chmncc.dataset import (
@@ -1196,7 +1196,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--network",
         "-n",
         type=str,
-        choices=["resnet", "lenet",  "lenet7", "alexnet"],
+        choices=["resnet", "lenet",  "lenet7", "alexnet", "mlp"],
         default="resnet",
         help="Network",
     )
@@ -1284,8 +1284,22 @@ def configure_subparsers(subparsers: Subparser) -> None:
         help="Do not see the gradient behaviour",
     )
     parser.add_argument("--wandb", "-wdb", type=bool, default=False, help="wandb")
+    parser.add_argument(
+        "--constrained-layer",
+        "-clayer",
+        dest="constrained_layer",
+        action="store_true",
+        help="Use the Giunchiglia et al. layer to enforce hierarchical logical constraints",
+    )
+    parser.add_argument(
+        "--no-constrained-layer",
+        "-noclayer",
+        dest="constrained_layer",
+        action="store_false",
+        help="Do not use the Giunchiglia et al. layer to enforce hierarchical logical constraints",
+    )
     # set the main function to run when blob is called from the command line
-    parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False)
+    parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False, constrained_layer=True)
 
 
 def main(args: Namespace) -> None:
@@ -1333,19 +1347,23 @@ def main(args: Namespace) -> None:
     # Network
     if args.network == "lenet":
         net = LeNet5(
-            dataloaders["train_R"], 121
+            dataloaders["train_R"], 121, args.constrained_layer
         )  # 20 superclasses, 100 subclasses + the root
     elif args.network == "lenet7":
         net = LeNet7(
-            dataloaders["train_R"], 121
+            dataloaders["train_R"], 121, args.constrained_layer
         )  # 20 superclasses, 100 subclasses + the root
     elif args.network == "alexnet":
         net = AlexNet(
-            dataloaders["train_R"], 121
+            dataloaders["train_R"], 121, args.constrained_layer
+        )  # 20 superclasses, 100 subclasses + the root
+    elif args.network == "mlp":
+        net = MLP(
+            dataloaders["train_R"], 121, args.constrained_layer
         )  # 20 superclasses, 100 subclasses + the root
     else:
         net = ResNet18(
-            dataloaders["train_R"], 121, False
+            dataloaders["train_R"], 121, args.constrained_layer
         )  # 20 superclasses, 100 subclasses + the root
 
     # move everything on the cpu

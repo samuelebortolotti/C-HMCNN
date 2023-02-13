@@ -579,7 +579,7 @@ def c_hmcnn(
     print("#> After training:")
 
     # Test on best weights
-    #  load_best_weights(net, model_folder, device)
+    load_best_weights(net, model_folder, device)
 
     # test set
     test_loss, test_accuracy, test_score = test_step(

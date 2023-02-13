@@ -1395,7 +1395,7 @@ def main(args: Namespace) -> None:
     scheduler = get_plateau_scheduler(optimizer=optimizer)
 
     # Test on best weights (of the confounded model)
-    load_last_weights(net, args.weights_path_folder, args.device)
+    load_best_weights(net, args.weights_path_folder, args.device)
 
     # dataloaders
     test_loader = dataloaders["test_loader"]

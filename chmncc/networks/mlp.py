@@ -2,11 +2,13 @@ import torch.nn as nn
 import torch
 from chmncc.utils import get_constr_out
 
+
 class Flatten(nn.Module):
     """Flatten layer"""
 
     def forward(self, x):
         return x.view(x.shape[0], -1)
+
 
 class MLP(nn.Module):
     r"""
@@ -14,7 +16,14 @@ class MLP(nn.Module):
     """
 
     def __init__(
-        self, R: torch.Tensor, num_out_logits: int = 20, constrained_layer: bool = True, img_width: int = 32, img_height: int = 32, channels: int = 3, dropout: float = 0.25
+        self,
+        R: torch.Tensor,
+        num_out_logits: int = 20,
+        constrained_layer: bool = True,
+        img_width: int = 32,
+        img_height: int = 32,
+        channels: int = 3,
+        dropout: float = 0.25,
     ) -> None:
         r"""
         Initialize the MLP model
@@ -31,20 +40,23 @@ class MLP(nn.Module):
         self.img_width = img_width
         self.channels = channels
         self.classifier = nn.Sequential(
-            nn.Linear(in_features=self.img_height * self.img_width * self.channels, out_features=1536),
-            nn.Dropout(p=dropout)
+            nn.Linear(
+                in_features=self.img_height * self.img_width * self.channels,
+                out_features=1536,
+            ),
+            nn.Dropout(p=dropout),
             nn.ReLU(),
             nn.Linear(in_features=1536, out_features=768),
-            nn.Dropout(p=dropout)
+            nn.Dropout(p=dropout),
             nn.ReLU(),
             nn.Linear(in_features=768, out_features=384),
-            nn.Dropout(p=dropout)
+            nn.Dropout(p=dropout),
             nn.ReLU(),
             nn.Linear(in_features=384, out_features=256),
-            nn.Dropout(p=dropout)
+            nn.Dropout(p=dropout),
             nn.ReLU(),
             nn.Linear(in_features=256, out_features=num_out_logits),
-            nn.Dropout(p=dropout)
+            nn.Dropout(p=dropout),
             nn.Sigmoid(),
         )
 

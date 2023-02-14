@@ -13,5 +13,5 @@ def get_plateau_scheduler(
         scheduler [torch.optim.lr_scheduler._LRScheduler]
     """
     return torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer=optimizer, mode="min", patience=5
+        optimizer=optimizer, mode="min", patience=15
     )

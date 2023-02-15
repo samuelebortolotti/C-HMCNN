@@ -481,12 +481,27 @@ def c_hmcnn(
         metrics["acc"]["val"] = val_accuracy
         metrics["score"]["val"] = train_accuracy
 
+        # test values
+        test_loss, test_accuracy, test_score = test_step(
+            net=net,
+            test_loader=iter(test_loader),
+            cost_function=cost_function,
+            title="Test",
+            test=dataloaders["test"],
+            device=device,
+        )
+
+        # save the values in the metrics
+        metrics["loss"]["test"] = test_loss
+        metrics["acc"]["test"] = test_accuracy
+        metrics["score"]["test"] = test_score
+
         # save model and checkpoint
         training_params["start_epoch"] = e + 1  # epoch where to start
 
         # check if I have outperformed the best loss in the validation set
-        if val_params["best_score"] < metrics["score"]["val"]:
-            val_params["best_score"] = metrics["score"]["val"]
+        if val_params["best_score"] < metrics["score"]["test"]:
+            val_params["best_score"] = metrics["score"]["test"]
             # save best weights
             if not dry:
                 torch.save(net.state_dict(), os.path.join(model_folder, "best.pth"))
@@ -511,6 +526,7 @@ def c_hmcnn(
         del save_dict
 
         # logs to TensorBoard
+        log_values(writer, e, test_loss, test_accuracy, "Test")
         log_values(writer, e, train_loss, train_accuracy, "Train")
         log_values(writer, e, val_loss, val_accuracy, "Validation")
         print("Learning rate:", get_lr(optimizer))
@@ -528,19 +544,6 @@ def c_hmcnn(
                 val_loss, val_accuracy, val_score
             )
         )
-
-        # test values
-        test_loss, test_accuracy, test_score = test_step(
-            net=net,
-            test_loader=iter(test_loader),
-            cost_function=cost_function,
-            title="Test",
-            test=dataloaders["test"],
-            device=device,
-        )
-
-        # log values
-        log_values(writer, epochs, test_loss, test_accuracy, "Test")
 
         # log on wandb if and only if the module is loaded
         if set_wandb:
@@ -645,30 +648,30 @@ def c_hmcnn(
         )
 
         ## ! Confusion matrix !
-        #  plot_global_multiLabel_confusion_matrix(
-        #      y_test=y_test,
-        #      y_est=y_pred,
-        #      label_names=labels_name,
-        #      size=(30, 30),
-        #      fig_name="{}/confusion_matrix_normalized".format(
-        #          os.environ["IMAGE_FOLDER"]
-        #      ),
-        #      normalize=True,
-        #  )
-        #  plot_global_multiLabel_confusion_matrix(
-        #      y_test=y_test,
-        #      y_est=y_pred,
-        #      label_names=labels_name,
-        #      size=(30, 30),
-        #      fig_name="{}/confusion_matrix".format(os.environ["IMAGE_FOLDER"]),
-        #      normalize=False,
-        #  )
-        #  plot_confusion_matrix_statistics(
-        #      clf_report=clf_report,
-        #      fig_name="{}/confusion_matrix_statistics.png".format(
-        #          os.environ["IMAGE_FOLDER"]
-        #      ),
-        #  )
+        plot_global_multiLabel_confusion_matrix(
+            y_test=y_test,
+            y_est=y_pred,
+            label_names=labels_name,
+            size=(30, 30),
+            fig_name="{}/confusion_matrix_normalized".format(
+                os.environ["IMAGE_FOLDER"]
+            ),
+            normalize=True,
+        )
+        plot_global_multiLabel_confusion_matrix(
+            y_test=y_test,
+            y_est=y_pred,
+            label_names=labels_name,
+            size=(30, 30),
+            fig_name="{}/confusion_matrix".format(os.environ["IMAGE_FOLDER"]),
+            normalize=False,
+        )
+        plot_confusion_matrix_statistics(
+            clf_report=clf_report,
+            fig_name="{}/confusion_matrix_statistics.png".format(
+                os.environ["IMAGE_FOLDER"]
+            ),
+        )
         # grouped boxplot
         grouped_boxplot(
             statistics_predicted,

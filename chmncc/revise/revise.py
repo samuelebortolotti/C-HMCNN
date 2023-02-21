@@ -245,7 +245,7 @@ def revise_step(
     #      y_test[:, train.to_eval], constr_train.data[:, train.to_eval], average="micro"
     #  )
     score = average_precision_score(
-        y_test[:, test.to_eval],
+        y_test[:, train.to_eval],
         predicted_train.data[:, train.to_eval].to(torch.float),
         average="micro",
     )

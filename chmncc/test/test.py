@@ -30,6 +30,7 @@ def test_step(
     device: str = "gpu",
     debug_mode: bool = False,
     print_me: bool = False,
+    prediction_treshold: float = 0.5,
 ) -> Tuple[float, float, float]:
     r"""Test function for the network.
     It computes the accuracy together with the area under the precision-recall-curve as a metric
@@ -42,6 +43,7 @@ def test_step(
         test [dotdict] test set dictionary
         device [str] = "gpu": device on which to run the experiment
         debug_mode [bool] = False: whether the test is done on the debug dataloader
+        prediction_treshold [float]: threshold used to consider a class as predicted
 
     Returns:
         cumulative_loss [float] loss on the test set [not used to train!]
@@ -83,7 +85,7 @@ def test_step(
             outputs = net(inputs.float())
 
             # predicted
-            predicted = outputs.data > 0.5
+            predicted = outputs.data > prediction_treshold  # 0.5
 
             if print_me:
                 torch.set_printoptions(profile="full")
@@ -126,8 +128,13 @@ def test_step(
                 y_test = torch.cat((y_test, targets), dim=0)
 
     # average precision score
+    #  score = average_precision_score(
+    #      y_test[:, test.to_eval], constr_test.data[:, test.to_eval], average="micro"
+    #  )
     score = average_precision_score(
-        y_test[:, test.to_eval], constr_test.data[:, test.to_eval], average="micro"
+        y_test[:, test.to_eval],
+        predicted_train.data[:, train.to_eval].to(torch.float),
+        average="micro",
     )
 
     return (
@@ -145,6 +152,7 @@ def test_step_with_prediction_statistics(
     test: dotdict,
     labels_name: List[str],
     device: str = "gpu",
+    prediction_treshold: float = 0.5,
 ) -> Tuple[
     float,
     float,
@@ -168,6 +176,7 @@ def test_step_with_prediction_statistics(
         test [dotdict] test set dictionary
         labels_name [List[str]] name of the labels
         device [str] = "gpu": device on which to run the experiment
+        prediction_treshold [float]: threshold used to consider a class as predicted
 
     Returns:
         cumulative_loss [float] loss on the test set [not used to train!]
@@ -203,7 +212,7 @@ def test_step_with_prediction_statistics(
             outputs = net(inputs.float())
 
             # predicted
-            predicted = outputs.data > 0.5
+            predicted = outputs.data > prediction_treshold  # 0.5
             # total
             total += targets.shape[0] * targets.shape[1]
             # total correct predictions
@@ -259,8 +268,13 @@ def test_step_with_prediction_statistics(
                 stats_correct[subclass[i]][correct_idx] += 1
 
     # average precision score
+    #  score = average_precision_score(
+    #      y_test[:, test.to_eval], constr_test.data[:, test.to_eval], average="micro"
+    #  )
     score = average_precision_score(
-        y_test[:, test.to_eval], constr_test.data[:, test.to_eval], average="micro"
+        y_test[:, test.to_eval],
+        predicted_train.data[:, train.to_eval].to(torch.float),
+        average="micro",
     )
 
     # classification report on the confusion matrix

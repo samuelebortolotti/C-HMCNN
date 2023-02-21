@@ -229,7 +229,13 @@ def configure_subparsers(subparsers: Subparser) -> None:
         action="store_false",
         help="Use sigmoid for all the output logits",
     )
-
+    parser.add_argument(
+        "--num-workers", type=int, default=4, help="dataloaders num workers"
+    )
+    parser.add_argument(
+        "--prediction-treshold", type=float, default=0.01, help="considers the class to be predicted in a multilabel classification setting"
+    )
+    parser.add_argument("--patience", type=int, default=5, help="scheduler patience")
     # set the main function to run when blob is called from the command line
     parser.set_defaults(
         func=experiment,
@@ -257,6 +263,9 @@ def c_hmcnn(
     constrained_layer: bool = True,
     no_confounder: bool = False,
     force_superclass_prediction: bool = False,
+    num_workers: int = 4,
+    patience: int = 10,
+    prediction_treshold: float = 0.01,
     **kwargs: Any,
 ) -> None:
     r"""
@@ -279,6 +288,9 @@ def c_hmcnn(
         constrained_layer [bool] = True
         no_confounder [bool] = False
         force_superclass_prediction [bool] = False
+        num_workers [int] = 4
+        patience [int] = 10
+        prediction_treshold [float] = 0.01
 
     Args:
         exp_name [str]: name of the experiment, basically where to save the logs of the SummaryWriter
@@ -298,6 +310,9 @@ def c_hmcnn(
         constrained_layer [bool] = True: whether to use the constrained output layer from Giunchiglia et al.
         no_confounder [bool]: whether to have a normal, and therefore not confounded, training
         force_superclass_prediction [bool]: whether to force the prediction for the superclasses
+        num_workers [int]: number of workers for the dataloaders
+        patience [int]: patience for the scheduler
+        prediction_treshold [float]: prediction threshold
         \*\*kwargs [Any]: additional key-value arguments
     """
 
@@ -347,6 +362,7 @@ def c_hmcnn(
             batch_size=batch_size,
             test_batch_size=test_batch_size,
             normalize=True,  # normalize the dataset
+            num_workers=num_workers,  # num workers
         )
 
     # network initialization
@@ -430,7 +446,7 @@ def c_hmcnn(
     optimizer = get_adam_optimizer(net, learning_rate, weight_decay=weight_decay)
 
     # scheduler
-    scheduler = get_plateau_scheduler(optimizer=optimizer)
+    scheduler = get_plateau_scheduler(optimizer=optimizer, patience=patience)
 
     # define the cost function
     cost_function = torch.nn.BCELoss()
@@ -459,6 +475,7 @@ def c_hmcnn(
             title="Training",
             device=device,
             constrained_layer=constrained_layer,
+            prediction_treshold=prediction_treshold,
         )
 
         # save the values in the metrics
@@ -474,6 +491,7 @@ def c_hmcnn(
             title="Validation",
             test=dataloaders["val"],
             device=device,
+            prediction_treshold=prediction_treshold,
         )
 
         # save the values in the metrics
@@ -489,6 +507,7 @@ def c_hmcnn(
             title="Test",
             test=dataloaders["test"],
             device=device,
+            prediction_treshold=prediction_treshold,
         )
 
         # save the values in the metrics
@@ -550,6 +569,7 @@ def c_hmcnn(
             wandb.log(
                 {
                     "train/train_loss": train_loss,
+                    "train/train_right_anwer_loss": train_loss,
                     "train/train_accuracy": train_accuracy,
                     "train/train_auprc": train_au_prc_score,
                     "val/val_loss": val_loss,
@@ -557,6 +577,7 @@ def c_hmcnn(
                     "val/val_auprc": val_score,
                     "learning_rate": get_lr(optimizer),
                     "test/test_loss": test_loss,
+                    "test/test_right_answer_loss": test_loss,
                     "test/test_accuracy": test_accuracy,
                     "test/test_auprc": test_score,
                 }
@@ -592,20 +613,11 @@ def c_hmcnn(
         title="Test",
         test=dataloaders["test"],
         device=device,
+        prediction_treshold=prediction_treshold,
     )
 
     # log values
     log_values(writer, epochs, test_loss, test_accuracy, "Test")
-
-    # log on wandb if and only if the module is loaded
-    #  if set_wandb:
-    #      wandb.log(
-    #          {
-    #              "test/test_loss": test_loss,
-    #              "test/test_accuracy": test_accuracy,
-    #              "test/test_auprc": test_score,
-    #          }
-    #      )
 
     print(
         "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
@@ -626,7 +638,75 @@ def c_hmcnn(
         # load the human readable labels dataloader
         test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
         test_dataset_with_label_names = dataloaders["test_set"]
+        # load the training dataloader
+        training_loader_with_labels_names = dataloaders["training_loader_with_labels_names"]
+
         labels_name = test_dataset_with_label_names.nodes_names_without_root
+
+        ## TRAIN ##
+        # collect stats
+        (
+            _,
+            _,
+            _,
+            statistics_predicted,
+            statistics_correct,
+            clf_report,  # classification matrix
+            y_test,  # ground-truth for multiclass classification matrix
+            y_pred,  # predited values for multiclass classification matrix
+        ) = test_step_with_prediction_statistics(
+            net=net,
+            test_loader=iter(training_loader_with_labels_names),
+            cost_function=cost_function,
+            title="Collect Statistics [TRAIN]",
+            test=dataloaders["train"],
+            device=device,
+            labels_name=labels_name,
+            prediction_treshold=prediction_treshold,
+        )
+
+        ## ! Confusion matrix !
+        plot_global_multiLabel_confusion_matrix(
+            y_test=y_test,
+            y_est=y_pred,
+            label_names=labels_name,
+            size=(30, 30),
+            fig_name="{}/train_confusion_matrix_normalized".format(
+                os.environ["IMAGE_FOLDER"]
+            ),
+            normalize=True,
+        )
+        plot_global_multiLabel_confusion_matrix(
+            y_test=y_test,
+            y_est=y_pred,
+            label_names=labels_name,
+            size=(30, 30),
+            fig_name="{}/train_confusion_matrix".format(os.environ["IMAGE_FOLDER"]),
+            normalize=False,
+        )
+        plot_confusion_matrix_statistics(
+            clf_report=clf_report,
+            fig_name="{}/train_confusion_matrix_statistics.png".format(
+                os.environ["IMAGE_FOLDER"]
+            ),
+        )
+        # grouped boxplot
+        grouped_boxplot(
+            statistics_predicted,
+            os.environ["IMAGE_FOLDER"],
+            "Predicted",
+            "Not predicted",
+            "train_predicted",
+        )
+        grouped_boxplot(
+            statistics_correct,
+            os.environ["IMAGE_FOLDER"],
+            "Correct prediction",
+            "Wrong prediction",
+            "train_accuracy",
+        )
+
+        ## TEST ##
         # collect stats
         (
             _,
@@ -641,10 +721,11 @@ def c_hmcnn(
             net=net,
             test_loader=iter(test_loader_with_label_names),
             cost_function=cost_function,
-            title="Collect Statistics",
+            title="Collect Statistics [TEST]",
             test=dataloaders["test"],
             device=device,
             labels_name=labels_name,
+            prediction_treshold=prediction_treshold,
         )
 
         ## ! Confusion matrix !
@@ -653,7 +734,7 @@ def c_hmcnn(
             y_est=y_pred,
             label_names=labels_name,
             size=(30, 30),
-            fig_name="{}/confusion_matrix_normalized".format(
+            fig_name="{}/test_confusion_matrix_normalized".format(
                 os.environ["IMAGE_FOLDER"]
             ),
             normalize=True,
@@ -663,12 +744,12 @@ def c_hmcnn(
             y_est=y_pred,
             label_names=labels_name,
             size=(30, 30),
-            fig_name="{}/confusion_matrix".format(os.environ["IMAGE_FOLDER"]),
+            fig_name="{}/test_confusion_matrix".format(os.environ["IMAGE_FOLDER"]),
             normalize=False,
         )
         plot_confusion_matrix_statistics(
             clf_report=clf_report,
-            fig_name="{}/confusion_matrix_statistics.png".format(
+            fig_name="{}/test_confusion_matrix_statistics.png".format(
                 os.environ["IMAGE_FOLDER"]
             ),
         )
@@ -678,14 +759,14 @@ def c_hmcnn(
             os.environ["IMAGE_FOLDER"],
             "Predicted",
             "Not predicted",
-            "predicted",
+            "test_predicted",
         )
         grouped_boxplot(
             statistics_correct,
             os.environ["IMAGE_FOLDER"],
             "Correct prediction",
             "Wrong prediction",
-            "accuracy",
+            "test_accuracy",
         )
         # extract also the names of the classes
         test_el, superclass, subclass, _ = next(iter(test_loader_with_label_names))

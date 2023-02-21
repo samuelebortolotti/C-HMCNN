@@ -95,10 +95,7 @@ def show_gradient_behavior(
 def revise_step(
     epoch_number: int,
     net: nn.Module,
-    debug_loader_no_conf: torch.utils.data.DataLoader,
-    debug_loader_only_conf: torch.utils.data.DataLoader,
     debug_loader: torch.utils.data.DataLoader,
-    small_dataset_frequency_for_iteration: int,
     train: dotdict,
     R: torch.Tensor,
     optimizer: torch.optim.Optimizer,
@@ -109,6 +106,7 @@ def revise_step(
     device: str = "cuda",
     have_to_train: bool = True,
     gradient_analysis: bool = False,
+    prediction_treshold: float = 0.5,
 ) -> Tuple[float, float, float, float, float, float]:
     """Revise step of the network. It integrates the user feedback and revise the network by the means
     of the RRRLoss.
@@ -116,7 +114,6 @@ def revise_step(
     Args:
         epoch_number [int]: epoch number
         net [nn.Module] network on device
-        small_dataset_frequency_for_iteration [float]: small dataset frequency
         train [dotdict]: training set dictionary
         R [torch.Tensor]: adjency matrix
         optimizer [torch.optim.Optimizer]: optimizer
@@ -126,6 +123,7 @@ def revise_step(
         device [str]: on which device to run the experiment [default: cuda]
         have_to_train [bool]: whether to train or not the model
         gradient_analysis [bool]: whether to analyze the gradients by means of plots
+        prediction_treshold [float]: threshold used to consider a class as predicted
 
     Returns:
         loss [float]
@@ -193,7 +191,7 @@ def revise_step(
         # compute the amount of confounded samples
         confounded_samples += confounded.sum().item()
 
-        predicted = constr_output.data > 0.5
+        predicted = constr_output.data > prediction_treshold  # 0.5
 
         # fetch prediction and loss value
         total_train += ground_truth.shape[0] * ground_truth.shape[1]
@@ -243,8 +241,13 @@ def revise_step(
             break
 
     # average precision score
+    #  score = average_precision_score(
+    #      y_test[:, train.to_eval], constr_train.data[:, train.to_eval], average="micro"
+    #  )
     score = average_precision_score(
-        y_test[:, train.to_eval], constr_train.data[:, train.to_eval], average="micro"
+        y_test[:, test.to_eval],
+        predicted_train.data[:, train.to_eval].to(torch.float),
+        average="micro",
     )
 
     # confounded samples

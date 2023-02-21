@@ -19,6 +19,7 @@ def training_step(
     title: str,
     device: str = "cuda",
     constrained_layer: bool = True,
+    prediction_treshold: float = 0.5,
 ) -> Tuple[float, float, float]:
     """Training step of the network. It works both for our approach and for the one of
     Giunchiglia et al.
@@ -33,6 +34,7 @@ def training_step(
         title [str] title of the experiment
         device [str]: on which device to run the experiment [default: cuda]
         constrained_layer [bool]: whether to use the constrained layer training from Giuchiglia et al.
+        prediction_treshold [float]: threshold used to consider a prediction
 
     Returns:
         cumulative loss [float]
@@ -79,7 +81,7 @@ def training_step(
         loss = cost_function(train_output[:, train.to_eval], label[:, train.to_eval])
         cumulative_loss += loss.item()
 
-        predicted = constr_output.data > 0.5
+        predicted = constr_output.data > prediction_treshold  # 0.5
 
         # fetch prediction and loss value
         total_train += label.shape[0] * label.shape[1]
@@ -107,8 +109,13 @@ def training_step(
             y_test = torch.cat((y_test, label), dim=0)
 
     # average precision score
+    #  score = average_precision_score(
+    #      y_test[:, train.to_eval], constr_train.data[:, train.to_eval], average="micro"
+    #  )
     score = average_precision_score(
-        y_test[:, train.to_eval], constr_train.data[:, train.to_eval], average="micro"
+        y_test[:, train.to_eval],
+        predicted_train.data[:, train.to_eval].to(torch.float),
+        average="micro",
     )
 
     return (

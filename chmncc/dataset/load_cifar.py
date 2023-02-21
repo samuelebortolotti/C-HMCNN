@@ -269,6 +269,20 @@ class LoadDataset(Dataset):
             reader = csv.reader(f)
             data = list(reader)
 
+        #  c = {}
+        #  for ls in data:
+        #      img, sup, sub = ls
+        #      if sup not in c:
+        #          c[sup] = 1
+        #      else:
+        #          c[sup] += 1
+        #
+        #      if sub not in c:
+        #          c[sub] = 1
+        #      else:
+        #          c[sub] += 1
+        #
+        #  print(c)
         return data
 
     def get_to_eval(self) -> torch.Tensor:

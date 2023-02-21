@@ -878,7 +878,6 @@ def debug(
     integrated_gradients: bool,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler._LRScheduler,
-    test_loader: torch.utils.data.DataLoader,
     debug_test_loader: torch.utils.data.DataLoader,
     batch_size: int,
     test_batch_size: int,
@@ -887,6 +886,8 @@ def debug(
     model_folder: str,
     network: str,
     gradient_analysis: bool,
+    num_workers: int,
+    prediction_treshold: float,
     **kwargs: Any
 ) -> None:
     """Method which performs the debug step by fine-tuning the network employing the right for the right reason loss.
@@ -909,6 +910,8 @@ def debug(
         model_folder [str]: folder where to fetch the models weights
         network [str]: name of the network
         gradient_analysis [bool]: whether to analyze the gradient behavior
+        num_workers [int]: number of workers for dataloaders
+        prediction_treshold [float]: prediction threshold
         **kwargs [Any]: kwargs
     """
     print("Have to run for {} debug iterations...".format(iterations))
@@ -924,40 +927,26 @@ def debug(
 
     # Dataloaders for the previous values
     debug_loader = torch.utils.data.DataLoader(
-        debug_train, batch_size=batch_size, shuffle=True, num_workers=4
+        debug_train, batch_size=batch_size, shuffle=True, num_workers=num_workers
     )
 
     test_debug = torch.utils.data.DataLoader(
-        test_debug, batch_size=test_batch_size, shuffle=False, num_workers=4
+        test_debug, batch_size=test_batch_size, shuffle=False, num_workers=num_workers
     )
 
     ## ==================================================================
+
     # test with only confounder (in test) loaders
     test_only_confounder = dataloaders[
         "test_loader_with_labels_and_confunders_pos_only"
     ]
 
     for_test_loader_test_only_confounder_wo_conf = torch.utils.data.DataLoader(
-        dataloaders["test_dataset_with_labels_and_confunders_pos_only_without_confounders"], batch_size=test_batch_size, shuffle=False, num_workers=4
+        dataloaders["test_dataset_with_labels_and_confunders_pos_only_without_confounders"], batch_size=test_batch_size, shuffle=False, num_workers=num_workers
     )
 
     for_test_loader_test_only_confounder_wo_conf_in_train_data = torch.utils.data.DataLoader(
-        dataloaders["test_dataset_with_labels_and_confunders_pos_only_without_confounders_on_training_samples"], batch_size=test_batch_size, shuffle=False, num_workers=4
-    )
-
-    # Without and only confounder
-    debug_test_no_conf = LoadDebugDataset(
-        dataloaders["train_dataset_with_labels_and_confunders_position_no_conf"]
-    )
-
-    debug_loader_no_conf = torch.utils.data.DataLoader(
-        debug_test_no_conf, batch_size=batch_size, shuffle=True, num_workers=4
-    )
-    debug_test_only_conf = LoadDebugDataset(
-        dataloaders["train_dataset_with_labels_and_confunders_position_only_conf"]
-    )
-    debug_loader_only_conf = torch.utils.data.DataLoader(
-        debug_test_only_conf, batch_size=batch_size, shuffle=True, num_workers=4
+        dataloaders["test_dataset_with_labels_and_confunders_pos_only_without_confounders_on_training_samples"], batch_size=test_batch_size, shuffle=False, num_workers=num_workers
     )
 
     # copy the iterators for trying to analyze the same images
@@ -1002,10 +991,7 @@ def debug(
         ) = revise_step(
             epoch_number=it,
             net=net,
-            debug_loader_no_conf=iter(debug_loader_no_conf),
-            debug_loader_only_conf=iter(debug_loader_only_conf),
             debug_loader=iter(debug_loader),
-            small_dataset_frequency_for_iteration=10,
             R=dataloaders["train_R"],
             train=dataloaders["train"],
             optimizer=optimizer,
@@ -1015,6 +1001,7 @@ def debug(
             batches_treshold=batches_treshold,
             gradient_analysis=gradient_analysis,
             folder_where_to_save=debug_folder,
+            prediction_treshold=prediction_treshold,
         )
 
         print(
@@ -1046,24 +1033,44 @@ def debug(
             )
         )
 
-        # test set
-        test_loss_original, test_accuracy_original, test_score_original = test_step(
+        (
+            test_loss_original,
+            test_total_right_answer_loss,
+            test_total_right_reason_loss,
+            test_accuracy_original,
+            test_score_original,
+            test_right_reason_loss_confounded,
+        ) = revise_step(
+            epoch_number=it,
             net=net,
-            test_loader=iter(test_loader),
-            cost_function=cost_function,
-            title="Test",
-            test=dataloaders["test"],
+            debug_loader=iter(test_debug),
+            R=dataloaders["train_R"],
+            train=dataloaders["test"],
+            optimizer=optimizer,
+            revive_function=reviseLoss,
             device=device,
+            title="Test with RRR",
+            batches_treshold=batches_treshold,
+            gradient_analysis=gradient_analysis,
+            folder_where_to_save=debug_folder,
+            have_to_train=False,
+            prediction_treshold=prediction_treshold,
         )
 
         print(
-            "\n\t [Test set]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve {:.3f}".format(
-                test_loss_original, test_accuracy_original, test_score_original
+            "\n\t [Test set]: Loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, Score {:.5f}, Right Reason Loss on Confounded {:.5f}".format(
+                test_loss_original,
+                test_total_right_answer_loss,
+                test_total_right_reason_loss,
+                test_accuracy_original,
+                test_score_original,
+                test_right_reason_loss_confounded,
             )
         )
 
         # test set only confounder
         print("Test only:")
+
         test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_in_train_data = test_step(
             net=net,
             test_loader=iter(for_test_loader_test_only_confounder_wo_conf_in_train_data),
@@ -1151,6 +1158,8 @@ def debug(
                     "test/only_test_confounded_casses_without_confounders_auprc": test_conf_score_wo_conf_test_data,
                     "test/only_test_confounded_classes_auprc": test_conf_score_only_conf,
                     "test/test_loss": test_loss_original,
+                    "test/test_right_answer_loss": test_total_right_answer_loss,
+                    "test/test_right_reason_loss": test_total_right_reason_loss,
                     "test/test_accuracy": test_accuracy_original,
                     "test/test_auprc": test_score_original,
                     "learning_rate": get_lr(optimizer),
@@ -1298,6 +1307,15 @@ def configure_subparsers(subparsers: Subparser) -> None:
         action="store_false",
         help="Do not use the Giunchiglia et al. layer to enforce hierarchical logical constraints",
     )
+    parser.add_argument(
+        "--num-workers", type=int, default=4, help="dataloaders num workers"
+    )
+    parser.add_argument(
+        "--prediction-treshold", type=float, default=0.01, help="considers the class to be predicted in a multilabel classification setting"
+    )
+    parser.add_argument(
+        "--patience", type=int, default=5, help="scheduler patience"
+    )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False, constrained_layer=True)
 
@@ -1339,6 +1357,7 @@ def main(args: Namespace) -> None:
         batch_size=args.batch_size,
         test_batch_size=args.test_batch_size,
         normalize=True,  # normalize the dataset
+        num_workers=args.num_workers
     )
 
     # Load dataloaders
@@ -1392,7 +1411,7 @@ def main(args: Namespace) -> None:
         net, args.learning_rate, weight_decay=args.weight_decay
     )
     # scheduler
-    scheduler = get_plateau_scheduler(optimizer=optimizer)
+    scheduler = get_plateau_scheduler(optimizer=optimizer, patience=args.patience)
 
     # Test on best weights (of the confounded model)
     load_best_weights(net, args.weights_path_folder, args.device)
@@ -1412,14 +1431,15 @@ def main(args: Namespace) -> None:
         title="Test",
         test=dataloaders["test"],
         device=args.device,
+        prediction_treshold=args.prediction_treshold,
     )
-
-    # Test on best weights (of the confounded model)
-    #  load_last_weights(net, args.weights_path_folder, args.device)
 
     # load the human readable labels dataloader
     test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
     labels_name = dataloaders["test_set"].nodes_names_without_root
+    # load the training dataloader
+    training_loader_with_labels_names = dataloaders["training_loader_with_labels_names"]
+
 
     # collect stats
     (
@@ -1438,7 +1458,8 @@ def main(args: Namespace) -> None:
         title="Collect Statistics",
         test=dataloaders["test"],
         device=args.device,
-        labels_name=labels_name
+        labels_name=labels_name,
+        prediction_treshold=args.prediction_treshold,
     )
 
     # confusion matrix before debug
@@ -1473,16 +1494,6 @@ def main(args: Namespace) -> None:
         )
     )
 
-    # log on wandb if and only if the module is loaded
-    #  if args.wandb:
-    #      wandb.log(
-    #          {
-    #              "test/loss": test_loss,
-    #              "test/accuracy": test_accuracy,
-    #              "test/score": test_score,
-    #          }
-    #      )
-
     print("-----------------------------------------------------")
 
     print("#> Debug...")
@@ -1516,8 +1527,8 @@ def main(args: Namespace) -> None:
         scheduler=scheduler, # learning rate scheduler
         title="debug", # title of the iterator
         debug_test_loader=val_loader, # validation loader on which to validate the model
-        test_loader=test_loader, # loader on which to test the performances
         reviseLoss=reviseLoss, # RRR
+        prediction_treshold=args.prediction_treshold, # prediction thresold
         **vars(args) # additional variables
     )
 
@@ -1531,6 +1542,7 @@ def main(args: Namespace) -> None:
         title="Test",
         test=dataloaders["test"],
         device=args.device,
+        prediction_treshold=args.prediction_treshold,
     )
 
     print(
@@ -1539,15 +1551,68 @@ def main(args: Namespace) -> None:
         )
     )
 
-    #  # log on wandb if and only if the module is loaded
-    #  if args.wandb:
-    #      wandb.log(
-    #          {
-    #              "test/loss": test_loss,
-    #              "test/accuracy": test_accuracy,
-    #              "test/score": test_score,
-    #          }
-    #      )
+    ## TRAIN ##
+    # collect stats
+    (
+        _,
+        _,
+        _,
+        statistics_predicted,
+        statistics_correct,
+        clf_report,  # classification matrix
+        y_test,  # ground-truth for multiclass classification matrix
+        y_pred,  # predited values for multiclass classification matrix
+    ) = test_step_with_prediction_statistics(
+        net=net,
+        test_loader=iter(training_loader_with_labels_names),
+        cost_function=cost_function,
+        title="Collect Statistics [TRAIN]",
+        test=dataloaders["train"],
+        device=args.device,
+        labels_name=labels_name,
+        prediction_treshold=args.prediction_treshold,
+    )
+
+    ## ! Confusion matrix !
+    plot_global_multiLabel_confusion_matrix(
+        y_test=y_test,
+        y_est=y_pred,
+        label_names=labels_name,
+        size=(30, 30),
+        fig_name="{}/train_confusion_matrix_normalized".format(
+            os.environ["IMAGE_FOLDER"]
+        ),
+        normalize=True,
+    )
+    plot_global_multiLabel_confusion_matrix(
+        y_test=y_test,
+        y_est=y_pred,
+        label_names=labels_name,
+        size=(30, 30),
+        fig_name="{}/train_confusion_matrix".format(os.environ["IMAGE_FOLDER"]),
+        normalize=False,
+    )
+    plot_confusion_matrix_statistics(
+        clf_report=clf_report,
+        fig_name="{}/train_confusion_matrix_statistics.png".format(
+            os.environ["IMAGE_FOLDER"]
+        ),
+    )
+    # grouped boxplot
+    grouped_boxplot(
+        statistics_predicted,
+        os.environ["IMAGE_FOLDER"],
+        "Predicted",
+        "Not predicted",
+        "train_predicted",
+    )
+    grouped_boxplot(
+        statistics_correct,
+        os.environ["IMAGE_FOLDER"],
+        "Correct prediction",
+        "Wrong prediction",
+        "train_accuracy",
+    )
 
     # collect stats
     (
@@ -1563,10 +1628,11 @@ def main(args: Namespace) -> None:
         net=net,
         test_loader=iter(test_loader_with_label_names),
         cost_function=cost_function,
-        title="Collect Statistics",
+        title="Collect Statistics [TEST]",
         test=dataloaders["test"],
         device=args.device,
-        labels_name=labels_name
+        labels_name=labels_name,
+        prediction_treshold=args.prediction_treshold,
     )
 
     ## confusion matrix after debug
@@ -1575,7 +1641,7 @@ def main(args: Namespace) -> None:
         y_est=y_pred,
         label_names=labels_name,
         size=(30, 20),
-        fig_name="{}/after_confusion_matrix_normalized".format(
+        fig_name="{}/test_after_confusion_matrix_normalized".format(
             args.debug_folder
         ),
         normalize=True,
@@ -1585,12 +1651,12 @@ def main(args: Namespace) -> None:
         y_est=y_pred,
         label_names=labels_name,
         size=(30, 20),
-        fig_name="{}/after_confusion_matrix".format(args.debug_folder),
+        fig_name="{}/test_after_confusion_matrix".format(args.debug_folder),
         normalize=False,
     )
     plot_confusion_matrix_statistics(
         clf_report=clf_report,
-        fig_name="{}/after_confusion_matrix_statistics.png".format(
+        fig_name="{}/test_after_confusion_matrix_statistics.png".format(
             args.debug_folder
         ),
     )
@@ -1601,14 +1667,14 @@ def main(args: Namespace) -> None:
         args.debug_folder,
         "Predicted",
         "Not predicted",
-        "predicted",
+        "test_predicted",
     )
     grouped_boxplot(
         statistics_correct,
         args.debug_folder,
         "Correct prediction",
         "Wrong prediction",
-        "accuracy",
+        "test_accuracy",
     )
 
     # save the model state of the debugged network

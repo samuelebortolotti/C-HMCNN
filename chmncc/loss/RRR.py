@@ -192,6 +192,7 @@ class IGRRRLoss(RRRLoss):
         # if expl.shape [n,1,h,w] and gradXes.shape [n,3,h,w] then torch broadcasting
         # is used implicitly
         # when the feature is 0 -> relevant, since if it is 1 we are adding a penality
+        expl = expl.unsqueeze(dim=1)
         A_gradX = torch.mul(expl, gradXes) ** 2
 
         right_reason_loss = torch.sum(A_gradX)

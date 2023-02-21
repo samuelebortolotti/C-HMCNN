@@ -264,6 +264,7 @@
         <span class="c1"># if expl.shape [n,1,h,w] and gradXes.shape [n,3,h,w] then torch broadcasting</span>
         <span class="c1"># is used implicitly</span>
         <span class="c1"># when the feature is 0 -&gt; relevant, since if it is 1 we are adding a penality</span>
+        <span class="n">expl</span> <span class="o">=</span> <span class="n">expl</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">A_gradX</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">expl</span><span class="p">,</span> <span class="n">gradXes</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
 
         <span class="n">right_reason_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">A_gradX</span><span class="p">)</span>

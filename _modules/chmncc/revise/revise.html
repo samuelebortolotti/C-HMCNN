@@ -167,10 +167,7 @@
 <div class="viewcode-block" id="revise_step"><a class="viewcode-back" href="../../../chmncc.revise.html#chmncc.revise.revise.revise_step">[docs]</a><span class="k">def</span> <span class="nf">revise_step</span><span class="p">(</span>
     <span class="n">epoch_number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">net</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-    <span class="n">debug_loader_no_conf</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">,</span>
-    <span class="n">debug_loader_only_conf</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">,</span>
     <span class="n">debug_loader</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">,</span>
-    <span class="n">small_dataset_frequency_for_iteration</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">train</span><span class="p">:</span> <span class="n">dotdict</span><span class="p">,</span>
     <span class="n">R</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">optimizer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">,</span>
@@ -181,6 +178,7 @@
     <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
     <span class="n">have_to_train</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">gradient_analysis</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">prediction_treshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Revise step of the network. It integrates the user feedback and revise the network by the means</span>
 <span class="sd">    of the RRRLoss.</span>
@@ -188,7 +186,6 @@
 <span class="sd">    Args:</span>
 <span class="sd">        epoch_number [int]: epoch number</span>
 <span class="sd">        net [nn.Module] network on device</span>
-<span class="sd">        small_dataset_frequency_for_iteration [float]: small dataset frequency</span>
 <span class="sd">        train [dotdict]: training set dictionary</span>
 <span class="sd">        R [torch.Tensor]: adjency matrix</span>
 <span class="sd">        optimizer [torch.optim.Optimizer]: optimizer</span>
@@ -198,6 +195,7 @@
 <span class="sd">        device [str]: on which device to run the experiment [default: cuda]</span>
 <span class="sd">        have_to_train [bool]: whether to train or not the model</span>
 <span class="sd">        gradient_analysis [bool]: whether to analyze the gradients by means of plots</span>
+<span class="sd">        prediction_treshold [float]: threshold used to consider a class as predicted</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        loss [float]</span>
@@ -265,7 +263,7 @@
         <span class="c1"># compute the amount of confounded samples</span>
         <span class="n">confounded_samples</span> <span class="o">+=</span> <span class="n">confounded</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
-        <span class="n">predicted</span> <span class="o">=</span> <span class="n">constr_output</span><span class="o">.</span><span class="n">data</span> <span class="o">&gt;</span> <span class="mf">0.5</span>
+        <span class="n">predicted</span> <span class="o">=</span> <span class="n">constr_output</span><span class="o">.</span><span class="n">data</span> <span class="o">&gt;</span> <span class="n">prediction_treshold</span>  <span class="c1"># 0.5</span>
 
         <span class="c1"># fetch prediction and loss value</span>
         <span class="n">total_train</span> <span class="o">+=</span> <span class="n">ground_truth</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">ground_truth</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -315,8 +313,13 @@
             <span class="k">break</span>
 
     <span class="c1"># average precision score</span>
+    <span class="c1">#  score = average_precision_score(</span>
+    <span class="c1">#      y_test[:, train.to_eval], constr_train.data[:, train.to_eval], average=&quot;micro&quot;</span>
+    <span class="c1">#  )</span>
     <span class="n">score</span> <span class="o">=</span> <span class="n">average_precision_score</span><span class="p">(</span>
-        <span class="n">y_test</span><span class="p">[:,</span> <span class="n">train</span><span class="o">.</span><span class="n">to_eval</span><span class="p">],</span> <span class="n">constr_train</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">train</span><span class="o">.</span><span class="n">to_eval</span><span class="p">],</span> <span class="n">average</span><span class="o">=</span><span class="s2">&quot;micro&quot;</span>
+        <span class="n">y_test</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">],</span>
+        <span class="n">predicted_train</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">train</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">),</span>
+        <span class="n">average</span><span class="o">=</span><span class="s2">&quot;micro&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># confounded samples</span>

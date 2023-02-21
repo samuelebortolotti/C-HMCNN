@@ -107,7 +107,7 @@ def revise_step(
     have_to_train: bool = True,
     gradient_analysis: bool = False,
     prediction_treshold: float = 0.5,
-) -> Tuple[float, float, float, float, float, float]:
+) -> Tuple[float, float, float, float, float, float, float]:
     """Revise step of the network. It integrates the user feedback and revise the network by the means
     of the RRRLoss.
 
@@ -130,7 +130,8 @@ def revise_step(
         right_answer_loss [float]: error considering the training loss
         right_reason_loss [float]: error considering the penalty on the wrong focus of the model
         accuracy [float]: accuracy of the model in percentage
-        score [float]: area under the precision/recall curve
+        score [float]: area under the precision/recall curve raw
+        score [float]: area under the precision/recall curve const
         right_reason_loss_confounded [float]: cumulative right_reason_loss divided over the number of confounded samples
     """
     total_train = 0.0
@@ -241,10 +242,11 @@ def revise_step(
             break
 
     # average precision score
-    #  score = average_precision_score(
-    #      y_test[:, train.to_eval], constr_train.data[:, train.to_eval], average="micro"
-    #  )
-    score = average_precision_score(
+    score_raw = average_precision_score(
+        y_test[:, train.to_eval], constr_train.data[:, train.to_eval], average="micro"
+    )
+
+    score_const = average_precision_score(
         y_test[:, train.to_eval],
         predicted_train.data[:, train.to_eval].to(torch.float),
         average="micro",
@@ -259,6 +261,7 @@ def revise_step(
         cumulative_right_answer_loss / len(debug_loader),
         cumulative_right_reason_loss / len(debug_loader),
         cumulative_accuracy / total_train * 100,
-        score,
+        score_raw,
+        score_const,
         cumulative_right_reason_loss / confounded_samples,
     )

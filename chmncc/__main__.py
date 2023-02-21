@@ -233,7 +233,10 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--num-workers", type=int, default=4, help="dataloaders num workers"
     )
     parser.add_argument(
-        "--prediction-treshold", type=float, default=0.01, help="considers the class to be predicted in a multilabel classification setting"
+        "--prediction-treshold",
+        type=float,
+        default=0.01,
+        help="considers the class to be predicted in a multilabel classification setting",
     )
     parser.add_argument("--patience", type=int, default=5, help="scheduler patience")
     # set the main function to run when blob is called from the command line
@@ -465,7 +468,12 @@ def c_hmcnn(
 
     # for each epoch, train the network and then compute evaluation results
     for e in tqdm.tqdm(range(start_epoch, epochs), desc="Epochs"):
-        train_loss, train_accuracy, train_au_prc_score = training_step(
+        (
+            train_loss,
+            train_accuracy,
+            train_au_prc_score_raw,
+            train_au_prc_score_const,
+        ) = training_step(
             net=net,
             train=dataloaders["train"],
             R=dataloaders["train_R"],
@@ -481,10 +489,10 @@ def c_hmcnn(
         # save the values in the metrics
         metrics["loss"]["train"] = train_loss
         metrics["acc"]["train"] = train_accuracy
-        metrics["score"]["train"] = train_au_prc_score
+        metrics["score"]["train"] = train_au_prc_score_const
 
         # validation set
-        val_loss, val_accuracy, val_score = test_step(
+        val_loss, val_accuracy, val_score_raw, val_score_const = test_step(
             net=net,
             test_loader=iter(val_loader),
             cost_function=cost_function,
@@ -500,7 +508,7 @@ def c_hmcnn(
         metrics["score"]["val"] = train_accuracy
 
         # test values
-        test_loss, test_accuracy, test_score = test_step(
+        test_loss, test_accuracy, test_score_raw, test_score_const = test_step(
             net=net,
             test_loader=iter(test_loader),
             cost_function=cost_function,
@@ -513,7 +521,7 @@ def c_hmcnn(
         # save the values in the metrics
         metrics["loss"]["test"] = test_loss
         metrics["acc"]["test"] = test_accuracy
-        metrics["score"]["test"] = test_score
+        metrics["score"]["test"] = test_score_const
 
         # save model and checkpoint
         training_params["start_epoch"] = e + 1  # epoch where to start
@@ -554,13 +562,16 @@ def c_hmcnn(
         # test value
         print("\nEpoch: {:d}".format(e + 1))
         print(
-            "\t Training loss {:.5f}, Training accuracy {:.2f}%, Training Area under Precision-Recall Curve {:.3f}".format(
-                train_loss, train_accuracy, train_au_prc_score
+            "\t Training loss {:.5f}, Training accuracy {:.2f}%, Training Area under Precision-Recall Curve Raw {:.3f}, Training Area under Precision-Recall Curve Const {:.3f}".format(
+                train_loss,
+                train_accuracy,
+                train_au_prc_score_raw,
+                train_au_prc_score_const,
             )
         )
         print(
-            "\t Validation loss {:.5f}, Validation accuracy {:.2f}%, Validation Area under Precision-Recall Curve {:.3f}".format(
-                val_loss, val_accuracy, val_score
+            "\t Validation loss {:.5f}, Validation accuracy {:.2f}%, Validation Area under Precision-Recall Curve Raw {:.3f},  Validation Area under Precision-Recall Curve Const {:.3f}".format(
+                val_loss, val_accuracy, val_score_raw, val_score_const
             )
         )
 
@@ -571,21 +582,24 @@ def c_hmcnn(
                     "train/train_loss": train_loss,
                     "train/train_right_anwer_loss": train_loss,
                     "train/train_accuracy": train_accuracy,
-                    "train/train_auprc": train_au_prc_score,
+                    "train/train_auprc_raw": train_au_prc_score_raw,
+                    "train/train_auprc_const": train_au_prc_score_const,
                     "val/val_loss": val_loss,
                     "val/val_accuracy": val_accuracy,
-                    "val/val_auprc": val_score,
+                    "val/val_auprc_raw": val_score_raw,
+                    "val/val_auprc_const": val_score_const,
                     "learning_rate": get_lr(optimizer),
                     "test/test_loss": test_loss,
                     "test/test_right_answer_loss": test_loss,
                     "test/test_accuracy": test_accuracy,
-                    "test/test_auprc": test_score,
+                    "test/test_auprc_raw": test_score_raw,
+                    "test/test_auprc_const": test_score_const,
                 }
             )
 
         print(
-            "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
-                test_loss, test_accuracy, test_score
+            "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve Raw {:.3f}, Test Area under Precision-Recall Curve Const {:.3f}".format(
+                test_loss, test_accuracy, test_score_raw, test_score_const
             )
         )
 
@@ -606,7 +620,7 @@ def c_hmcnn(
     load_best_weights(net, model_folder, device)
 
     # test set
-    test_loss, test_accuracy, test_score = test_step(
+    test_loss, test_accuracy, test_score_raw, test_score_const = test_step(
         net=net,
         test_loader=iter(test_loader),
         cost_function=cost_function,
@@ -620,8 +634,8 @@ def c_hmcnn(
     log_values(writer, epochs, test_loss, test_accuracy, "Test")
 
     print(
-        "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
-            test_loss, test_accuracy, test_score
+        "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve Raw {:.3f}, Test Area under Precision-Recall Curve Const {:.3f}".format(
+            test_loss, test_accuracy, test_score_raw, test_score_const
         )
     )
     print("-----------------------------------------------------")
@@ -639,13 +653,16 @@ def c_hmcnn(
         test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
         test_dataset_with_label_names = dataloaders["test_set"]
         # load the training dataloader
-        training_loader_with_labels_names = dataloaders["training_loader_with_labels_names"]
+        training_loader_with_labels_names = dataloaders[
+            "training_loader_with_labels_names"
+        ]
 
         labels_name = test_dataset_with_label_names.nodes_names_without_root
 
         ## TRAIN ##
         # collect stats
         (
+            _,
             _,
             _,
             _,
@@ -709,6 +726,7 @@ def c_hmcnn(
         ## TEST ##
         # collect stats
         (
+            _,
             _,
             _,
             _,
@@ -960,7 +978,7 @@ def c_hmcnn(
         dataset = "chmncc"
 
     f = open("results/" + dataset + ".csv", "a")
-    f.write(str(kwargs.pop("seed")) + "," + str(epochs) + "," + str(test_score) + "\n")
+    f.write(str(kwargs.pop("seed")) + "," + str(epochs) + "," + str(test_score_const) + "\n")
     f.close()
 
 

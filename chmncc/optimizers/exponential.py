@@ -1,5 +1,6 @@
 import torch
 
+
 def get_exponential_scheduler(
     optimizer: torch.optim.Optimizer, gamma: float
 ) -> torch.optim.lr_scheduler._LRScheduler:

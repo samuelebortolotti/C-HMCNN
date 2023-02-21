@@ -986,7 +986,8 @@ def debug(
             train_total_right_answer_loss,
             train_total_right_reason_loss,
             train_total_accuracy,
-            train_total_score,
+            train_total_score_raw,
+            train_total_score_const,
             train_right_reason_loss_confounded,
         ) = revise_step(
             epoch_number=it,
@@ -1005,12 +1006,13 @@ def debug(
         )
 
         print(
-            "\n\t Debug full loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, Score {:.5f}, Right Reason Loss on Confounded {:.5f}".format(
+            "\n\t Debug full loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, AuPRc raw {:.5f}, AuPRc const {:.5f}, Right Reason Loss on Confounded {:.5f}".format(
                 train_total_loss,
                 train_total_right_answer_loss,
                 train_total_right_reason_loss,
                 train_total_accuracy,
-                train_total_score,
+                train_total_score_raw,
+                train_total_score_const,
                 train_right_reason_loss_confounded,
             )
         )
@@ -1018,7 +1020,7 @@ def debug(
         print("Testing...")
 
         #  # validation set
-        val_loss, val_accuracy, val_score = test_step(
+        val_loss, val_accuracy, val_score_raw, val_score_const = test_step(
             net=net,
             test_loader=iter(debug_test_loader),
             cost_function=cost_function,
@@ -1028,8 +1030,8 @@ def debug(
         )
 
         print(
-            "\n\t [Validation set]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve {:.3f}".format(
-                val_loss, val_accuracy, val_score
+            "\n\t [Validation set]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve Raw {:.3f}, Area under Precision-Recall Curve Const {:.3f}".format(
+                val_loss, val_accuracy, val_score_raw, val_score_const
             )
         )
 
@@ -1038,7 +1040,8 @@ def debug(
             test_total_right_answer_loss,
             test_total_right_reason_loss,
             test_accuracy_original,
-            test_score_original,
+            test_score_original_raw,
+            test_score_original_const,
             test_right_reason_loss_confounded,
         ) = revise_step(
             epoch_number=it,
@@ -1058,12 +1061,13 @@ def debug(
         )
 
         print(
-            "\n\t [Test set]: Loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, Score {:.5f}, Right Reason Loss on Confounded {:.5f}".format(
+            "\n\t [Test set]: Loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, AuPRc raw {:.5f}, AuPRc const {:.5f}, Right Reason Loss on Confounded {:.5f}".format(
                 test_loss_original,
                 test_total_right_answer_loss,
                 test_total_right_reason_loss,
                 test_accuracy_original,
-                test_score_original,
+                test_score_original_raw,
+                test_score_original_const,
                 test_right_reason_loss_confounded,
             )
         )
@@ -1071,7 +1075,7 @@ def debug(
         # test set only confounder
         print("Test only:")
 
-        test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_in_train_data = test_step(
+        test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_in_train_data_raw, test_conf_score_wo_conf_in_train_data_const = test_step(
             net=net,
             test_loader=iter(for_test_loader_test_only_confounder_wo_conf_in_train_data),
             cost_function=cost_function,
@@ -1082,12 +1086,12 @@ def debug(
         )
 
         print(
-            "\n\t [Test on confounded train data without confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve {:.3f}".format(
-                test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_in_train_data
+            "\n\t [Test on confounded train data without confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Area under Precision-Recall Curve const {:.3f}".format(
+                test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_in_train_data_raw, test_conf_score_wo_conf_in_train_data_const
             )
         )
 
-        test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_test_data = test_step(
+        test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_test_data_raw, test_conf_score_wo_conf_test_data_const = test_step(
             net=net,
             test_loader=iter(for_test_loader_test_only_confounder_wo_conf),
             cost_function=cost_function,
@@ -1098,12 +1102,12 @@ def debug(
         )
 
         print(
-            "\n\t [Test set Confounder Only WO confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve {:.3f}".format(
-                test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_test_data
+            "\n\t [Test set Confounder Only WO confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Area under Precision-Recall Curve const {:.3f}".format(
+                test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_test_data_raw, test_conf_score_wo_conf_test_data_const
             )
         )
 
-        test_conf_loss, test_conf_accuracy, test_conf_score_only_conf = test_step(
+        test_conf_loss, test_conf_accuracy, test_conf_score_only_conf_raw, test_conf_score_only_conf_const = test_step(
             net=net,
             test_loader=iter(test_only_confounder),
             cost_function=cost_function,
@@ -1114,15 +1118,15 @@ def debug(
         )
 
         print(
-            "\n\t [Test set Confounder Only]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve {:.3f}".format(
-                test_conf_loss, test_conf_accuracy, test_conf_score_only_conf
+            "\n\t [Test set Confounder Only]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Area under Precision-Recall Curve const {:.3f}".format(
+                test_conf_loss, test_conf_accuracy, test_conf_score_only_conf_raw, test_conf_score_only_conf_const
             )
         )
 
-        # save he model if the results are better
-        if best_test_score > test_score_original:
+        # save the model if the results are better
+        if best_test_score > test_score_original_const:
             # save the best score
-            best_test_score = test_score_original
+            best_test_score = test_score_original_const
             # save the model state of the debugged network
             torch.save(
                 net.state_dict(),
@@ -1149,19 +1153,25 @@ def debug(
                     "train/train_right_anwer_loss": train_total_right_answer_loss,
                     "train/train_right_reason_loss": train_total_right_reason_loss,
                     "train/train_accuracy": train_total_accuracy,
-                    "train/train_auprc": train_total_score,
+                    "train/train_auprc_raw": train_total_score_raw,
+                    "train/train_auprc_const": train_total_score_const,
                     "train/train_confounded_samples_only_right_reason": train_right_reason_loss_confounded,
                     "val/val_loss": val_loss,
                     "val/val_accuracy": val_accuracy,
-                    "val/val_auprc": val_score,
-                    "test/only_training_confounded_classes_without_confounders_auprc": test_conf_score_wo_conf_in_train_data,
-                    "test/only_test_confounded_casses_without_confounders_auprc": test_conf_score_wo_conf_test_data,
-                    "test/only_test_confounded_classes_auprc": test_conf_score_only_conf,
+                    "val/val_auprc_raw": val_score_raw,
+                    "val/val_auprc_const": val_score_const,
+                    "test/only_training_confounded_classes_without_confounders_auprc_raw": test_conf_score_wo_conf_in_train_data_raw,
+                    "test/only_test_confounded_casses_without_confounders_auprc_raw": test_conf_score_wo_conf_test_data_raw,
+                    "test/only_test_confounded_classes_auprc_raw": test_conf_score_only_conf_raw,
+                    "test/only_training_confounded_classes_without_confounders_auprc_const": test_conf_score_wo_conf_in_train_data_const,
+                    "test/only_test_confounded_casses_without_confounders_auprc_const": test_conf_score_wo_conf_test_data_const,
+                    "test/only_test_confounded_classes_auprc_const": test_conf_score_only_conf_const,
                     "test/test_loss": test_loss_original,
                     "test/test_right_answer_loss": test_total_right_answer_loss,
                     "test/test_right_reason_loss": test_total_right_reason_loss,
                     "test/test_accuracy": test_accuracy_original,
-                    "test/test_auprc": test_score_original,
+                    "test/test_auprc_raw": test_score_original_raw,
+                    "test/test_auprc_const": test_score_original_const,
                     "learning_rate": get_lr(optimizer),
                 }
             )
@@ -1424,7 +1434,7 @@ def main(args: Namespace) -> None:
     cost_function = torch.nn.BCELoss()
 
     # test set
-    test_loss, test_accuracy, test_score = test_step(
+    test_loss, test_accuracy, test_score_raw, test_score_const = test_step(
         net=net,
         test_loader=iter(test_loader),
         cost_function=cost_function,
@@ -1443,6 +1453,7 @@ def main(args: Namespace) -> None:
 
     # collect stats
     (
+        _,
         _,
         _,
         _,
@@ -1489,8 +1500,8 @@ def main(args: Namespace) -> None:
     print("Network resumed, performances:")
 
     print(
-        "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
-            test_loss, test_accuracy, test_score
+        "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve raw {:.3f}, Test Area under Precision-Recall Curve const {:.3f}".format(
+            test_loss, test_accuracy, test_score_raw, test_score_const
         )
     )
 
@@ -1528,14 +1539,13 @@ def main(args: Namespace) -> None:
         title="debug", # title of the iterator
         debug_test_loader=val_loader, # validation loader on which to validate the model
         reviseLoss=reviseLoss, # RRR
-        prediction_treshold=args.prediction_treshold, # prediction thresold
         **vars(args) # additional variables
     )
 
     print("After debugging...")
 
     # re-test set
-    test_loss, test_accuracy, test_score = test_step(
+    test_loss, test_accuracy, test_score_raw, test_score_const = test_step(
         net=net,
         test_loader=iter(test_loader),
         cost_function=cost_function,
@@ -1546,14 +1556,15 @@ def main(args: Namespace) -> None:
     )
 
     print(
-        "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve {:.3f}".format(
-            test_loss, test_accuracy, test_score
+        "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve raw {:.3f}, Test Area under Precision-Recall Curve const {:.3f}".format(
+            test_loss, test_accuracy, test_score_raw, test_score_const
         )
     )
 
     ## TRAIN ##
     # collect stats
     (
+        _,
         _,
         _,
         _,
@@ -1616,6 +1627,7 @@ def main(args: Namespace) -> None:
 
     # collect stats
     (
+        _,
         _,
         _,
         _,

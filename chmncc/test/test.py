@@ -31,7 +31,7 @@ def test_step(
     debug_mode: bool = False,
     print_me: bool = False,
     prediction_treshold: float = 0.5,
-) -> Tuple[float, float, float]:
+) -> Tuple[float, float, float, float]:
     r"""Test function for the network.
     It computes the accuracy together with the area under the precision-recall-curve as a metric
 
@@ -48,7 +48,8 @@ def test_step(
     Returns:
         cumulative_loss [float] loss on the test set [not used to train!]
         cumulative_accuracy [float] accuracy on the test set in percentage
-        score [float] area under the precision-recall curve
+        score [float] area under the precision-recall curve raw
+        score [float] area under the precision-recall curve const
     """
     total = 0.0
     cumulative_loss = 0.0
@@ -127,11 +128,13 @@ def test_step(
                 constr_test = torch.cat((constr_test, cpu_constrained_output), dim=0)
                 y_test = torch.cat((y_test, targets), dim=0)
 
+    # average precision score raw
+    score_raw = average_precision_score(
+        y_test[:, test.to_eval], constr_test.data[:, test.to_eval], average="micro"
+    )
+
     # average precision score
-    #  score = average_precision_score(
-    #      y_test[:, test.to_eval], constr_test.data[:, test.to_eval], average="micro"
-    #  )
-    score = average_precision_score(
+    score_const = average_precision_score(
         y_test[:, test.to_eval],
         predicted_test.data[:, test.to_eval].to(torch.float),
         average="micro",
@@ -140,7 +143,8 @@ def test_step(
     return (
         cumulative_loss / len(test_loader),
         cumulative_accuracy / total * 100,
-        score,
+        score_raw,
+        score_const,
     )
 
 
@@ -154,6 +158,7 @@ def test_step_with_prediction_statistics(
     device: str = "gpu",
     prediction_treshold: float = 0.5,
 ) -> Tuple[
+    float,
     float,
     float,
     float,
@@ -181,7 +186,8 @@ def test_step_with_prediction_statistics(
     Returns:
         cumulative_loss [float] loss on the test set [not used to train!]
         cumulative_accuracy [float] accuracy on the test set in percentage
-        score [float] area under the precision-recall curve
+        score [float] area under the precision-recall curve raw
+        score [float] area under the precision-recall curve const
         statistics [Dict[str, List[int]]]: name of the class : [not-predicted, predicted]
         statistics correct [Dict[str, List[int]]]: name of the class : [not-correct, correct]
         clf_report Dict[str, float]: confusion matrix statistics
@@ -268,10 +274,11 @@ def test_step_with_prediction_statistics(
                 stats_correct[subclass[i]][correct_idx] += 1
 
     # average precision score
-    #  score = average_precision_score(
-    #      y_test[:, test.to_eval], constr_test.data[:, test.to_eval], average="micro"
-    #  )
-    score = average_precision_score(
+    score_raw = average_precision_score(
+        y_test[:, test.to_eval], constr_test.data[:, test.to_eval], average="micro"
+    )
+
+    score_const = average_precision_score(
         y_test[:, test.to_eval],
         predicted_test.data[:, test.to_eval].to(torch.float),
         average="micro",
@@ -289,7 +296,8 @@ def test_step_with_prediction_statistics(
     return (
         cumulative_loss / len(test_loader),
         cumulative_accuracy / total * 100,
-        score,
+        score_raw,
+        score_const,
         stats_predicted,
         stats_correct,
         clf_report,  # classification matrix

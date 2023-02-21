@@ -133,7 +133,7 @@ def test_step(
     #  )
     score = average_precision_score(
         y_test[:, test.to_eval],
-        predicted_train.data[:, train.to_eval].to(torch.float),
+        predicted_test.data[:, train.to_eval].to(torch.float),
         average="micro",
     )
 
@@ -273,7 +273,7 @@ def test_step_with_prediction_statistics(
     #  )
     score = average_precision_score(
         y_test[:, test.to_eval],
-        predicted_train.data[:, train.to_eval].to(torch.float),
+        predicted_test.data[:, train.to_eval].to(torch.float),
         average="micro",
     )
 

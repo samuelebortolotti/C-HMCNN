@@ -8,7 +8,7 @@ from torch.nn.modules.loss import BCELoss
 from chmncc.dataset.load_cifar import LoadDataset
 from chmncc.networks import ResNet18, LeNet5, LeNet7, AlexNet, MLP
 from chmncc.config import hierarchy
-from chmncc.utils.utils import load_last_weights, load_best_weights, grouped_boxplot, plot_confusion_matrix_statistics, plot_global_multiLabel_confusion_matrix, get_lr
+from chmncc.utils.utils import force_prediction_from_batch, load_last_weights, load_best_weights, grouped_boxplot, plot_confusion_matrix_statistics, plot_global_multiLabel_confusion_matrix, get_lr
 from chmncc.dataset import (
     load_cifar_dataloaders,
     get_named_label_predictions,
@@ -117,6 +117,8 @@ def save_sample(
     subclass: str,
     integrated_gradients: bool,
     prefix: str,
+    prediction_treshold: float,
+    force_prediction: bool
 ) -> Tuple[bool, np.ndarray]:
     """Save the test sample.
     Then it returns whether the sample contains a confunder or if the sample has been
@@ -132,6 +134,8 @@ def save_sample(
         subclass [str]: subclass string
         integrated_gradients [bool]: whether to use integrated gradients
         prefix [str]: prefix for the sample to save
+        prediction_treshold [float] prediction threshold
+        force_prediction [bool]: force prediction
 
     Returns:
         correct_guess [bool]: whether the model has guessed correctly
@@ -146,7 +150,11 @@ def save_sample(
     single_el_show = single_el_show / np.max(single_el_show)
 
     # get the prediction
-    predicted_1_0 = prediction.cpu().data > 0.5
+    if force_prediction:
+        predicted_1_0 = force_prediction_from_batch(prediction.cpu().data, prediction_treshold)
+    else:
+        predicted_1_0 = prediction.cpu().data > prediction_treshold
+
     predicted_1_0 = predicted_1_0.to(torch.float)[0]
 
     # get the named prediction
@@ -217,6 +225,8 @@ def visualize_sample(
     device: str,
     net: nn.Module,
     prefix: str,
+    prediction_treshold: float,
+    force_prediction: bool,
 ) -> None:
     """Save the samples information, including the sample itself, the gradients and the masked gradients
 
@@ -232,6 +242,8 @@ def visualize_sample(
         device [str]: device
         net [nn.Module]: network
         prefix [str]: prefix for the sample to save
+        prediction_treshold [float]: prediction treshold
+        force_prediction [bool]: force prediction
     """
     # set the network to eval mode
     net.eval()
@@ -259,6 +271,8 @@ def visualize_sample(
         subclass=subclass,
         integrated_gradients=integrated_gradients,
         prefix=prefix,
+        prediction_treshold=prediction_treshold,
+        force_prediction=force_prediction,
     )
 
     # compute the gradient, whether input or integrated
@@ -575,6 +589,8 @@ def save_some_confounded_samples(
     folder: str,
     integrated_gradients: bool,
     prefix: str,
+    prediction_treshold: float,
+    force_prediction: bool,
 ) -> None:
     """Save some confounded examples according to the dataloader and the number of examples the user specifies
 
@@ -588,6 +604,8 @@ def save_some_confounded_samples(
         folder [str]: folder where to store the sample
         integrated_gradients [bool]: whether the gradient are integrated or input gradients
         prefix [str]: prefix to save the images with
+        prediction_treshold [float] prediction treshold
+        force_prediction [bool] force prediction
     """
     # set the networ to evaluation mode
     net.eval()
@@ -618,6 +636,8 @@ def save_some_confounded_samples(
                     device,
                     net,
                     prefix,
+                    prediction_treshold,
+                    force_prediction,
                 )
                 # increase the counter
                 counter += 1
@@ -888,6 +908,7 @@ def debug(
     gradient_analysis: bool,
     num_workers: int,
     prediction_treshold: float,
+    force_prediction: bool,
     **kwargs: Any
 ) -> None:
     """Method which performs the debug step by fine-tuning the network employing the right for the right reason loss.
@@ -912,6 +933,7 @@ def debug(
         gradient_analysis [bool]: whether to analyze the gradient behavior
         num_workers [int]: number of workers for dataloaders
         prediction_treshold [float]: prediction threshold
+        force_prediction [bool]: force prediction
         **kwargs [Any]: kwargs
     """
     print("Have to run for {} debug iterations...".format(iterations))
@@ -957,13 +979,15 @@ def debug(
     save_some_confounded_samples(
         net=net,
         start_from=0,
-        number=2,
+        number=30,
         dataloaders=dataloaders,
         device=device,
         folder=debug_folder,
         integrated_gradients=integrated_gradients,
         loader=print_iterator_before,
         prefix="before",
+        prediction_treshold=prediction_treshold,
+        force_prediction=force_prediction,
     )
 
     # compute graident confounded correlation
@@ -1003,6 +1027,7 @@ def debug(
             gradient_analysis=gradient_analysis,
             folder_where_to_save=debug_folder,
             prediction_treshold=prediction_treshold,
+            force_prediction=force_prediction,
         )
 
         print(
@@ -1027,6 +1052,8 @@ def debug(
             title="Validation",
             test=dataloaders["train"],
             device=device,
+            prediction_treshold=prediction_treshold,
+            force_prediction=force_prediction,
         )
 
         print(
@@ -1058,6 +1085,7 @@ def debug(
             folder_where_to_save=debug_folder,
             have_to_train=False,
             prediction_treshold=prediction_treshold,
+            force_prediction=force_prediction,
         )
 
         print(
@@ -1082,7 +1110,9 @@ def debug(
             title="Test",
             test=dataloaders["test"],
             device=device,
-            debug_mode=True
+            debug_mode=True,
+            prediction_treshold=prediction_treshold,
+            force_prediction=force_prediction,
         )
 
         print(
@@ -1099,6 +1129,8 @@ def debug(
             test=dataloaders["test"],
             device=device,
             debug_mode=True,
+            prediction_treshold=prediction_treshold,
+            force_prediction=force_prediction,
         )
 
         print(
@@ -1115,6 +1147,8 @@ def debug(
             test=dataloaders["test"],
             device=device,
             debug_mode=True,
+            prediction_treshold=prediction_treshold,
+            force_prediction=force_prediction,
         )
 
         print(
@@ -1177,20 +1211,22 @@ def debug(
             )
 
         # scheduler step
-        scheduler.step(test_loss_original)
+        scheduler.step(val_loss)
 
 
     # save some test confounded examples
     save_some_confounded_samples(
         net=net,
         start_from=0,
-        number=2,
+        number=30,
         dataloaders=dataloaders,
         device=device,
         folder=debug_folder,
         integrated_gradients=integrated_gradients,
         loader=print_iterator_after,
         prefix="after",
+        prediction_treshold=prediction_treshold,
+        force_prediction=force_prediction,
     )
 
     # give the correlation
@@ -1321,13 +1357,27 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--num-workers", type=int, default=4, help="dataloaders num workers"
     )
     parser.add_argument(
-        "--prediction-treshold", type=float, default=0.01, help="considers the class to be predicted in a multilabel classification setting"
+        "--prediction-treshold", type=float, default=0.5, help="considers the class to be predicted in a multilabel classification setting"
     )
     parser.add_argument(
         "--patience", type=int, default=5, help="scheduler patience"
     )
+    parser.add_argument(
+        "--force-prediction",
+        "-fpred",
+        dest="force_prediction",
+        action="store_true",
+        help="Force the prediction",
+    )
+    parser.add_argument(
+        "--no-force-prediction",
+        "-nofspred",
+        dest="force_prediction",
+        action="store_false",
+        help="Use the classic prediction output logits",
+    )
     # set the main function to run when blob is called from the command line
-    parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False, constrained_layer=True)
+    parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False, constrained_layer=True, force_prediction=False)
 
 
 def main(args: Namespace) -> None:
@@ -1442,6 +1492,7 @@ def main(args: Namespace) -> None:
         test=dataloaders["test"],
         device=args.device,
         prediction_treshold=args.prediction_treshold,
+        force_prediction=args.force_prediction,
     )
 
     # load the human readable labels dataloader
@@ -1471,6 +1522,7 @@ def main(args: Namespace) -> None:
         device=args.device,
         labels_name=labels_name,
         prediction_treshold=args.prediction_treshold,
+        force_prediction=args.force_prediction,
     )
 
     # confusion matrix before debug
@@ -1553,6 +1605,7 @@ def main(args: Namespace) -> None:
         test=dataloaders["test"],
         device=args.device,
         prediction_treshold=args.prediction_treshold,
+        force_prediction=args.force_prediction,
     )
 
     print(
@@ -1582,6 +1635,7 @@ def main(args: Namespace) -> None:
         device=args.device,
         labels_name=labels_name,
         prediction_treshold=args.prediction_treshold,
+        force_prediction=args.force_prediction,
     )
 
     ## ! Confusion matrix !
@@ -1645,6 +1699,7 @@ def main(args: Namespace) -> None:
         device=args.device,
         labels_name=labels_name,
         prediction_treshold=args.prediction_treshold,
+        force_prediction=args.force_prediction,
     )
 
     ## confusion matrix after debug

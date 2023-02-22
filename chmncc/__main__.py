@@ -32,6 +32,7 @@ os.environ["MODELS"] = "./models"
 os.environ["IMAGE_FOLDER"] = "./plots"
 
 from chmncc.utils.utils import (
+    force_prediction_from_batch,
     log_values,
     resume_training,
     get_lr,
@@ -216,18 +217,18 @@ def configure_subparsers(subparsers: Subparser) -> None:
         help="Do not use the confounders in training and test",
     )
     parser.add_argument(
-        "--force-superclass-prediction",
-        "-fspred",
-        dest="force_superclass_prediction",
+        "--force-prediction",
+        "-fpred",
+        dest="force_prediction",
         action="store_true",
-        help="Use the softmax for the superclasses prediction",
+        help="Force the prediction",
     )
     parser.add_argument(
-        "--no-force-superclass-prediction",
+        "--no-force-prediction",
         "-nofspred",
-        dest="force_superclass_prediction",
+        dest="force_prediction",
         action="store_false",
-        help="Use sigmoid for all the output logits",
+        help="Use the classic prediction output logits",
     )
     parser.add_argument(
         "--num-workers", type=int, default=4, help="dataloaders num workers"
@@ -235,7 +236,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
     parser.add_argument(
         "--prediction-treshold",
         type=float,
-        default=0.01,
+        default=0.5,
         help="considers the class to be predicted in a multilabel classification setting",
     )
     parser.add_argument("--patience", type=int, default=5, help="scheduler patience")
@@ -244,7 +245,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         func=experiment,
         constrained_layer=True,
         no_confounder=False,
-        force_superclass_prediction=False,
+        force_prediction=False,
     )
 
 
@@ -265,10 +266,10 @@ def c_hmcnn(
     pretrained: bool = False,
     constrained_layer: bool = True,
     no_confounder: bool = False,
-    force_superclass_prediction: bool = False,
+    force_prediction: bool = False,
     num_workers: int = 4,
     patience: int = 10,
-    prediction_treshold: float = 0.01,
+    prediction_treshold: float = 0.5,
     **kwargs: Any,
 ) -> None:
     r"""
@@ -290,7 +291,7 @@ def c_hmcnn(
         pretrained [bool] = False
         constrained_layer [bool] = True
         no_confounder [bool] = False
-        force_superclass_prediction [bool] = False
+        force_prediction [bool] = False
         num_workers [int] = 4
         patience [int] = 10
         prediction_treshold [float] = 0.01
@@ -312,7 +313,7 @@ def c_hmcnn(
         pretrained [bool] = False, whether the network is pretrained [Note: lenet is not pretrained]
         constrained_layer [bool] = True: whether to use the constrained output layer from Giunchiglia et al.
         no_confounder [bool]: whether to have a normal, and therefore not confounded, training
-        force_superclass_prediction [bool]: whether to force the prediction for the superclasses
+        force_prediction [bool]: whether to force the prediction always
         num_workers [int]: number of workers for the dataloaders
         patience [int]: patience for the scheduler
         prediction_treshold [float]: prediction threshold
@@ -401,7 +402,6 @@ def c_hmcnn(
                 dataloaders["train_R"],
                 121,
                 constrained_layer,
-                force_superclass_prediction,
                 dataloaders["train_set"].n_superclasses,
             )  # 20 superclasses, 100 subclasses + the root
         elif network == "alexnet":
@@ -484,6 +484,7 @@ def c_hmcnn(
             device=device,
             constrained_layer=constrained_layer,
             prediction_treshold=prediction_treshold,
+            force_prediction=force_prediction,
         )
 
         # save the values in the metrics
@@ -500,6 +501,7 @@ def c_hmcnn(
             test=dataloaders["val"],
             device=device,
             prediction_treshold=prediction_treshold,
+            force_prediction=force_prediction,
         )
 
         # save the values in the metrics
@@ -516,6 +518,7 @@ def c_hmcnn(
             test=dataloaders["test"],
             device=device,
             prediction_treshold=prediction_treshold,
+            force_prediction=force_prediction,
         )
 
         # save the values in the metrics
@@ -628,6 +631,7 @@ def c_hmcnn(
         test=dataloaders["test"],
         device=device,
         prediction_treshold=prediction_treshold,
+        force_prediction=force_prediction,
     )
 
     # log values
@@ -680,6 +684,7 @@ def c_hmcnn(
             device=device,
             labels_name=labels_name,
             prediction_treshold=prediction_treshold,
+            force_prediction=force_prediction,
         )
 
         ## ! Confusion matrix !
@@ -744,6 +749,7 @@ def c_hmcnn(
             device=device,
             labels_name=labels_name,
             prediction_treshold=prediction_treshold,
+            force_prediction=force_prediction,
         )
 
         ## ! Confusion matrix !
@@ -821,7 +827,13 @@ def c_hmcnn(
             # get named predictions
             torch.set_printoptions(profile="full")
             # get the prediction
-            predicted_1_0 = preds.data > 0.5
+            if force_prediction:
+                predicted_1_0 = force_prediction_from_batch(
+                    preds.data, prediction_treshold
+                )
+            else:
+                predicted_1_0 = preds.data > prediction_treshold
+
             predicted_1_0 = predicted_1_0.to(torch.float)[0]
             # get the named prediction
             named_prediction = get_named_label_predictions(
@@ -852,6 +864,8 @@ def c_hmcnn(
 
             if not confunded:
                 continue
+
+            print(i, parent_predictions, children_predictions)
 
             # plot the title
             prediction_text = "Predicted: {}\nbecause of: {}".format(
@@ -978,7 +992,9 @@ def c_hmcnn(
         dataset = "chmncc"
 
     f = open("results/" + dataset + ".csv", "a")
-    f.write(str(kwargs.pop("seed")) + "," + str(epochs) + "," + str(test_score_const) + "\n")
+    f.write(
+        str(kwargs.pop("seed")) + "," + str(epochs) + "," + str(test_score_const) + "\n"
+    )
     f.close()
 
 

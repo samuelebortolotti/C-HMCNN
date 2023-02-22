@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from typing import Tuple, Dict, List
 import tqdm
-from chmncc.utils import dotdict
+from chmncc.utils import dotdict, force_prediction_from_batch
 from sklearn.metrics import average_precision_score, classification_report
 import numpy as np
 
@@ -31,6 +31,7 @@ def test_step(
     debug_mode: bool = False,
     print_me: bool = False,
     prediction_treshold: float = 0.5,
+    force_prediction: bool = False,
 ) -> Tuple[float, float, float, float]:
     r"""Test function for the network.
     It computes the accuracy together with the area under the precision-recall-curve as a metric
@@ -44,6 +45,7 @@ def test_step(
         device [str] = "gpu": device on which to run the experiment
         debug_mode [bool] = False: whether the test is done on the debug dataloader
         prediction_treshold [float]: threshold used to consider a class as predicted
+        force_prediction [bool]: force prediction
 
     Returns:
         cumulative_loss [float] loss on the test set [not used to train!]
@@ -85,8 +87,13 @@ def test_step(
             # forward pass
             outputs = net(inputs.float())
 
-            # predicted
-            predicted = outputs.data > prediction_treshold  # 0.5
+            # force prediction
+            if force_prediction:
+                predicted = force_prediction_from_batch(
+                    outputs.data, prediction_treshold
+                )
+            else:
+                predicted = outputs.data > prediction_treshold  # 0.5
 
             if print_me:
                 torch.set_printoptions(profile="full")
@@ -157,6 +164,7 @@ def test_step_with_prediction_statistics(
     labels_name: List[str],
     device: str = "gpu",
     prediction_treshold: float = 0.5,
+    force_prediction: bool = False,
 ) -> Tuple[
     float,
     float,
@@ -182,6 +190,7 @@ def test_step_with_prediction_statistics(
         labels_name [List[str]] name of the labels
         device [str] = "gpu": device on which to run the experiment
         prediction_treshold [float]: threshold used to consider a class as predicted
+        force_prediction [bool]: force prediction
 
     Returns:
         cumulative_loss [float] loss on the test set [not used to train!]
@@ -218,7 +227,13 @@ def test_step_with_prediction_statistics(
             outputs = net(inputs.float())
 
             # predicted
-            predicted = outputs.data > prediction_treshold  # 0.5
+            if force_prediction:
+                predicted = force_prediction_from_batch(
+                    outputs.data, prediction_treshold
+                )
+            else:
+                predicted = outputs.data > prediction_treshold  # 0.5
+
             # total
             total += targets.shape[0] * targets.shape[1]
             # total correct predictions

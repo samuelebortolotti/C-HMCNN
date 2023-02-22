@@ -456,3 +456,23 @@ def plot_confusion_matrix_statistics(
     sns.heatmap(pd.DataFrame(clf_report).iloc[:-1, :].T, annot=True, cmap=plt.cm.Blues)
     plt.savefig("{}".format(fig_name))
     plt.close()
+
+
+def force_prediction_from_batch(
+    output: torch.Tensor,
+    prediction_treshold: float,
+) -> torch.Tensor:
+    """Force the prediction from a batch of predictions
+
+    Args:
+      output [torch.Tensor]: output
+      prediction_treshold [float]: threshold for the prediction
+    """
+    new_output = list()
+    for pred in output:
+        tmp = pred > prediction_treshold
+        if tmp[1:].sum().item() == 0:
+            max_pred = torch.max(pred[1:]).item()
+            tmp = pred >= max_pred
+        new_output.append(tmp)
+    return torch.stack(new_output)

@@ -4,7 +4,7 @@ import torch.nn as nn
 import numpy as np
 from chmncc.utils import dotdict
 from typing import Tuple
-from chmncc.utils import get_constr_out
+from chmncc.utils import get_constr_out, force_prediction_from_batch
 from typing import Union
 from chmncc.loss import RRRLoss, IGRRRLoss
 from sklearn.metrics import average_precision_score
@@ -107,6 +107,7 @@ def revise_step(
     have_to_train: bool = True,
     gradient_analysis: bool = False,
     prediction_treshold: float = 0.5,
+    force_prediction: bool = False,
 ) -> Tuple[float, float, float, float, float, float, float]:
     """Revise step of the network. It integrates the user feedback and revise the network by the means
     of the RRRLoss.
@@ -124,6 +125,7 @@ def revise_step(
         have_to_train [bool]: whether to train or not the model
         gradient_analysis [bool]: whether to analyze the gradients by means of plots
         prediction_treshold [float]: threshold used to consider a class as predicted
+        force_prediction [bool]: force prediction
 
     Returns:
         loss [float]
@@ -192,7 +194,12 @@ def revise_step(
         # compute the amount of confounded samples
         confounded_samples += confounded.sum().item()
 
-        predicted = constr_output.data > prediction_treshold  # 0.5
+        if force_prediction:
+            predicted = force_prediction_from_batch(
+                constr_output.data, prediction_treshold
+            )
+        else:
+            predicted = constr_output.data > prediction_treshold  # 0.5
 
         # fetch prediction and loss value
         total_train += ground_truth.shape[0] * ground_truth.shape[1]

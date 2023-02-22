@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from chmncc.utils import dotdict
+from chmncc.utils import dotdict, force_prediction_from_batch
 import numpy as np
 from typing import Tuple
 import tqdm
@@ -20,6 +20,7 @@ def training_step(
     device: str = "cuda",
     constrained_layer: bool = True,
     prediction_treshold: float = 0.5,
+    force_prediction: bool = False,
 ) -> Tuple[float, float, float, float]:
     """Training step of the network. It works both for our approach and for the one of
     Giunchiglia et al.
@@ -82,7 +83,13 @@ def training_step(
         loss = cost_function(train_output[:, train.to_eval], label[:, train.to_eval])
         cumulative_loss += loss.item()
 
-        predicted = constr_output.data > prediction_treshold  # 0.5
+        # force prediction
+        if force_prediction:
+            predicted = force_prediction_from_batch(
+                constr_output.data, prediction_treshold
+            )
+        else:
+            predicted = constr_output.data > prediction_treshold  # 0.5
 
         # fetch prediction and loss value
         total_train += label.shape[0] * label.shape[1]

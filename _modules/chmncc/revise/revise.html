@@ -76,7 +76,7 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">chmncc.utils</span> <span class="kn">import</span> <span class="n">dotdict</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
-<span class="kn">from</span> <span class="nn">chmncc.utils</span> <span class="kn">import</span> <span class="n">get_constr_out</span>
+<span class="kn">from</span> <span class="nn">chmncc.utils</span> <span class="kn">import</span> <span class="n">get_constr_out</span><span class="p">,</span> <span class="n">force_prediction_from_batch</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
 <span class="kn">from</span> <span class="nn">chmncc.loss</span> <span class="kn">import</span> <span class="n">RRRLoss</span><span class="p">,</span> <span class="n">IGRRRLoss</span>
 <span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">average_precision_score</span>
@@ -179,6 +179,7 @@
     <span class="n">have_to_train</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">gradient_analysis</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">prediction_treshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">force_prediction</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Revise step of the network. It integrates the user feedback and revise the network by the means</span>
 <span class="sd">    of the RRRLoss.</span>
@@ -196,6 +197,7 @@
 <span class="sd">        have_to_train [bool]: whether to train or not the model</span>
 <span class="sd">        gradient_analysis [bool]: whether to analyze the gradients by means of plots</span>
 <span class="sd">        prediction_treshold [float]: threshold used to consider a class as predicted</span>
+<span class="sd">        force_prediction [bool]: force prediction</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        loss [float]</span>
@@ -264,7 +266,12 @@
         <span class="c1"># compute the amount of confounded samples</span>
         <span class="n">confounded_samples</span> <span class="o">+=</span> <span class="n">confounded</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
-        <span class="n">predicted</span> <span class="o">=</span> <span class="n">constr_output</span><span class="o">.</span><span class="n">data</span> <span class="o">&gt;</span> <span class="n">prediction_treshold</span>  <span class="c1"># 0.5</span>
+        <span class="k">if</span> <span class="n">force_prediction</span><span class="p">:</span>
+            <span class="n">predicted</span> <span class="o">=</span> <span class="n">force_prediction_from_batch</span><span class="p">(</span>
+                <span class="n">constr_output</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">prediction_treshold</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">predicted</span> <span class="o">=</span> <span class="n">constr_output</span><span class="o">.</span><span class="n">data</span> <span class="o">&gt;</span> <span class="n">prediction_treshold</span>  <span class="c1"># 0.5</span>
 
         <span class="c1"># fetch prediction and loss value</span>
         <span class="n">total_train</span> <span class="o">+=</span> <span class="n">ground_truth</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">ground_truth</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>

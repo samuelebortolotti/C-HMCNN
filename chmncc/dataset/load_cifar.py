@@ -38,6 +38,7 @@ class LoadDataset(Dataset):
         train: bool = True,
         no_confounders: bool = False,
         balance_factor_conf_classes: int = 1,
+        fixed_confounder: bool = False,
     ):
         """Init param
 
@@ -53,6 +54,7 @@ class LoadDataset(Dataset):
             only [bool] = whether to return only the confounder data
             confund [bool] = whether to put confunders
             train [bool] = whether the set is training or not (used to apply the confunders)
+            fixed_confounder [bool] = False: confounder position is fixed
         """
 
         assert os.path.exists(csv_path), "The given csv path must be valid!"
@@ -67,6 +69,7 @@ class LoadDataset(Dataset):
         self.data_list = self.csv_to_list()
         self.coarse_labels, self.fine_labels = read_meta(self.meta_filename)
         self.name_labels = name_labels
+        self.fixed_confounder = fixed_confounder
 
         # check if the hierarchy dictionary is consistent with the csv file
         for k, v in hierarchy.items():
@@ -183,7 +186,7 @@ class LoadDataset(Dataset):
         """
         # the random number generated is the same for the same image over and over
         # in this way the experiment is reproducible
-        #  random.seed(seed)
+        random.seed(seed)
         # get the random sizes
         crop_width = random.randint(confunder["min_dim"], confunder["max_dim"])
         crop_height = random.randint(confunder["min_dim"], confunder["max_dim"])
@@ -192,13 +195,14 @@ class LoadDataset(Dataset):
         # get the shape
         shape = confunder["shape"]
         # generate the segments
-        # TODO ho cambiato questo
-        #  starting_point = 0 if shape == "rectangle" else radius
-        # get random point
-        #  x = random.randint(starting_point, 32 - crop_width)
-        #  y = random.randint(starting_point, 32 - crop_height)
-        x = 32 - crop_width
-        y = 32 - crop_height
+        if not self.fixed_confounder:
+            starting_point = 0 if shape == "rectangle" else radius
+            # get random point
+            x = random.randint(starting_point, 32 - crop_width)
+            y = random.randint(starting_point, 32 - crop_height)
+        else:
+            x = 32 - crop_width
+            y = 32 - crop_height
         # starting and ending points
         p0 = (x, y)
         p1 = (x + crop_width, y + crop_height)
@@ -268,21 +272,6 @@ class LoadDataset(Dataset):
         with open(self.csv_path, newline="") as f:
             reader = csv.reader(f)
             data = list(reader)
-
-        #  c = {}
-        #  for ls in data:
-        #      img, sup, sub = ls
-        #      if sup not in c:
-        #          c[sup] = 1
-        #      else:
-        #          c[sup] += 1
-        #
-        #      if sub not in c:
-        #          c[sub] = 1
-        #      else:
-        #          c[sub] += 1
-        #
-        #  print(c)
         return data
 
     def get_to_eval(self) -> torch.Tensor:

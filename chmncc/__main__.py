@@ -239,13 +239,28 @@ def configure_subparsers(subparsers: Subparser) -> None:
         default=0.5,
         help="considers the class to be predicted in a multilabel classification setting",
     )
-    parser.add_argument("--patience", type=int, default=5, help="scheduler patience")
+    parser.add_argument("--patience", type=int, default=15, help="scheduler patience")
+    parser.add_argument(
+        "--fixed-confounder",
+        "-fixconf",
+        dest="fixed_confounder",
+        action="store_true",
+        help="Force the confounder position to the bottom right",
+    )
+    parser.add_argument(
+        "--no-fixed-confounder",
+        "-nofixconf",
+        dest="fixed_confounder",
+        action="store_false",
+        help="Let the confounder be placed in a random position in the image",
+    )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(
         func=experiment,
         constrained_layer=True,
         no_confounder=False,
         force_prediction=False,
+        fixed_confounder=False,
     )
 
 
@@ -270,6 +285,7 @@ def c_hmcnn(
     num_workers: int = 4,
     patience: int = 10,
     prediction_treshold: float = 0.5,
+    fixed_confounder: bool = False,
     **kwargs: Any,
 ) -> None:
     r"""
@@ -295,6 +311,7 @@ def c_hmcnn(
         num_workers [int] = 4
         patience [int] = 10
         prediction_treshold [float] = 0.01
+        fixed_confounder [bool] = False
 
     Args:
         exp_name [str]: name of the experiment, basically where to save the logs of the SummaryWriter
@@ -317,6 +334,7 @@ def c_hmcnn(
         num_workers [int]: number of workers for the dataloaders
         patience [int]: patience for the scheduler
         prediction_treshold [float]: prediction threshold
+        fixed_confounder [bool] = False: use fixed confounder position
         \*\*kwargs [Any]: additional key-value arguments
     """
 
@@ -367,6 +385,7 @@ def c_hmcnn(
             test_batch_size=test_batch_size,
             normalize=True,  # normalize the dataset
             num_workers=num_workers,  # num workers
+            fixed_confounder=fixed_confounder,
         )
 
     # network initialization

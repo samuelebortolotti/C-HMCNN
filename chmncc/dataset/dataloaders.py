@@ -101,6 +101,7 @@ def load_cifar_dataloaders(
     normalize: bool = True,
     confunder: bool = True,
     num_workers: int = 4,
+    fixed_confounder: bool = False,
 ) -> Dict[str, Any]:
     r"""
     Load the CIFAR-100 dataloaders
@@ -115,6 +116,7 @@ def load_cifar_dataloaders(
         normalize [bool] = True
         confunder [bool] = True
         num_workers [int] = 4
+        fixed_confounder [bool] = False
 
     Args:
         img_size [int]: image shape
@@ -132,6 +134,7 @@ def load_cifar_dataloaders(
         normalize [bool]: whether to normalize
         confunder [bool]: whether to put confunders in the images
         num_workers [int]: number of workers of the dataloader
+        fixed_confounder [bool] = False: use fixed confounders
 
     Returns:
         dataloaders [Dict[str, Any]]: a dictionary containing the dataloaders, for training, validation and test
@@ -178,6 +181,7 @@ def load_cifar_dataloaders(
         transform=transform_train,
         confund=confunder,
         train=True,
+        fixed_confounder=fixed_confounder,
     )
 
     train_dataset_no_confounder = LoadDataset(
@@ -188,6 +192,7 @@ def load_cifar_dataloaders(
         transform=transform_train,
         confund=False,
         train=True,
+        fixed_confounder=fixed_confounder,
     )
 
     train_dataset_with_labels_and_confunders_position = LoadDataset(
@@ -200,6 +205,7 @@ def load_cifar_dataloaders(
         name_labels=True,
         confund=confunder,
         train=True,
+        fixed_confounder=fixed_confounder,
         #  balance_factor_conf_classes=10,
     )
 
@@ -213,6 +219,7 @@ def load_cifar_dataloaders(
         name_labels=True,
         confund=confunder,
         train=True,
+        fixed_confounder=fixed_confounder,
     )
 
     train_dataset_with_labels_and_confunders_position_only_conf = LoadDataset(
@@ -226,6 +233,7 @@ def load_cifar_dataloaders(
         confund=confunder,
         train=True,
         only_confounders=True,
+        fixed_confounder=fixed_confounder,
     )
 
     train_dataset_with_labels_and_confunders_position_no_conf = LoadDataset(
@@ -240,6 +248,7 @@ def load_cifar_dataloaders(
         train=True,
         only_confounders=False,
         no_confounders=True,
+        fixed_confounder=fixed_confounder,
     )
 
     train_dataset_with_labels = LoadDataset(
@@ -251,6 +260,7 @@ def load_cifar_dataloaders(
         name_labels=True,
         confund=confunder,
         train=True,
+        fixed_confounder=fixed_confounder,
     )
 
     test_dataset = LoadDataset(
@@ -261,6 +271,7 @@ def load_cifar_dataloaders(
         transform=transform_test,
         confund=confunder,
         train=False,
+        fixed_confounder=fixed_confounder,
     )
 
     test_dataset_no_confounder = LoadDataset(
@@ -271,6 +282,7 @@ def load_cifar_dataloaders(
         transform=transform_test,
         confund=False,
         train=False,
+        fixed_confounder=fixed_confounder,
     )
 
     test_dataset_with_labels_and_confunders_pos = LoadDataset(
@@ -283,6 +295,7 @@ def load_cifar_dataloaders(
         name_labels=True,
         confund=confunder,
         train=False,
+        fixed_confounder=fixed_confounder,
     )
 
     test_dataset_with_labels_and_confunders_pos_only = LoadDataset(
@@ -296,6 +309,7 @@ def load_cifar_dataloaders(
         confund=confunder,
         train=False,
         only_confounders=True,
+        fixed_confounder=fixed_confounder,
     )
 
     test_dataset_with_labels_and_confunders_pos_only_without_confounders = LoadDataset(
@@ -309,6 +323,7 @@ def load_cifar_dataloaders(
         confund=False,
         train=False,
         only_confounders=True,
+        fixed_confounder=fixed_confounder,
     )
 
     test_dataset_with_labels_and_confunders_pos_only_without_confounders_on_training_samples = LoadDataset(
@@ -322,6 +337,7 @@ def load_cifar_dataloaders(
         confund=False,
         train=True,
         only_confounders=True,
+        fixed_confounder=fixed_confounder,
     )
 
     test_dataset_with_labels = LoadDataset(
@@ -333,6 +349,7 @@ def load_cifar_dataloaders(
         name_labels=True,
         confund=confunder,
         train=False,
+        fixed_confounder=fixed_confounder,
     )
 
     val_dataset = LoadDataset(
@@ -343,6 +360,7 @@ def load_cifar_dataloaders(
         transform=transform_test,
         confund=confunder,
         train=True,
+        fixed_confounder=fixed_confounder,
     )
 
     val_dataset_no_confounder = LoadDataset(
@@ -353,6 +371,7 @@ def load_cifar_dataloaders(
         transform=transform_test,
         confund=False,
         train=True,
+        fixed_confounder=fixed_confounder,
     )
 
     val_dataset_debug = LoadDataset(
@@ -363,6 +382,7 @@ def load_cifar_dataloaders(
         transform=transform_train,
         confund=confunder,
         train=False,
+        fixed_confounder=fixed_confounder,
         #  balance_factor_conf_classes=10,
     )
 

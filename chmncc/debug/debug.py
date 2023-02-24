@@ -1197,9 +1197,9 @@ def debug(
                     "test/only_training_confounded_classes_without_confounders_auprc_raw": test_conf_score_wo_conf_in_train_data_raw,
                     "test/only_test_confounded_casses_without_confounders_auprc_raw": test_conf_score_wo_conf_test_data_raw,
                     "test/only_test_confounded_classes_auprc_raw": test_conf_score_only_conf_raw,
-                    "test/only_training_confounded_classes_without_confounders_auprc_const": test_conf_score_wo_conf_in_train_data_const,
-                    "test/only_test_confounded_casses_without_confounders_auprc_const": test_conf_score_wo_conf_test_data_const,
-                    "test/only_test_confounded_classes_auprc_const": test_conf_score_only_conf_const,
+                    #  "test/only_training_confounded_classes_without_confounders_auprc_const": test_conf_score_wo_conf_in_train_data_const,
+                    #  "test/only_test_confounded_casses_without_confounders_auprc_const": test_conf_score_wo_conf_test_data_const,
+                    #  "test/only_test_confounded_classes_auprc_const": test_conf_score_only_conf_const,
                     "test/test_loss": test_loss_original,
                     "test/test_right_answer_loss": test_total_right_answer_loss,
                     "test/test_right_reason_loss": test_total_right_reason_loss,
@@ -1376,8 +1376,22 @@ def configure_subparsers(subparsers: Subparser) -> None:
         action="store_false",
         help="Use the classic prediction output logits",
     )
+    parser.add_argument(
+        "--fixed-confounder",
+        "-fixconf",
+        dest="fixed_confounder",
+        action="store_true",
+        help="Force the confounder position to the bottom right",
+    )
+    parser.add_argument(
+        "--no-fixed-confounder",
+        "-nofixconf",
+        dest="fixed_confounder",
+        action="store_false",
+        help="Let the confounder be placed in a random position in the image",
+    )
     # set the main function to run when blob is called from the command line
-    parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False, constrained_layer=True, force_prediction=False)
+    parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False, constrained_layer=True, force_prediction=False, fixed_confounder=False)
 
 
 def main(args: Namespace) -> None:
@@ -1417,7 +1431,8 @@ def main(args: Namespace) -> None:
         batch_size=args.batch_size,
         test_batch_size=args.test_batch_size,
         normalize=True,  # normalize the dataset
-        num_workers=args.num_workers
+        num_workers=args.num_workers,
+        fixed_confounder=args.fixed_confounder,
     )
 
     # Load dataloaders

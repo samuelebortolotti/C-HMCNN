@@ -266,7 +266,7 @@
 
         <span class="k">if</span> <span class="n">force_prediction</span><span class="p">:</span>
             <span class="n">predicted</span> <span class="o">=</span> <span class="n">force_prediction_from_batch</span><span class="p">(</span>
-                <span class="n">constr_output</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">prediction_treshold</span>
+                <span class="n">constr_output</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">prediction_treshold</span><span class="p">,</span> <span class="kc">False</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">predicted</span> <span class="o">=</span> <span class="n">constr_output</span><span class="o">.</span><span class="n">data</span> <span class="o">&gt;</span> <span class="n">prediction_treshold</span>  <span class="c1"># 0.5</span>

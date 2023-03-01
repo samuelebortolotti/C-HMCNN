@@ -532,6 +532,8 @@
 <div class="viewcode-block" id="force_prediction_from_batch"><a class="viewcode-back" href="../../../chmncc.utils.html#chmncc.utils.utils.force_prediction_from_batch">[docs]</a><span class="k">def</span> <span class="nf">force_prediction_from_batch</span><span class="p">(</span>
     <span class="n">output</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">prediction_treshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">use_softmax</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">superclasses_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Force the prediction from a batch of predictions</span>
 
@@ -541,10 +543,17 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">new_output</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">pred</span> <span class="ow">in</span> <span class="n">output</span><span class="p">:</span>
-        <span class="n">tmp</span> <span class="o">=</span> <span class="n">pred</span> <span class="o">&gt;</span> <span class="n">prediction_treshold</span>
-        <span class="k">if</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">max_pred</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-            <span class="n">tmp</span> <span class="o">=</span> <span class="n">pred</span> <span class="o">&gt;=</span> <span class="n">max_pred</span>
+        <span class="k">if</span> <span class="n">use_softmax</span><span class="p">:</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="mi">1</span> <span class="p">:</span> <span class="n">superclasses_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">child</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="n">superclasses_number</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:])</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+            <span class="n">tmp</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">tmp</span><span class="p">[</span><span class="n">child</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">pred</span> <span class="o">&gt;</span> <span class="n">prediction_treshold</span>
+            <span class="k">if</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">max_pred</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">tmp</span> <span class="o">=</span> <span class="n">pred</span> <span class="o">&gt;=</span> <span class="n">max_pred</span>
         <span class="n">new_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">new_output</span><span class="p">)</span></div>
 

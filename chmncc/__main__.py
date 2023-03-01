@@ -254,6 +254,13 @@ def configure_subparsers(subparsers: Subparser) -> None:
         action="store_false",
         help="Let the confounder be placed in a random position in the image",
     )
+    parser.add_argument(
+        "--use-softmax",
+        "-soft",
+        dest="use_softmax",
+        action="store_true",
+        help="Force the confounder position to use softmax as loss",
+    )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(
         func=experiment,
@@ -261,6 +268,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         no_confounder=False,
         force_prediction=False,
         fixed_confounder=False,
+        use_softmax=False,
     )
 
 
@@ -286,6 +294,7 @@ def c_hmcnn(
     patience: int = 10,
     prediction_treshold: float = 0.5,
     fixed_confounder: bool = False,
+    use_softmax: bool = False,
     **kwargs: Any,
 ) -> None:
     r"""
@@ -312,6 +321,7 @@ def c_hmcnn(
         patience [int] = 10
         prediction_treshold [float] = 0.01
         fixed_confounder [bool] = False
+        use_softmax [bool] = False
 
     Args:
         exp_name [str]: name of the experiment, basically where to save the logs of the SummaryWriter
@@ -335,6 +345,7 @@ def c_hmcnn(
         patience [int]: patience for the scheduler
         prediction_treshold [float]: prediction threshold
         fixed_confounder [bool] = False: use fixed confounder position
+        use_softmax [bool] = False: whether to use softmax
         \*\*kwargs [Any]: additional key-value arguments
     """
 
@@ -414,7 +425,7 @@ def c_hmcnn(
         # CNN
         if network == "lenet":
             net = LeNet5(
-                dataloaders["train_R"], 121, constrained_layer
+                dataloaders["train_R"], 121, constrained_layer,
             )  # 20 superclasses, 100 subclasses + the root
         elif network == "lenet7":
             net = LeNet7(
@@ -422,6 +433,7 @@ def c_hmcnn(
                 121,
                 constrained_layer,
                 dataloaders["train_set"].n_superclasses,
+                use_softmax,
             )  # 20 superclasses, 100 subclasses + the root
         elif network == "alexnet":
             # AlexNet
@@ -431,7 +443,9 @@ def c_hmcnn(
         elif network == "mlp":
             # MLP
             net = MLP(
-                dataloaders["train_R"], 121, constrained_layer
+                dataloaders["train_R"], 121, constrained_layer,
+                dataloaders["train_set"].n_superclasses,
+                use_softmax,
             )  # 20 superclasses, 100 subclasses + the root
         else:
             net = ResNet18(
@@ -504,6 +518,8 @@ def c_hmcnn(
             constrained_layer=constrained_layer,
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
+            use_softmax=use_softmax,
+            superclasses_number=dataloaders["train_set"].n_superclasses,
         )
 
         # save the values in the metrics
@@ -521,6 +537,8 @@ def c_hmcnn(
             device=device,
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
+            use_softmax=use_softmax,
+            superclasses_number=dataloaders["train_set"].n_superclasses,
         )
 
         # save the values in the metrics
@@ -538,6 +556,8 @@ def c_hmcnn(
             device=device,
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
+            use_softmax=use_softmax,
+            superclasses_number=dataloaders["train_set"].n_superclasses,
         )
 
         # save the values in the metrics
@@ -651,6 +671,8 @@ def c_hmcnn(
         device=device,
         prediction_treshold=prediction_treshold,
         force_prediction=force_prediction,
+        use_softmax=use_softmax,
+        superclasses_number=dataloaders["train_set"].n_superclasses,
     )
 
     # log values
@@ -704,6 +726,8 @@ def c_hmcnn(
             labels_name=labels_name,
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
+            use_softmax=use_softmax,
+            superclasses_number=dataloaders["train_set"].n_superclasses,
         )
 
         ## ! Confusion matrix !
@@ -769,6 +793,8 @@ def c_hmcnn(
             labels_name=labels_name,
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
+            use_softmax=use_softmax,
+            superclasses_number=dataloaders["train_set"].n_superclasses,
         )
 
         ## ! Confusion matrix !

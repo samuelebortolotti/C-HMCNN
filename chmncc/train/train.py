@@ -1,7 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from chmncc.utils import dotdict, force_prediction_from_batch
+from chmncc.utils import (
+    dotdict,
+    force_prediction_from_batch,
+    cross_entropy_from_softmax,
+)
 import numpy as np
 from typing import Tuple
 import tqdm
@@ -21,6 +25,8 @@ def training_step(
     constrained_layer: bool = True,
     prediction_treshold: float = 0.5,
     force_prediction: bool = False,
+    use_softmax: bool = False,
+    superclasses_number: int = 20,
 ) -> Tuple[float, float, float, float]:
     """Training step of the network. It works both for our approach and for the one of
     Giunchiglia et al.
@@ -36,6 +42,9 @@ def training_step(
         device [str]: on which device to run the experiment [default: cuda]
         constrained_layer [bool]: whether to use the constrained layer training from Giuchiglia et al.
         prediction_treshold [float]: threshold used to consider a prediction
+        force_prediction [bool]: force the prediction
+        use_softmax [bool]: use the softmax
+        superclasses_number [int]: number of superclasses
 
     Returns:
         cumulative loss [float]
@@ -79,8 +88,12 @@ def training_step(
             train_output = label * outputs.double()
             train_output = (1 - label) * constr_output.double() + label * train_output
 
-        # get the loss masking the prediction on the root -> confunder
-        loss = cost_function(train_output[:, train.to_eval], label[:, train.to_eval])
+        if use_softmax:
+            loss = cross_entropy_from_softmax(label, train_output, superclasses_number)
+        else:
+            loss = cost_function(
+                train_output[:, train.to_eval], label[:, train.to_eval]
+            )
         cumulative_loss += loss.item()
 
         # force prediction
@@ -99,6 +112,7 @@ def training_step(
 
         # backward pass
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(net.parameters(), 10)
         # optimizer
         optimizer.step()
 

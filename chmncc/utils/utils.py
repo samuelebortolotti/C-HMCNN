@@ -8,6 +8,7 @@ from sklearn.metrics._plot.confusion_matrix import ConfusionMatrixDisplay
 from sklearn.metrics import multilabel_confusion_matrix
 from typing import Tuple, Dict, Optional, List, Any
 from torch.utils import tensorboard
+import torch.nn.functional as F
 import seaborn as sns
 
 
@@ -476,3 +477,13 @@ def force_prediction_from_batch(
             tmp = pred >= max_pred
         new_output.append(tmp)
     return torch.stack(new_output)
+
+
+def cross_entropy_from_softmax(
+    targets: torch.Tensor, outputs: torch.Tensor, superclasses_number: int
+) -> torch.Tensor:
+    _, inds = torch.max(targets[:, 1 : superclasses_number + 1], dim=1)
+    loss = F.nll_loss(torch.log(outputs[:, 1 : superclasses_number + 1]), inds)
+    _, inds = torch.max(targets[:, superclasses_number + 1 :], dim=1)
+    loss += F.nll_loss(torch.log(outputs[:, superclasses_number + 1 :]), inds)
+    return loss / 2

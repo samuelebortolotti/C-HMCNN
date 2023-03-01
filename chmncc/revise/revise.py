@@ -244,10 +244,6 @@ def revise_step(
             constr_train = torch.cat((constr_train, cpu_constrained_output), dim=0)
             y_test = torch.cat((y_test, ground_truth), dim=0)
 
-        # break if the number of training batches is more then the threshold
-        if batch_idx >= batches_treshold:
-            break
-
     # average precision score
     score_raw = average_precision_score(
         y_test[:, train.to_eval], constr_train.data[:, train.to_eval], average="micro"

@@ -16,7 +16,7 @@ class LeNet5(nn.Module):
     """
 
     def __init__(
-        self, R: torch.Tensor, num_out_logits: int = 20, constrained_layer: bool = True
+        self, R: torch.Tensor, num_out_logits: int = 20, constrained_layer: bool = True,
     ) -> None:
         r"""
         Initialize the LeNet5 model

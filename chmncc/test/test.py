@@ -2,7 +2,11 @@ import torch
 import torch.nn as nn
 from typing import Tuple, Dict, List
 import tqdm
-from chmncc.utils import dotdict, force_prediction_from_batch
+from chmncc.utils import (
+    dotdict,
+    force_prediction_from_batch,
+    cross_entropy_from_softmax,
+)
 from sklearn.metrics import average_precision_score, classification_report
 import numpy as np
 
@@ -32,6 +36,8 @@ def test_step(
     print_me: bool = False,
     prediction_treshold: float = 0.5,
     force_prediction: bool = False,
+    use_softmax: bool = False,
+    superclasses_number: int = 20,
 ) -> Tuple[float, float, float, float]:
     r"""Test function for the network.
     It computes the accuracy together with the area under the precision-recall-curve as a metric
@@ -46,6 +52,8 @@ def test_step(
         debug_mode [bool] = False: whether the test is done on the debug dataloader
         prediction_treshold [float]: threshold used to consider a class as predicted
         force_prediction [bool]: force prediction
+        use_softmax [bool]: use the softmax
+        superclasses_number [int]: number of superclasses
 
     Returns:
         cumulative_loss [float] loss on the test set [not used to train!]
@@ -114,7 +122,10 @@ def test_step(
             cumulative_accuracy += (predicted == targets.byte()).sum().item()
 
             # loss computation
-            loss = cost_function(outputs.double(), targets)
+            if use_softmax:
+                loss = cross_entropy_from_softmax(targets, outputs, superclasses_number)
+            else:
+                loss = cost_function(outputs.double(), targets)
 
             # fetch prediction and loss value
             cumulative_loss += (
@@ -165,6 +176,8 @@ def test_step_with_prediction_statistics(
     device: str = "gpu",
     prediction_treshold: float = 0.5,
     force_prediction: bool = False,
+    use_softmax: bool = False,
+    superclasses_number: int = 20,
 ) -> Tuple[
     float,
     float,
@@ -191,6 +204,8 @@ def test_step_with_prediction_statistics(
         device [str] = "gpu": device on which to run the experiment
         prediction_treshold [float]: threshold used to consider a class as predicted
         force_prediction [bool]: force prediction
+        use_softmax [bool]: use the softmax
+        superclasses_number [int]: number of superclasses
 
     Returns:
         cumulative_loss [float] loss on the test set [not used to train!]
@@ -240,7 +255,10 @@ def test_step_with_prediction_statistics(
             cumulative_accuracy += (predicted == targets.byte()).sum().item()
 
             # loss computation
-            loss = cost_function(outputs.double(), targets)
+            if use_softmax:
+                loss = cross_entropy_from_softmax(targets, outputs, superclasses_number)
+            else:
+                loss = cost_function(outputs.double(), targets)
 
             # fetch prediction and loss value
             cumulative_loss += (

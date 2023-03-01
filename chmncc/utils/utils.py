@@ -462,6 +462,8 @@ def plot_confusion_matrix_statistics(
 def force_prediction_from_batch(
     output: torch.Tensor,
     prediction_treshold: float,
+    use_softmax: bool,
+    superclasses_number: int = 20,
 ) -> torch.Tensor:
     """Force the prediction from a batch of predictions
 
@@ -471,10 +473,17 @@ def force_prediction_from_batch(
     """
     new_output = list()
     for pred in output:
-        tmp = pred > prediction_treshold
-        if tmp[1:].sum().item() == 0:
-            max_pred = torch.max(pred[1:]).item()
-            tmp = pred >= max_pred
+        if use_softmax:
+            parent = torch.argmax(pred[1 : superclasses_number + 1]).item()
+            child = torch.argmax(pred[superclasses_number + 1 :]).item()
+            tmp = torch.zeros_like(pred, dtype=torch.bool)
+            tmp[parent] = True
+            tmp[child] = True
+        else:
+            tmp = pred > prediction_treshold
+            if tmp[1:].sum().item() == 0:
+                max_pred = torch.max(pred[1:]).item()
+                tmp = pred >= max_pred
         new_output.append(tmp)
     return torch.stack(new_output)
 

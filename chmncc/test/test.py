@@ -98,7 +98,7 @@ def test_step(
             # force prediction
             if force_prediction:
                 predicted = force_prediction_from_batch(
-                    outputs.data, prediction_treshold
+                    outputs.data, prediction_treshold, use_softmax, superclasses_number
                 )
             else:
                 predicted = outputs.data > prediction_treshold  # 0.5
@@ -244,7 +244,7 @@ def test_step_with_prediction_statistics(
             # predicted
             if force_prediction:
                 predicted = force_prediction_from_batch(
-                    outputs.data, prediction_treshold
+                    outputs.data, prediction_treshold, use_softmax, superclasses_number
                 )
             else:
                 predicted = outputs.data > prediction_treshold  # 0.5

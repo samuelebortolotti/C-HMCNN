@@ -99,7 +99,10 @@ def training_step(
         # force prediction
         if force_prediction:
             predicted = force_prediction_from_batch(
-                constr_output.data, prediction_treshold
+                constr_output.data,
+                prediction_treshold,
+                use_softmax,
+                superclasses_number,
             )
         else:
             predicted = constr_output.data > prediction_treshold  # 0.5

@@ -196,7 +196,7 @@ def revise_step(
 
         if force_prediction:
             predicted = force_prediction_from_batch(
-                constr_output.data, prediction_treshold
+                constr_output.data, prediction_treshold, False
             )
         else:
             predicted = constr_output.data > prediction_treshold  # 0.5

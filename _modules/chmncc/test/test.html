@@ -10,10 +10,8 @@
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
         <script src="../../../_static/sphinx_highlight.js"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -74,7 +72,11 @@
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
 <span class="kn">import</span> <span class="nn">tqdm</span>
-<span class="kn">from</span> <span class="nn">chmncc.utils</span> <span class="kn">import</span> <span class="n">dotdict</span><span class="p">,</span> <span class="n">force_prediction_from_batch</span>
+<span class="kn">from</span> <span class="nn">chmncc.utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">dotdict</span><span class="p">,</span>
+    <span class="n">force_prediction_from_batch</span><span class="p">,</span>
+    <span class="n">cross_entropy_from_softmax</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">average_precision_score</span><span class="p">,</span> <span class="n">classification_report</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
@@ -104,6 +106,8 @@
     <span class="n">print_me</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">prediction_treshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
     <span class="n">force_prediction</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">use_softmax</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">superclasses_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Test function for the network.</span>
 <span class="sd">    It computes the accuracy together with the area under the precision-recall-curve as a metric</span>
@@ -118,6 +122,8 @@
 <span class="sd">        debug_mode [bool] = False: whether the test is done on the debug dataloader</span>
 <span class="sd">        prediction_treshold [float]: threshold used to consider a class as predicted</span>
 <span class="sd">        force_prediction [bool]: force prediction</span>
+<span class="sd">        use_softmax [bool]: use the softmax</span>
+<span class="sd">        superclasses_number [int]: number of superclasses</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        cumulative_loss [float] loss on the test set [not used to train!]</span>
@@ -186,7 +192,10 @@
             <span class="n">cumulative_accuracy</span> <span class="o">+=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">targets</span><span class="o">.</span><span class="n">byte</span><span class="p">())</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
             <span class="c1"># loss computation</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="n">cost_function</span><span class="p">(</span><span class="n">outputs</span><span class="o">.</span><span class="n">double</span><span class="p">(),</span> <span class="n">targets</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">use_softmax</span><span class="p">:</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">cross_entropy_from_softmax</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">superclasses_number</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">cost_function</span><span class="p">(</span><span class="n">outputs</span><span class="o">.</span><span class="n">double</span><span class="p">(),</span> <span class="n">targets</span><span class="p">)</span>
 
             <span class="c1"># fetch prediction and loss value</span>
             <span class="n">cumulative_loss</span> <span class="o">+=</span> <span class="p">(</span>
@@ -237,6 +246,8 @@
     <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gpu&quot;</span><span class="p">,</span>
     <span class="n">prediction_treshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
     <span class="n">force_prediction</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">use_softmax</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">superclasses_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
     <span class="nb">float</span><span class="p">,</span>
     <span class="nb">float</span><span class="p">,</span>
@@ -263,6 +274,8 @@
 <span class="sd">        device [str] = &quot;gpu&quot;: device on which to run the experiment</span>
 <span class="sd">        prediction_treshold [float]: threshold used to consider a class as predicted</span>
 <span class="sd">        force_prediction [bool]: force prediction</span>
+<span class="sd">        use_softmax [bool]: use the softmax</span>
+<span class="sd">        superclasses_number [int]: number of superclasses</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        cumulative_loss [float] loss on the test set [not used to train!]</span>
@@ -312,7 +325,10 @@
             <span class="n">cumulative_accuracy</span> <span class="o">+=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">targets</span><span class="o">.</span><span class="n">byte</span><span class="p">())</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
             <span class="c1"># loss computation</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="n">cost_function</span><span class="p">(</span><span class="n">outputs</span><span class="o">.</span><span class="n">double</span><span class="p">(),</span> <span class="n">targets</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">use_softmax</span><span class="p">:</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">cross_entropy_from_softmax</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">superclasses_number</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">cost_function</span><span class="p">(</span><span class="n">outputs</span><span class="o">.</span><span class="n">double</span><span class="p">(),</span> <span class="n">targets</span><span class="p">)</span>
 
             <span class="c1"># fetch prediction and loss value</span>
             <span class="n">cumulative_loss</span> <span class="o">+=</span> <span class="p">(</span>

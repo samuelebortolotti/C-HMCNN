@@ -1508,7 +1508,7 @@ def main(args: Namespace) -> None:
     scheduler = get_plateau_scheduler(optimizer=optimizer, patience=args.patience)
 
     # Test on best weights (of the confounded model)
-    #  load_best_weights(net, args.weights_path_folder, args.device)
+    load_best_weights(net, args.weights_path_folder, args.device)
 
     # dataloaders
     test_loader = dataloaders["test_loader"]
@@ -1518,16 +1518,16 @@ def main(args: Namespace) -> None:
     cost_function = torch.nn.BCELoss()
 
     # test set
-    #  test_loss, test_accuracy, test_score_raw, test_score_const = test_step(
-    #      net=net,
-    #      test_loader=iter(test_loader),
-    #      cost_function=cost_function,
-    #      title="Test",
-    #      test=dataloaders["test"],
-    #      device=args.device,
-    #      prediction_treshold=args.prediction_treshold,
-    #      force_prediction=args.force_prediction,
-    #  )
+    test_loss, test_accuracy, test_score_raw, test_score_const = test_step(
+        net=net,
+        test_loader=iter(test_loader),
+        cost_function=cost_function,
+        title="Test",
+        test=dataloaders["test"],
+        device=args.device,
+        prediction_treshold=args.prediction_treshold,
+        force_prediction=args.force_prediction,
+    )
 
     # load the human readable labels dataloader
     test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
@@ -1537,59 +1537,59 @@ def main(args: Namespace) -> None:
 
 
     # collect stats
-    #  (
-    #      _,
-    #      _,
-    #      _,
-    #      _,
-    #      statistics_predicted,
-    #      statistics_correct,
-    #      clf_report,  # classification matrix
-    #      y_test,      # ground-truth for multiclass classification matrix
-    #      y_pred,      # predited values for multiclass classification matrix
-    #  ) = test_step_with_prediction_statistics(
-    #      net=net,
-    #      test_loader=iter(test_loader_with_label_names),
-    #      cost_function=cost_function,
-    #      title="Collect Statistics",
-    #      test=dataloaders["test"],
-    #      device=args.device,
-    #      labels_name=labels_name,
-    #      prediction_treshold=args.prediction_treshold,
-    #      force_prediction=args.force_prediction,
-    #  )
+    (
+        _,
+        _,
+        _,
+        _,
+        statistics_predicted,
+        statistics_correct,
+        clf_report,  # classification matrix
+        y_test,      # ground-truth for multiclass classification matrix
+        y_pred,      # predited values for multiclass classification matrix
+    ) = test_step_with_prediction_statistics(
+        net=net,
+        test_loader=iter(test_loader_with_label_names),
+        cost_function=cost_function,
+        title="Collect Statistics",
+        test=dataloaders["test"],
+        device=args.device,
+        labels_name=labels_name,
+        prediction_treshold=args.prediction_treshold,
+        force_prediction=args.force_prediction,
+    )
 
     # confusion matrix before debug
-    #  plot_global_multiLabel_confusion_matrix(
-    #      y_test=y_test,
-    #      y_est=y_pred,
-    #      label_names=labels_name,
-    #      size=(30, 30),
-    #      fig_name="{}/before_confusion_matrix".format(args.debug_folder),
-    #      normalize=False,
-    #  )
-    #  plot_global_multiLabel_confusion_matrix(
-    #      y_test=y_test,
-    #      y_est=y_pred,
-    #      label_names=labels_name,
-    #      size=(30, 30),
-    #      fig_name="{}/before_confusion_matrix_normalized".format(args.debug_folder),
-    #      normalize=True,
-    #  )
-    #  plot_confusion_matrix_statistics(
-    #      clf_report=clf_report,
-    #      fig_name="{}/before_confusion_matrix_statistics.png".format(
-    #          args.debug_folder
-    #      ),
-    #  )
+    plot_global_multiLabel_confusion_matrix(
+        y_test=y_test,
+        y_est=y_pred,
+        label_names=labels_name,
+        size=(30, 30),
+        fig_name="{}/before_confusion_matrix".format(args.debug_folder),
+        normalize=False,
+    )
+    plot_global_multiLabel_confusion_matrix(
+        y_test=y_test,
+        y_est=y_pred,
+        label_names=labels_name,
+        size=(30, 30),
+        fig_name="{}/before_confusion_matrix_normalized".format(args.debug_folder),
+        normalize=True,
+    )
+    plot_confusion_matrix_statistics(
+        clf_report=clf_report,
+        fig_name="{}/before_confusion_matrix_statistics.png".format(
+            args.debug_folder
+        ),
+    )
 
-    #  print("Network resumed, performances:")
-    #
-    #  print(
-    #      "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve raw {:.3f}, Test Area under Precision-Recall Curve const {:.3f}".format(
-    #          test_loss, test_accuracy, test_score_raw, test_score_const
-    #      )
-    #  )
+    print("Network resumed, performances:")
+
+    print(
+        "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve raw {:.3f}, Test Area under Precision-Recall Curve const {:.3f}".format(
+            test_loss, test_accuracy, test_score_raw, test_score_const
+        )
+    )
 
     print("-----------------------------------------------------")
 

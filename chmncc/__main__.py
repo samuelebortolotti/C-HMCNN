@@ -874,7 +874,7 @@ def c_hmcnn(
             # get the prediction
             if force_prediction:
                 predicted_1_0 = force_prediction_from_batch(
-                    preds.data, prediction_treshold
+                    preds.data, prediction_treshold, use_softmax, dataloaders["train_set"].n_superclasses,
                 )
             else:
                 predicted_1_0 = preds.data > prediction_treshold

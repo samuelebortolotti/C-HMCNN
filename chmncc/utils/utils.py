@@ -474,19 +474,27 @@ def force_prediction_from_batch(
     new_output = list()
     for pred in output:
         if use_softmax:
-            # TODO
             tmp = torch.zeros_like(pred, dtype=torch.bool)
             tmp[1 : superclasses_number + 1] = (
-                tmp[1 : superclasses_number + 1] > 1.0 / superclasses_number
+                pred[1 : superclasses_number + 1].data > 1.0 / superclasses_number
             )
-            tmp[superclasses_number + 1 :] = tmp[superclasses_number + 1 :] > 1.0 / (
-                tmp.shape[0] - 1 - superclasses_number
-            )
+            tmp[superclasses_number + 1 :] = pred[
+                superclasses_number + 1 :
+            ].data > 1.0 / (tmp.shape[0] - 1 - superclasses_number)
         else:
             tmp = pred > prediction_treshold
             if tmp[1:].sum().item() == 0:
                 max_pred = torch.max(pred[1:]).item()
                 tmp = pred >= max_pred
+                predicted_child = False
+                for el in torch.where(tmp == True)[0].tolist():
+                    if el > superclasses_number:
+                        predicted_child = True
+                        break
+
+                if not predicted_child:
+                    child = torch.argmax(pred[superclasses_number + 1 :])
+                    tmp[child.item() + superclasses_number + 1] = True
         new_output.append(tmp)
     return torch.stack(new_output)
 

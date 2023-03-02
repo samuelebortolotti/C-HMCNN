@@ -118,7 +118,8 @@ def save_sample(
     integrated_gradients: bool,
     prefix: str,
     prediction_treshold: float,
-    force_prediction: bool
+    force_prediction: bool,
+    use_softmax: bool,
 ) -> Tuple[bool, np.ndarray]:
     """Save the test sample.
     Then it returns whether the sample contains a confunder or if the sample has been
@@ -136,6 +137,7 @@ def save_sample(
         prefix [str]: prefix for the sample to save
         prediction_treshold [float] prediction threshold
         force_prediction [bool]: force prediction
+        use_softmax [bool]: use softmax
 
     Returns:
         correct_guess [bool]: whether the model has guessed correctly
@@ -151,7 +153,7 @@ def save_sample(
 
     # get the prediction
     if force_prediction:
-        predicted_1_0 = force_prediction_from_batch(prediction.cpu().data, prediction_treshold)
+        predicted_1_0 = force_prediction_from_batch(prediction.cpu().data, prediction_treshold, use_softmax)
     else:
         predicted_1_0 = prediction.cpu().data > prediction_treshold
 
@@ -227,6 +229,7 @@ def visualize_sample(
     prefix: str,
     prediction_treshold: float,
     force_prediction: bool,
+    use_softmax: bool,
 ) -> None:
     """Save the samples information, including the sample itself, the gradients and the masked gradients
 
@@ -244,6 +247,7 @@ def visualize_sample(
         prefix [str]: prefix for the sample to save
         prediction_treshold [float]: prediction treshold
         force_prediction [bool]: force prediction
+        use_softmax [bool]: use softmax
     """
     # set the network to eval mode
     net.eval()
@@ -273,6 +277,7 @@ def visualize_sample(
         prefix=prefix,
         prediction_treshold=prediction_treshold,
         force_prediction=force_prediction,
+        use_softmax=use_softmax,
     )
 
     # compute the gradient, whether input or integrated
@@ -591,6 +596,7 @@ def save_some_confounded_samples(
     prefix: str,
     prediction_treshold: float,
     force_prediction: bool,
+    use_softmax: bool,
 ) -> None:
     """Save some confounded examples according to the dataloader and the number of examples the user specifies
 
@@ -606,6 +612,7 @@ def save_some_confounded_samples(
         prefix [str]: prefix to save the images with
         prediction_treshold [float] prediction treshold
         force_prediction [bool] force prediction
+        use_softmax [bool] use softmax
     """
     # set the networ to evaluation mode
     net.eval()
@@ -638,6 +645,7 @@ def save_some_confounded_samples(
                     prefix,
                     prediction_treshold,
                     force_prediction,
+                    use_softmax,
                 )
                 # increase the counter
                 counter += 1
@@ -909,6 +917,7 @@ def debug(
     num_workers: int,
     prediction_treshold: float,
     force_prediction: bool,
+    use_softmax: bool,
     **kwargs: Any
 ) -> None:
     """Method which performs the debug step by fine-tuning the network employing the right for the right reason loss.
@@ -934,6 +943,7 @@ def debug(
         num_workers [int]: number of workers for dataloaders
         prediction_treshold [float]: prediction threshold
         force_prediction [bool]: force prediction
+        use_softmax [bool]: use softmax
         **kwargs [Any]: kwargs
     """
     print("Have to run for {} debug iterations...".format(iterations))
@@ -988,6 +998,7 @@ def debug(
         prefix="before",
         prediction_treshold=prediction_treshold,
         force_prediction=force_prediction,
+        use_softmax=use_softmax,
     )
 
     # compute graident confounded correlation
@@ -1227,6 +1238,7 @@ def debug(
         prefix="after",
         prediction_treshold=prediction_treshold,
         force_prediction=force_prediction,
+        use_softmax=use_softmax,
     )
 
     # give the correlation
@@ -1390,8 +1402,15 @@ def configure_subparsers(subparsers: Subparser) -> None:
         action="store_false",
         help="Let the confounder be placed in a random position in the image",
     )
+    parser.add_argument(
+        "--use-softmax",
+        "-soft",
+        dest="use_softmax",
+        action="store_true",
+        help="Force the confounder position to use softmax as loss",
+    )
     # set the main function to run when blob is called from the command line
-    parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False, constrained_layer=True, force_prediction=False, fixed_confounder=False)
+    parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False, constrained_layer=True, force_prediction=False, fixed_confounder=False, use_softmax=False)
 
 
 def main(args: Namespace) -> None:

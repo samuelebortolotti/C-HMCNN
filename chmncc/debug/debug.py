@@ -411,7 +411,7 @@ def overlay_input_gradient(
     plt.colorbar(
         matplotlib.cm.ScalarMappable(norm=norm, cmap='viridis'), label="Gradient magnitude"
     )
-    plt.imshow(single_el)
+    plt.imshow(single_el, cmap="gray")
     plt.imshow(gradient_to_show, cmap='viridis', alpha=0.5)
     plt.title("{} gradient overlay".format("Integrated" if integrated_gradients else "Input"))
 

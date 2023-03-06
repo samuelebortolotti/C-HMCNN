@@ -179,7 +179,7 @@ def test_step(
         else cumulative_loss_parent / len(test_loader),
         None
         if cumulative_loss_children is None
-        else cumulative_loss_children / len(train_loader),
+        else cumulative_loss_children / len(test_loader),
     )
 
 

@@ -589,7 +589,7 @@ def c_hmcnn(
         )
 
         # validation set
-        val_loss, val_accuracy, val_score_raw, val_score_const = test_step(
+        val_loss, val_accuracy, val_score_raw, val_score_const, _, _ = test_step(
             net=net,
             test_loader=iter(val_loader),
             cost_function=cost_function,
@@ -608,7 +608,7 @@ def c_hmcnn(
         metrics["score"]["val"] = train_accuracy
 
         # test values
-        test_loss, test_accuracy, test_score_raw, test_score_const = test_step(
+        test_loss, test_accuracy, test_score_raw, test_score_const, _, _ = test_step(
             net=net,
             test_loader=iter(test_loader),
             cost_function=cost_function,
@@ -760,7 +760,7 @@ def c_hmcnn(
     load_best_weights(net, model_folder, device)
 
     # test set
-    test_loss, test_accuracy, test_score_raw, test_score_const = test_step(
+    test_loss, test_accuracy, test_score_raw, test_score_const, _, _ = test_step(
         net=net,
         test_loader=iter(test_loader),
         cost_function=cost_function,
@@ -814,6 +814,8 @@ def c_hmcnn(
             clf_report,  # classification matrix
             y_test,  # ground-truth for multiclass classification matrix
             y_pred,  # predited values for multiclass classification matrix
+            _,
+            _
         ) = test_step_with_prediction_statistics(
             net=net,
             test_loader=iter(training_loader_with_labels_names),
@@ -881,6 +883,8 @@ def c_hmcnn(
             clf_report,  # classification matrix
             y_test,  # ground-truth for multiclass classification matrix
             y_pred,  # predited values for multiclass classification matrix
+            _,
+            _
         ) = test_step_with_prediction_statistics(
             net=net,
             test_loader=iter(test_loader_with_label_names),

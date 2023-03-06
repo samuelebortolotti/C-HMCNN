@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Optional
 import tqdm
 from chmncc.utils import (
     dotdict,
@@ -38,7 +38,7 @@ def test_step(
     force_prediction: bool = False,
     use_softmax: bool = False,
     superclasses_number: int = 20,
-) -> Tuple[float, float, float, float]:
+) -> Tuple[float, float, float, float, Optional[float], Optional[float]]:
     r"""Test function for the network.
     It computes the accuracy together with the area under the precision-recall-curve as a metric
 
@@ -64,6 +64,8 @@ def test_step(
     total = 0.0
     cumulative_loss = 0.0
     cumulative_accuracy = 0.0
+    cumulative_loss_children = None
+    cumulative_loss_parent = None
 
     # set the network to evaluation mode
     net.eval()
@@ -123,9 +125,18 @@ def test_step(
 
             # loss computation
             if use_softmax:
-                loss = cross_entropy_from_softmax(targets, outputs, superclasses_number)
+                loss, loss_parent, loss_children = cross_entropy_from_softmax(targets, outputs, superclasses_number)
             else:
                 loss = cost_function(outputs.double(), targets)
+                loss_parent, loss_children = None, None
+
+            # sum up the losses
+            if loss_parent is not None and loss_children is not None:
+                if cumulative_loss_children is None or cumulative_loss_parent is None:
+                    cumulative_loss_children = 0
+                    cumulative_loss_parent = 0
+                cumulative_loss_parent += loss_parent.item()
+                cumulative_loss_children += loss_children.item()
 
             # fetch prediction and loss value
             cumulative_loss += (
@@ -163,6 +174,12 @@ def test_step(
         cumulative_accuracy / total * 100,
         score_raw,
         score_const,
+        None
+        if cumulative_loss_parent is None
+        else cumulative_loss_parent / len(train_loader),
+        None
+        if cumulative_loss_children is None
+        else cumulative_loss_children / len(train_loader),
     )
 
 
@@ -188,6 +205,8 @@ def test_step_with_prediction_statistics(
     Dict[str, float],
     np.ndarray,
     np.ndarray,
+    Optional[float],
+    Optional[float]
 ]:
     r"""Test function for the network.
     It computes the accuracy together with the area under the precision-recall-curve as a metric
@@ -221,6 +240,8 @@ def test_step_with_prediction_statistics(
     total = 0.0
     cumulative_loss = 0.0
     cumulative_accuracy = 0.0
+    cumulative_loss_children = None
+    cumulative_loss_parent = None
 
     # set the network to evaluation mode
     net.eval()
@@ -256,9 +277,18 @@ def test_step_with_prediction_statistics(
 
             # loss computation
             if use_softmax:
-                loss = cross_entropy_from_softmax(targets, outputs, superclasses_number)
+                loss, loss_parent, loss_children = cross_entropy_from_softmax(targets, outputs, superclasses_number)
             else:
                 loss = cost_function(outputs.double(), targets)
+                loss_parent, loss_children = None, None
+
+            # sum up the losses
+            if loss_parent is not None and loss_children is not None:
+                if cumulative_loss_children is None or cumulative_loss_parent is None:
+                    cumulative_loss_children = 0
+                    cumulative_loss_parent = 0
+                cumulative_loss_parent += loss_parent.item()
+                cumulative_loss_children += loss_children.item()
 
             # fetch prediction and loss value
             cumulative_loss += (
@@ -338,4 +368,10 @@ def test_step_with_prediction_statistics(
         predicted_test[
             :, test.to_eval
         ],  # predited values for multiclass classification matrix
+        None
+        if cumulative_loss_parent is None
+        else cumulative_loss_parent / len(train_loader),
+        None
+        if cumulative_loss_children is None
+        else cumulative_loss_children / len(train_loader),
     )

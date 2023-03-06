@@ -246,7 +246,7 @@
         <span class="n">score_const</span><span class="p">,</span>
         <span class="kc">None</span>
         <span class="k">if</span> <span class="n">cumulative_loss_parent</span> <span class="ow">is</span> <span class="kc">None</span>
-        <span class="k">else</span> <span class="n">cumulative_loss_parent</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="p">),</span>
+        <span class="k">else</span> <span class="n">cumulative_loss_parent</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_loader</span><span class="p">),</span>
         <span class="kc">None</span>
         <span class="k">if</span> <span class="n">cumulative_loss_children</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="k">else</span> <span class="n">cumulative_loss_children</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="p">),</span>
@@ -440,10 +440,10 @@
         <span class="p">],</span>  <span class="c1"># predited values for multiclass classification matrix</span>
         <span class="kc">None</span>
         <span class="k">if</span> <span class="n">cumulative_loss_parent</span> <span class="ow">is</span> <span class="kc">None</span>
-        <span class="k">else</span> <span class="n">cumulative_loss_parent</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="p">),</span>
+        <span class="k">else</span> <span class="n">cumulative_loss_parent</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_loader</span><span class="p">),</span>
         <span class="kc">None</span>
         <span class="k">if</span> <span class="n">cumulative_loss_children</span> <span class="ow">is</span> <span class="kc">None</span>
-        <span class="k">else</span> <span class="n">cumulative_loss_children</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="p">),</span>
+        <span class="k">else</span> <span class="n">cumulative_loss_children</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_loader</span><span class="p">),</span>
     <span class="p">)</span></div>
 </pre></div>
 

@@ -171,7 +171,6 @@
     <span class="n">optimizer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">,</span>
     <span class="n">revive_function</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">IGRRRLoss</span><span class="p">,</span> <span class="n">RRRLoss</span><span class="p">],</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">batches_treshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">folder_where_to_save</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
     <span class="n">have_to_train</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -190,7 +189,6 @@
 <span class="sd">        optimizer [torch.optim.Optimizer]: optimizer</span>
 <span class="sd">        revive_function [Union[IGRRRLoss, RRRLoss]]: revive function (RRR loss)</span>
 <span class="sd">        title [str]: title for tqdm</span>
-<span class="sd">        batches_treshold [float]: threshold for the batches</span>
 <span class="sd">        device [str]: on which device to run the experiment [default: cuda]</span>
 <span class="sd">        have_to_train [bool]: whether to train or not the model</span>
 <span class="sd">        gradient_analysis [bool]: whether to analyze the gradients by means of plots</span>

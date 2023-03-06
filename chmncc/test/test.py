@@ -176,7 +176,7 @@ def test_step(
         score_const,
         None
         if cumulative_loss_parent is None
-        else cumulative_loss_parent / len(train_loader),
+        else cumulative_loss_parent / len(test_loader),
         None
         if cumulative_loss_children is None
         else cumulative_loss_children / len(train_loader),
@@ -370,8 +370,8 @@ def test_step_with_prediction_statistics(
         ],  # predited values for multiclass classification matrix
         None
         if cumulative_loss_parent is None
-        else cumulative_loss_parent / len(train_loader),
+        else cumulative_loss_parent / len(test_loader),
         None
         if cumulative_loss_children is None
-        else cumulative_loss_children / len(train_loader),
+        else cumulative_loss_children / len(test_loader),
     )

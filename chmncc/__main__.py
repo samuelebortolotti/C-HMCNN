@@ -701,13 +701,13 @@ def c_hmcnn(
                 train_au_prc_score_const,
             )
         )
-        print(revise_total_right_answer_loss, revise_total_right_reason_loss)
+        print("Training loss {:.5f}, RRLoss {:.5f}".format(revise_total_right_answer_loss, revise_total_right_reason_loss))
         print(
             "\t Validation loss {:.5f}, Validation accuracy {:.2f}%, Validation Area under Precision-Recall Curve Raw {:.3f},  Validation Area under Precision-Recall Curve Const {:.3f}".format(
                 val_loss, val_accuracy, val_score_raw, val_score_const
             )
         )
-        print(test_revise_total_right_answer_loss, test_revise_total_right_reason_loss)
+        print("Test loss {:.5f}, RRLoss {:.5f}".format(test_revise_total_right_answer_loss, test_revise_total_right_reason_loss))
 
         # log on wandb if and only if the module is loaded
         logs = {

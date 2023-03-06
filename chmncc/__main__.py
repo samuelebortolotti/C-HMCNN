@@ -19,10 +19,12 @@ from argparse import Namespace
 from typing import Any, Dict, List
 from torchsummary import summary
 from torch.utils.tensorboard import SummaryWriter
+from torch.nn import BCELoss
 import wandb
 import signal
 import matplotlib.image
 import torch.multiprocessing
+from chmncc.loss import RRRLoss, IGRRRLoss
 
 torch.multiprocessing.set_sharing_strategy("file_system")
 
@@ -58,6 +60,7 @@ from chmncc.dataset import (
     load_old_dataloaders,
     load_cifar_dataloaders,
     get_named_label_predictions,
+    LoadDebugDataset,
 )
 import chmncc.dataset.preproces_cifar as data
 import chmncc.debug.debug as debug
@@ -65,6 +68,7 @@ import chmncc.dataset.visualize_dataset as visualize_data
 from chmncc.config.old_config import lrs, epochss, hidden_dims
 from chmncc.config import confunders, hierarchy
 from chmncc.explanations import compute_integrated_gradient, output_gradients
+from chmncc.revise import revise_step
 
 
 class TerminationError(Exception):
@@ -425,7 +429,9 @@ def c_hmcnn(
         # CNN
         if network == "lenet":
             net = LeNet5(
-                dataloaders["train_R"], 121, constrained_layer,
+                dataloaders["train_R"],
+                121,
+                constrained_layer,
             )  # 20 superclasses, 100 subclasses + the root
         elif network == "lenet7":
             net = LeNet7(
@@ -443,7 +449,9 @@ def c_hmcnn(
         elif network == "mlp":
             # MLP
             net = MLP(
-                dataloaders["train_R"], 121, constrained_layer,
+                dataloaders["train_R"],
+                121,
+                constrained_layer,
                 dataloaders["train_set"].n_superclasses,
                 use_softmax,
             )  # 20 superclasses, 100 subclasses + the root
@@ -469,6 +477,27 @@ def c_hmcnn(
 
     test_loader = dataloaders["test_loader"]
     val_loader = dataloaders["val_loader"]
+
+    confounder_mask_train = LoadDebugDataset(
+        dataloaders["train_dataset_with_labels_and_confunders_position"],
+    )
+    confounder_mask_test = LoadDebugDataset(
+        dataloaders["test_dataset_with_labels_and_confunders_pos"],
+    )
+    # Dataloaders for the previous values
+    debug_loader = torch.utils.data.DataLoader(
+        confounder_mask_train,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+    )
+
+    test_debug = torch.utils.data.DataLoader(
+        confounder_mask_test,
+        batch_size=test_batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+    )
 
     if no_confounder:
         print("I am not going to use the confounders!")
@@ -506,6 +535,8 @@ def c_hmcnn(
             train_accuracy,
             train_au_prc_score_raw,
             train_au_prc_score_const,
+            train_loss_parent,
+            train_loss_children,
         ) = training_step(
             net=net,
             train=dataloaders["train"],
@@ -526,6 +557,36 @@ def c_hmcnn(
         metrics["loss"]["train"] = train_loss
         metrics["acc"]["train"] = train_accuracy
         metrics["score"]["train"] = train_au_prc_score_const
+
+        # mettere qua il revise step
+        (
+            revise_total_loss,
+            revise_total_right_answer_loss,
+            revise_total_right_reason_loss,
+            revise_total_accuracy,
+            revise_total_score_raw,
+            revise_total_score_const,
+            revise_right_reason_loss_confounded,
+        ) = revise_step(
+            epoch_number=e,
+            net=net,
+            debug_loader=iter(debug_loader),
+            R=dataloaders["train_R"],
+            train=dataloaders["train"],
+            optimizer=optimizer,
+            revive_function=RRRLoss(
+                net=net,
+                regularizer_rate=1,
+                base_criterion=BCELoss(),
+            ),
+            device=device,
+            title="Train with RRR",
+            gradient_analysis=False,
+            have_to_train=False,
+            folder_where_to_save=os.environ["IMAGE_FOLDER"],
+            prediction_treshold=prediction_treshold,
+            force_prediction=force_prediction,
+        )
 
         # validation set
         val_loss, val_accuracy, val_score_raw, val_score_const = test_step(
@@ -558,6 +619,35 @@ def c_hmcnn(
             force_prediction=force_prediction,
             use_softmax=use_softmax,
             superclasses_number=dataloaders["train_set"].n_superclasses,
+        )
+
+        (
+            test_revise_total_loss,
+            test_revise_total_right_answer_loss,
+            test_revise_total_right_reason_loss,
+            test_revise_total_accuracy,
+            test_revise_total_score_raw,
+            test_revise_total_score_const,
+            test_revise_right_reason_loss_confounded,
+        ) = revise_step(
+            epoch_number=e,
+            net=net,
+            debug_loader=iter(test_debug),
+            R=dataloaders["train_R"],
+            train=dataloaders["train"],
+            optimizer=optimizer,
+            revive_function=RRRLoss(
+                net=net,
+                regularizer_rate=1,
+                base_criterion=BCELoss(),
+            ),
+            device=device,
+            title="Train with RRR",
+            gradient_analysis=False,
+            have_to_train=False,
+            folder_where_to_save=os.environ["IMAGE_FOLDER"],
+            prediction_treshold=prediction_treshold,
+            force_prediction=force_prediction,
         )
 
         # save the values in the metrics
@@ -611,33 +701,41 @@ def c_hmcnn(
                 train_au_prc_score_const,
             )
         )
+        print(revise_total_right_answer_loss, revise_total_right_reason_loss)
         print(
             "\t Validation loss {:.5f}, Validation accuracy {:.2f}%, Validation Area under Precision-Recall Curve Raw {:.3f},  Validation Area under Precision-Recall Curve Const {:.3f}".format(
                 val_loss, val_accuracy, val_score_raw, val_score_const
             )
         )
+        print(test_revise_total_right_answer_loss, test_revise_total_right_reason_loss)
 
         # log on wandb if and only if the module is loaded
+        logs = {
+            "train/train_loss": train_loss,
+            "train/train_right_anwer_loss": train_loss,
+            "train/train_accuracy": train_accuracy,
+            "train/train_auprc_raw": train_au_prc_score_raw,
+            "train/train_auprc_const": train_au_prc_score_const,
+            "test/train_right_reason": revise_total_right_reason_loss,
+            "val/val_loss": val_loss,
+            "val/val_accuracy": val_accuracy,
+            "val/val_auprc_raw": val_score_raw,
+            "val/val_auprc_const": val_score_const,
+            "learning_rate": get_lr(optimizer),
+            "test/test_loss": test_loss,
+            "test/test_right_answer_loss": test_loss,
+            "test/test_accuracy": test_accuracy,
+            "test/test_auprc_raw": test_score_raw,
+            "test/test_auprc_const": test_score_const,
+            "test/test_right_reason": test_revise_total_right_reason_loss,
+        }
+
+        if train_loss_parent is not None and train_loss_children is not None:
+            logs.update({"train/train_right_answer_loss_parent": train_loss_parent})
+            logs.update({"train/train_right_answer_loss_children": train_loss_children})
+
         if set_wandb:
-            wandb.log(
-                {
-                    "train/train_loss": train_loss,
-                    "train/train_right_anwer_loss": train_loss,
-                    "train/train_accuracy": train_accuracy,
-                    "train/train_auprc_raw": train_au_prc_score_raw,
-                    "train/train_auprc_const": train_au_prc_score_const,
-                    "val/val_loss": val_loss,
-                    "val/val_accuracy": val_accuracy,
-                    "val/val_auprc_raw": val_score_raw,
-                    "val/val_auprc_const": val_score_const,
-                    "learning_rate": get_lr(optimizer),
-                    "test/test_loss": test_loss,
-                    "test/test_right_answer_loss": test_loss,
-                    "test/test_accuracy": test_accuracy,
-                    "test/test_auprc_raw": test_score_raw,
-                    "test/test_auprc_const": test_score_const,
-                }
-            )
+            wandb.log(logs)
 
         print(
             "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve Raw {:.3f}, Test Area under Precision-Recall Curve Const {:.3f}".format(
@@ -874,7 +972,10 @@ def c_hmcnn(
             # get the prediction
             if force_prediction:
                 predicted_1_0 = force_prediction_from_batch(
-                    preds.data, prediction_treshold, use_softmax, dataloaders["train_set"].n_superclasses,
+                    preds.data,
+                    prediction_treshold,
+                    use_softmax,
+                    dataloaders["train_set"].n_superclasses,
                 )
             else:
                 predicted_1_0 = preds.data > prediction_treshold

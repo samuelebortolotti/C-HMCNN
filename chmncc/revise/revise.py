@@ -101,7 +101,6 @@ def revise_step(
     optimizer: torch.optim.Optimizer,
     revive_function: Union[IGRRRLoss, RRRLoss],
     title: str,
-    batches_treshold: float,
     folder_where_to_save: str,
     device: str = "cuda",
     have_to_train: bool = True,
@@ -120,7 +119,6 @@ def revise_step(
         optimizer [torch.optim.Optimizer]: optimizer
         revive_function [Union[IGRRRLoss, RRRLoss]]: revive function (RRR loss)
         title [str]: title for tqdm
-        batches_treshold [float]: threshold for the batches
         device [str]: on which device to run the experiment [default: cuda]
         have_to_train [bool]: whether to train or not the model
         gradient_analysis [bool]: whether to analyze the gradients by means of plots

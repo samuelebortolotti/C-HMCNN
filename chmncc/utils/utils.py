@@ -475,12 +475,17 @@ def force_prediction_from_batch(
     for pred in output:
         if use_softmax:
             tmp = torch.zeros_like(pred, dtype=torch.bool)
-            tmp[1 : superclasses_number + 1] = (
-                pred[1 : superclasses_number + 1].data > 1.0 / superclasses_number
-            )
-            tmp[superclasses_number + 1 :] = pred[
-                superclasses_number + 1 :
-            ].data > 1.0 / (tmp.shape[0] - 1 - superclasses_number)
+            #  tmp[1 : superclasses_number + 1] = (
+            #      pred[1 : superclasses_number + 1].data > 1.0 / superclasses_number
+            #  )
+            #  tmp[superclasses_number + 1 :] = pred[
+            #      superclasses_number + 1 :
+            #  ].data > 1.0 / (tmp.shape[0] - 1 - superclasses_number)
+            parent = torch.argmax(pred[1 : superclasses_number + 1]).item()
+            child = torch.argmax(pred[superclasses_number + 1 :]).item()
+            tmp = torch.zeros_like(pred, dtype=torch.bool)
+            tmp[parent] = True
+            tmp[child] = True
         else:
             tmp = pred > prediction_treshold
             if tmp[1:].sum().item() == 0:
@@ -501,9 +506,10 @@ def force_prediction_from_batch(
 
 def cross_entropy_from_softmax(
     targets: torch.Tensor, outputs: torch.Tensor, superclasses_number: int
-) -> torch.Tensor:
+) -> Tuple[float, float, float]:
     _, inds_0 = torch.max(targets[:, 1 : superclasses_number + 1], dim=1)
-    loss = F.nll_loss(torch.log(outputs[:, 1 : superclasses_number + 1]), inds_0)
+    loss_1 = F.nll_loss(torch.log(outputs[:, 1 : superclasses_number + 1]), inds_0)
     _, inds_1 = torch.max(targets[:, superclasses_number + 1 :], dim=1)
-    loss += F.nll_loss(torch.log(outputs[:, superclasses_number + 1 :]), inds_1)
-    return loss / 2
+    loss_2 = F.nll_loss(torch.log(outputs[:, superclasses_number + 1 :]), inds_1)
+    loss = loss_1 + loss_2
+    return loss / 2, loss_1, loss_2

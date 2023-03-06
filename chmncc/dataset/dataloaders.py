@@ -203,7 +203,7 @@ def load_cifar_dataloaders(
         transform=transform_train,
         confunders_position=True,
         name_labels=True,
-        confund=confunder,
+        confund=True,  # confund=confunder, # always confounded
         train=True,
         fixed_confounder=fixed_confounder,
         #  balance_factor_conf_classes=10,
@@ -230,7 +230,7 @@ def load_cifar_dataloaders(
         transform=transform_train,
         confunders_position=True,
         name_labels=True,
-        confund=confunder,
+        confund=True,  # confund=confunder, # always confound
         train=True,
         only_confounders=True,
         fixed_confounder=fixed_confounder,
@@ -244,7 +244,7 @@ def load_cifar_dataloaders(
         transform=transform_train,
         confunders_position=True,
         name_labels=True,
-        confund=confunder,
+        confund=True,  # confund=confunder, # always confounded
         train=True,
         only_confounders=False,
         no_confounders=True,

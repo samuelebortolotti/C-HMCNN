@@ -294,8 +294,8 @@ def revise_step(
         cumulative_right_reason_loss / confounded_samples,
         None
         if cumulative_loss_parent is None
-        else comulative_loss_parent / len(debug_loader),
+        else cumulative_loss_parent / len(debug_loader),
         None
         if cumulative_loss_children is None
-        else comulative_loss_children / len(debug_loader),
+        else cumulative_loss_children / len(debug_loader),
     )

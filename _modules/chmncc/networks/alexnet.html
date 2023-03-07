@@ -96,7 +96,6 @@
 <span class="sd">            constrained_layer: [bool]: whether to use the constrained output approach from Giunchiglia et al.</span>
 <span class="sd">            dropout [float] = 0</span>
 <span class="sd">            pretrained [bool] = False</span>
-<span class="sd">            feature_extractor [bool] = False</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">R</span> <span class="o">=</span> <span class="n">R</span>  <span class="c1"># matrix of the hierarchy</span>
@@ -154,9 +153,9 @@
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Forward method</span>
 <span class="sd">        Args:</span>
-<span class="sd">        - x [torch.Tensor]: source sample</span>
+<span class="sd">            x [torch.Tensor]: source sample</span>
 <span class="sd">        Returns:</span>
-<span class="sd">        - prediction [torch.Tensor]: prediction</span>
+<span class="sd">            prediction [torch.Tensor]: prediction</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">avgpool</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>

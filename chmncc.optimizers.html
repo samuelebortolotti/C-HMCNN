@@ -110,7 +110,8 @@
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>nn.Module</strong><strong>]</strong> (<em>net</em>) – network architecture</p></li>
-<li><p><strong>[</strong><strong>float</strong><strong>]</strong> (<em>lr</em>) – learning rate</p></li>
+<li><p><strong>[</strong><strong>float</strong><strong>]</strong> (<em>weight_decay</em>) – learning rate</p></li>
+<li><p><strong>[</strong><strong>float</strong><strong>]</strong> – weight_decay</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -175,6 +176,27 @@
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>optimizer [nn.Optimizer]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-chmncc.optimizers.step_lr">
+<span id="chmncc-optimizers-step-lr-module"></span><h2>chmncc.optimizers.step_lr module<a class="headerlink" href="#module-chmncc.optimizers.step_lr" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.optimizers.step_lr.get_step_lr_scheduler">
+<span class="sig-prename descclassname"><span class="pre">chmncc.optimizers.step_lr.</span></span><span class="sig-name descname"><span class="pre">get_step_lr_scheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">_LRScheduler</span></span></span><a class="reference internal" href="_modules/chmncc/optimizers/step_lr.html#get_step_lr_scheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.optimizers.step_lr.get_step_lr_scheduler" title="Permalink to this definition"></a></dt>
+<dd><p>Get step lr scheduler</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>[</strong><strong>nn.Optimizer</strong><strong>]</strong> (<em>optimizer</em>) – </p></li>
+<li><p><strong>[</strong><strong>int</strong><strong>]</strong> (<em>step_size</em>) – </p></li>
+<li><p><strong>[</strong><strong>float</strong><strong>]</strong> (<em>gamma</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>scheduler [torch.optim.lr_scheduler._LRScheduler]</p>
 </dd>
 </dl>
 </dd></dl>

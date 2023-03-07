@@ -75,6 +75,7 @@
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">chmncc.utils</span> <span class="kn">import</span> <span class="n">cross_entropy_from_softmax</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 
 <div class="viewcode-block" id="RRRLoss"><a class="viewcode-back" href="../../../chmncc.loss.html#chmncc.loss.RRR.RRRLoss">[docs]</a><span class="k">class</span> <span class="nc">RRRLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -94,7 +95,7 @@
         <span class="n">base_criterion</span><span class="o">=</span><span class="n">F</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">,</span>
         <span class="n">weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">rr_clipping</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="p">):</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            net [nn.Module]: trained neural network</span>
@@ -123,18 +124,22 @@
         <span class="n">use_softmax</span><span class="p">,</span>
         <span class="n">to_eval</span><span class="p">,</span>
         <span class="n">superclasses_number</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
-    <span class="p">):</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns (loss, right_answer_loss, right_reason_loss)</span>
+<span class="sd">        Returns (loss, right_answer_loss, right_reason_loss, right_answer_parent, right_answer_children)</span>
 <span class="sd">        Args:</span>
 <span class="sd">            X: inputs.</span>
 <span class="sd">            y: ground-truth labels.</span>
 <span class="sd">            expl: explanation annotations masks (ones penalize regions) [is basically the annotation matrix]</span>
 <span class="sd">            logits: model output logits.</span>
 <span class="sd">            confounded: whether the sampleis confounded</span>
+<span class="sd">            use_softmax: use softmax for the predictions</span>
+<span class="sd">            to_eval: evaluation</span>
+<span class="sd">            superclasses_number=20: superclass number</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">use_softmax</span><span class="p">:</span>
+            <span class="c1"># use the softmax crossentropy</span>
             <span class="p">(</span>
                 <span class="n">right_answer_loss</span><span class="p">,</span>
                 <span class="n">right_answer_loss_parent</span><span class="p">,</span>
@@ -143,6 +148,7 @@
             <span class="n">logits</span> <span class="o">=</span> <span class="n">logits</span><span class="p">[:,</span> <span class="n">to_eval</span><span class="p">]</span>
             <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="n">to_eval</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># use the basic criterion</span>
             <span class="n">logits</span> <span class="o">=</span> <span class="n">logits</span><span class="p">[:,</span> <span class="n">to_eval</span><span class="p">]</span>
             <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="n">to_eval</span><span class="p">]</span>
 
@@ -216,7 +222,7 @@
         <span class="n">base_criterion</span><span class="o">=</span><span class="n">F</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">,</span>
         <span class="n">weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">rr_clipping</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="p">):</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            net: trained neural network</span>
@@ -240,16 +246,18 @@
         <span class="n">use_softmax</span><span class="p">,</span>
         <span class="n">to_eval</span><span class="p">,</span>
         <span class="n">superclasses_number</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
-    <span class="p">):</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This one uses the integrated_gradients</span>
-<span class="sd">        Returns (loss, right_answer_loss, right_reason_loss)</span>
+<span class="sd">        Returns (loss, right_answer_loss, right_reason_loss, right_answer_parent, right_answer_children) using integrated gradients</span>
 <span class="sd">        Args:</span>
 <span class="sd">            X: inputs.</span>
 <span class="sd">            y: ground-truth labels.</span>
 <span class="sd">            expl: explanation annotations masks (ones penalize regions) [is basically the annotation matrix]</span>
 <span class="sd">            logits: model output logits.</span>
 <span class="sd">            confounded: whether the sampleis confounded</span>
+<span class="sd">            use_softmax: use softmax for the predictions</span>
+<span class="sd">            to_eval: evaluation</span>
+<span class="sd">            superclasses_number=20: superclass number</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># the normal training loss</span>
 

@@ -40,6 +40,15 @@ chmncc.optimizers.sgd module
    :show-inheritance:
    :private-members:
 
+chmncc.optimizers.step\_lr module
+---------------------------------
+
+.. automodule:: chmncc.optimizers.step_lr
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
 Module contents
 ---------------
 

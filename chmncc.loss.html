@@ -120,14 +120,16 @@ DOI: <a class="reference external" href="https://arxiv.org/abs/2203.03668">https
 
 <dl class="py method">
 <dt class="sig sig-object py" id="chmncc.loss.RRR.IGRRRLoss.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confounded</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_softmax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_eval</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">superclasses_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/loss/RRR.html#IGRRRLoss.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.loss.RRR.IGRRRLoss.forward" title="Permalink to this definition"></a></dt>
-<dd><p>This one uses the integrated_gradients
-Returns (loss, right_answer_loss, right_reason_loss)
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confounded</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_softmax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_eval</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">superclasses_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/loss/RRR.html#IGRRRLoss.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.loss.RRR.IGRRRLoss.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Returns (loss, right_answer_loss, right_reason_loss, right_answer_parent, right_answer_children) using integrated gradients
 :param X: inputs.
 :param y: ground-truth labels.
 :param expl: explanation annotations masks (ones penalize regions) [is basically the annotation matrix]
 :param logits: model output logits.
-:param confounded: whether the sampleis confounded</p>
+:param confounded: whether the sampleis confounded
+:param use_softmax: use softmax for the predictions
+:param to_eval: evaluation
+:param superclasses_number=20: superclass number</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -154,13 +156,16 @@ DOI: <a class="reference external" href="https://arxiv.org/abs/2203.03668">https
 
 <dl class="py method">
 <dt class="sig sig-object py" id="chmncc.loss.RRR.RRRLoss.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confounded</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_softmax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_eval</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">superclasses_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/loss/RRR.html#RRRLoss.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.loss.RRR.RRRLoss.forward" title="Permalink to this definition"></a></dt>
-<dd><p>Returns (loss, right_answer_loss, right_reason_loss)
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confounded</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_softmax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_eval</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">superclasses_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/loss/RRR.html#RRRLoss.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.loss.RRR.RRRLoss.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Returns (loss, right_answer_loss, right_reason_loss, right_answer_parent, right_answer_children)
 :param X: inputs.
 :param y: ground-truth labels.
 :param expl: explanation annotations masks (ones penalize regions) [is basically the annotation matrix]
 :param logits: model output logits.
-:param confounded: whether the sampleis confounded</p>
+:param confounded: whether the sampleis confounded
+:param use_softmax: use softmax for the predictions
+:param to_eval: evaluation
+:param superclasses_number=20: superclass number</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -173,6 +178,7 @@ DOI: <a class="reference external" href="https://arxiv.org/abs/2203.03668">https
 </section>
 <section id="module-chmncc.loss">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-chmncc.loss" title="Permalink to this heading"></a></h2>
+<p>Modules which contains the RRR loss</p>
 </section>
 </section>
 

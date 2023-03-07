@@ -178,7 +178,17 @@ file label names [List[str]]: subclass label</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="chmncc.utils.utils.cross_entropy_from_softmax">
 <span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">cross_entropy_from_softmax</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">superclasses_number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#cross_entropy_from_softmax"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.cross_entropy_from_softmax" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Build the cross entropy from the softmax operation performed by the networks:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>[</strong><strong>torch.Tensor</strong><strong>]</strong> (<em>outputs</em>) – targets</p></li>
+<li><p><strong>[</strong><strong>torch.Tensor</strong><strong>]</strong> – outputs</p></li>
+<li><p><strong>[</strong><strong>int</strong><strong>]</strong> (<em>superclasses_number</em>) – int</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="chmncc.utils.utils.dotdict">
@@ -196,7 +206,12 @@ file label names [List[str]]: subclass label</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>torch.Tensor</strong><strong>]</strong> (<em>output</em>) – output</p></li>
 <li><p><strong>[</strong><strong>float</strong><strong>]</strong> (<em>prediction_treshold</em>) – threshold for the prediction</p></li>
+<li><p><strong>prediction</strong> (<em>use_softmax</em><em> [</em><em>bool</em><em>] </em><em>use softmax for the</em>) – </p></li>
+<li><p><strong>20</strong> (<em>superclasses_number</em><em> [</em><em>int</em><em>] </em><em>=</em>) – number of superclasses</p></li>
 </ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>forced prediction [torch.Tensor]</p>
 </dd>
 </dl>
 </dd></dl>

@@ -102,20 +102,30 @@
 </section>
 <section id="module-chmncc.early_stopper.early_stopper">
 <span id="chmncc-early-stopper-early-stopper-module"></span><h2>chmncc.early_stopper.early_stopper module<a class="headerlink" href="#module-chmncc.early_stopper.early_stopper" title="Permalink to this heading"></a></h2>
+<p>Just a simple Early Stopper</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="chmncc.early_stopper.early_stopper.EarlyStopper">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.early_stopper.early_stopper.</span></span><span class="sig-name descname"><span class="pre">EarlyStopper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patience</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_delta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/early_stopper/early_stopper.html#EarlyStopper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.early_stopper.early_stopper.EarlyStopper" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>EarlyStopper class</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="chmncc.early_stopper.early_stopper.EarlyStopper.early_stop">
-<span class="sig-name descname"><span class="pre">early_stop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">validation_loss</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/early_stopper/early_stopper.html#EarlyStopper.early_stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.early_stopper.early_stopper.EarlyStopper.early_stop" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">early_stop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">validation_loss</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/chmncc/early_stopper/early_stopper.html#EarlyStopper.early_stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.early_stopper.early_stopper.EarlyStopper.early_stop" title="Permalink to this definition"></a></dt>
+<dd><p>Stop the execution if the patience treshold is reached
+:param validation_loss [int]: validation loss</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>whether to stop [bool]</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
 </section>
 <section id="module-chmncc.early_stopper">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-chmncc.early_stopper" title="Permalink to this heading"></a></h2>
+<p>Module which contains an early stopper</p>
 </section>
 </section>
 

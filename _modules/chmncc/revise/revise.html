@@ -68,7 +68,8 @@
            <div itemprop="articleBody">
              
   <h1>Source code for chmncc.revise.revise</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span></span><span class="sd">&quot;&quot;&quot;Revise model module&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">tqdm</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -126,8 +127,8 @@
 <span class="sd">    Credits: @RoshanRane</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        - folder_where_to_save [str]: where to save the plots</span>
-<span class="sd">        - prefix [str]: image name prefix</span>
+<span class="sd">        folder_where_to_save [str]: where to save the plots</span>
+<span class="sd">        prefix [str]: image name prefix</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">ave_grads</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">max_grads</span> <span class="o">=</span> <span class="p">[]</span>
@@ -198,6 +199,8 @@
 <span class="sd">        gradient_analysis [bool]: whether to analyze the gradients by means of plots</span>
 <span class="sd">        prediction_treshold [float]: threshold used to consider a class as predicted</span>
 <span class="sd">        force_prediction [bool]: force prediction</span>
+<span class="sd">        use_softmax [bool] = False: whether to use softmax</span>
+<span class="sd">        superclasses_number [int] = 20: superclass number</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        loss [float]</span>
@@ -207,6 +210,8 @@
 <span class="sd">        score [float]: area under the precision/recall curve raw</span>
 <span class="sd">        score [float]: area under the precision/recall curve const</span>
 <span class="sd">        right_reason_loss_confounded [float]: cumulative right_reason_loss divided over the number of confounded samples</span>
+<span class="sd">        rigth_answer_parent [Optional[float]] right answer for the parent</span>
+<span class="sd">        rigth_answer_children [Optional[float]] right answer for the children</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">total_train</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="n">comulative_loss</span> <span class="o">=</span> <span class="mf">0.0</span>

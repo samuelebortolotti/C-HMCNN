@@ -770,7 +770,8 @@ def c_hmcnn(
         print("-----------------------------------------------------")
 
         # update scheduler
-        scheduler.step(val_loss)
+        #  scheduler.step(val_loss)
+        scheduler.step()
 
         # early stopping
         if early_stopper.early_stop(val_loss):

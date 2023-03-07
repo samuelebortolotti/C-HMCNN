@@ -574,6 +574,8 @@ def c_hmcnn(
             revise_total_score_raw,
             revise_total_score_const,
             revise_right_reason_loss_confounded,
+            _,
+            _
         ) = revise_step(
             epoch_number=e,
             net=net,
@@ -593,6 +595,8 @@ def c_hmcnn(
             folder_where_to_save=os.environ["IMAGE_FOLDER"],
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
+            use_softmax=use_softmax,
+            superclasses_number=dataloaders["train_set"].n_superclasses,
         )
 
         # validation set
@@ -636,6 +640,8 @@ def c_hmcnn(
             test_revise_total_score_raw,
             test_revise_total_score_const,
             test_revise_right_reason_loss_confounded,
+            _,
+            _,
         ) = revise_step(
             epoch_number=e,
             net=net,
@@ -655,6 +661,8 @@ def c_hmcnn(
             folder_where_to_save=os.environ["IMAGE_FOLDER"],
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
+            use_softmax=use_softmax,
+            superclasses_number=dataloaders["train_set"].n_superclasses,
         )
 
         # save the values in the metrics

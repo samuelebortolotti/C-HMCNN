@@ -233,28 +233,6 @@ def visualize_sample(
         prefix=prefix
     )
 
-    # show the masked gradient
-    #  gradient_to_show, max_value = show_masked_gradient(
-    #      confounder_mask=confounder_mask,
-    #      gradient=gradient,
-    #      debug_folder=debug_folder,
-    #      idx=idx,
-    #      integrated_gradients=integrated_gradients,
-    #      correct_guess=correct_guess,
-    #      prefix=prefix,
-    #  )
-
-    #  overlay_input_gradient(
-    #      gradient_to_show=gradient_to_show,
-    #      single_el=sample_to_save,
-    #      max_value=max_value,
-    #      debug_folder=debug_folder,
-    #      idx=idx,
-    #      integrated_gradients=integrated_gradients,
-    #      correct_guess=correct_guess,
-    #      full=False,
-    #      prefix=prefix
-    #  )
 
 def show_masked_gradient(
     confounder_mask: torch.Tensor,
@@ -772,6 +750,7 @@ def debug(
     prediction_treshold: float,
     force_prediction: bool,
     use_softmax: bool,
+    superclasses_number: int,
     **kwargs: Any
 ) -> None:
     """Method which performs the debug step by fine-tuning the network employing the right for the right reason loss.
@@ -877,6 +856,8 @@ def debug(
             train_total_score_raw,
             train_total_score_const,
             train_right_reason_loss_confounded,
+            train_loss_parent,
+            train_loss_children
         ) = revise_step(
             epoch_number=it,
             net=net,
@@ -891,6 +872,8 @@ def debug(
             folder_where_to_save=debug_folder,
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
+            use_softmax=use_softmax,
+            superclasses_number=superclasses_number
         )
 
         print(
@@ -908,7 +891,7 @@ def debug(
         print("Testing...")
 
         #  # validation set
-        val_loss, val_accuracy, val_score_raw, val_score_const = test_step(
+        val_loss, val_accuracy, val_score_raw, val_score_const, val_loss_parent, val_loss_children = test_step(
             net=net,
             test_loader=iter(debug_test_loader),
             cost_function=cost_function,
@@ -933,6 +916,8 @@ def debug(
             test_score_original_raw,
             test_score_original_const,
             test_right_reason_loss_confounded,
+            test_loss_parent,
+            test_loss_children
         ) = revise_step(
             epoch_number=it,
             net=net,
@@ -948,6 +933,8 @@ def debug(
             have_to_train=False,
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
+            use_softmax=use_softmax,
+            superclasses_number=superclasses_number
         )
 
         print(
@@ -965,7 +952,7 @@ def debug(
         # test set only confounder
         print("Test only:")
 
-        test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_in_train_data_raw, test_conf_score_wo_conf_in_train_data_const = test_step(
+        test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_in_train_data_raw, test_conf_score_wo_conf_in_train_data_const, _, _ = test_step(
             net=net,
             test_loader=iter(for_test_loader_test_only_confounder_wo_conf_in_train_data),
             cost_function=cost_function,
@@ -983,7 +970,7 @@ def debug(
             )
         )
 
-        test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_test_data_raw, test_conf_score_wo_conf_test_data_const = test_step(
+        test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_test_data_raw, test_conf_score_wo_conf_test_data_const, _, _ = test_step(
             net=net,
             test_loader=iter(for_test_loader_test_only_confounder_wo_conf),
             cost_function=cost_function,
@@ -1001,7 +988,7 @@ def debug(
             )
         )
 
-        test_conf_loss, test_conf_accuracy, test_conf_score_only_conf_raw, test_conf_score_only_conf_const = test_step(
+        test_conf_loss, test_conf_accuracy, test_conf_score_only_conf_raw, test_conf_score_only_conf_const, _, _ = test_step(
             net=net,
             test_loader=iter(test_only_confounder),
             cost_function=cost_function,
@@ -1041,35 +1028,46 @@ def debug(
 
         print("-----------------------------------------------------")
 
+        logs = {
+            "train/train_loss": train_total_loss,
+            "train/train_right_anwer_loss": train_total_right_answer_loss,
+            "train/train_right_reason_loss": train_total_right_reason_loss,
+            "train/train_accuracy": train_total_accuracy,
+            "train/train_auprc_raw": train_total_score_raw,
+            "train/train_auprc_const": train_total_score_const,
+            "train/train_confounded_samples_only_right_reason": train_right_reason_loss_confounded,
+            "val/val_loss": val_loss,
+            "val/val_accuracy": val_accuracy,
+            "val/val_auprc_raw": val_score_raw,
+            "val/val_auprc_const": val_score_const,
+            "test/only_training_confounded_classes_without_confounders_auprc_raw": test_conf_score_wo_conf_in_train_data_raw,
+            "test/only_test_confounded_casses_without_confounders_auprc_raw": test_conf_score_wo_conf_test_data_raw,
+            "test/only_test_confounded_classes_auprc_raw": test_conf_score_only_conf_raw,
+            "test/test_loss": test_loss_original,
+            "test/test_right_answer_loss": test_total_right_answer_loss,
+            "test/test_right_reason_loss": test_total_right_reason_loss,
+            "test/test_accuracy": test_accuracy_original,
+            "test/test_auprc_raw": test_score_original_raw,
+            "test/test_auprc_const": test_score_original_const,
+            "learning_rate": get_lr(optimizer),
+        }
+
+        if train_loss_parent is not None and train_loss_children is not None:
+            logs.update({"train/train_right_answer_loss_parent": train_loss_parent})
+            logs.update({"train/train_right_answer_loss_children": train_loss_children})
+
+        if val_loss_parent is not None and val_loss_children is not None:
+            logs.update({"val/val_right_answer_loss_parent": val_loss_parent})
+            logs.update({"val/val_right_answer_loss_children": val_loss_children})
+
+        if test_loss_parent is not None and test_loss_children is not None:
+            logs.update({"test/test_right_answer_loss_parent": test_loss_parent})
+            logs.update({"test/test_right_answer_loss_children": test_loss_children})
+
         # log on wandb if and only if the module is loaded
         if set_wandb:
             wandb.log(
-                {
-                    "train/train_loss": train_total_loss,
-                    "train/train_right_anwer_loss": train_total_right_answer_loss,
-                    "train/train_right_reason_loss": train_total_right_reason_loss,
-                    "train/train_accuracy": train_total_accuracy,
-                    "train/train_auprc_raw": train_total_score_raw,
-                    "train/train_auprc_const": train_total_score_const,
-                    "train/train_confounded_samples_only_right_reason": train_right_reason_loss_confounded,
-                    "val/val_loss": val_loss,
-                    "val/val_accuracy": val_accuracy,
-                    "val/val_auprc_raw": val_score_raw,
-                    "val/val_auprc_const": val_score_const,
-                    "test/only_training_confounded_classes_without_confounders_auprc_raw": test_conf_score_wo_conf_in_train_data_raw,
-                    "test/only_test_confounded_casses_without_confounders_auprc_raw": test_conf_score_wo_conf_test_data_raw,
-                    "test/only_test_confounded_classes_auprc_raw": test_conf_score_only_conf_raw,
-                    #  "test/only_training_confounded_classes_without_confounders_auprc_const": test_conf_score_wo_conf_in_train_data_const,
-                    #  "test/only_test_confounded_casses_without_confounders_auprc_const": test_conf_score_wo_conf_test_data_const,
-                    #  "test/only_test_confounded_classes_auprc_const": test_conf_score_only_conf_const,
-                    "test/test_loss": test_loss_original,
-                    "test/test_right_answer_loss": test_total_right_answer_loss,
-                    "test/test_right_reason_loss": test_total_right_reason_loss,
-                    "test/test_accuracy": test_accuracy_original,
-                    "test/test_auprc_raw": test_score_original_raw,
-                    "test/test_auprc_const": test_score_original_const,
-                    "learning_rate": get_lr(optimizer),
-                }
+                logs
             )
 
         # scheduler step
@@ -1363,7 +1361,7 @@ def main(args: Namespace) -> None:
     cost_function = torch.nn.BCELoss()
 
     # test set
-    test_loss, test_accuracy, test_score_raw, test_score_const = test_step(
+    test_loss, test_accuracy, test_score_raw, test_score_const, _, _ = test_step(
         net=net,
         test_loader=iter(test_loader),
         cost_function=cost_function,
@@ -1392,6 +1390,8 @@ def main(args: Namespace) -> None:
         clf_report,  # classification matrix
         y_test,      # ground-truth for multiclass classification matrix
         y_pred,      # predited values for multiclass classification matrix
+        _,
+        _
     ) = test_step_with_prediction_statistics(
         net=net,
         test_loader=iter(test_loader_with_label_names),
@@ -1470,13 +1470,14 @@ def main(args: Namespace) -> None:
         title="debug", # title of the iterator
         debug_test_loader=val_loader, # validation loader on which to validate the model
         reviseLoss=reviseLoss, # RRR
+        superclasses_number=dataloaders["train_set"].n_superclasses,
         **vars(args) # additional variables
     )
 
     print("After debugging...")
 
     # re-test set
-    test_loss, test_accuracy, test_score_raw, test_score_const = test_step(
+    test_loss, test_accuracy, test_score_raw, test_score_const, _, _ = test_step(
         net=net,
         test_loader=iter(test_loader),
         cost_function=cost_function,
@@ -1505,6 +1506,8 @@ def main(args: Namespace) -> None:
         clf_report,  # classification matrix
         y_test,  # ground-truth for multiclass classification matrix
         y_pred,  # predited values for multiclass classification matrix
+        _,
+        _
     ) = test_step_with_prediction_statistics(
         net=net,
         test_loader=iter(training_loader_with_labels_names),
@@ -1569,6 +1572,8 @@ def main(args: Namespace) -> None:
         clf_report,  # classification matrix
         y_test,  # ground-truth for multiclass classification matrix
         y_pred,  # predited values for multiclass classification matrix
+        _,
+        _
     ) = test_step_with_prediction_statistics(
         net=net,
         test_loader=iter(test_loader_with_label_names),

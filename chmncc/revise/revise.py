@@ -3,7 +3,7 @@ import tqdm
 import torch.nn as nn
 import numpy as np
 from chmncc.utils import dotdict
-from typing import Tuple
+from typing import Tuple, Optional
 from chmncc.utils import get_constr_out, force_prediction_from_batch
 from typing import Union
 from chmncc.loss import RRRLoss, IGRRRLoss
@@ -107,7 +107,11 @@ def revise_step(
     gradient_analysis: bool = False,
     prediction_treshold: float = 0.5,
     force_prediction: bool = False,
-) -> Tuple[float, float, float, float, float, float, float]:
+    use_softmax: bool = False,
+    superclasses_number: int = 20,
+) -> Tuple[
+    float, float, float, float, float, float, float, Optional[float], Optional[float]
+]:
     """Revise step of the network. It integrates the user feedback and revise the network by the means
     of the RRRLoss.
 
@@ -140,6 +144,9 @@ def revise_step(
     cumulative_right_answer_loss = 0.0
     cumulative_right_reason_loss = 0.0
     confounded_samples = 0.0
+
+    cumulative_loss_parent = None
+    cumulative_loss_children = None
 
     # set the network to training mode
     if have_to_train:
@@ -181,12 +188,21 @@ def revise_step(
         ) * constr_output.double() + ground_truth * train_output
 
         # get the loss masking the prediction on the root -> confunder
-        loss, right_answer_loss, right_reason_loss = revive_function(
+        (
+            loss,
+            right_answer_loss,
+            right_reason_loss,
+            loss_parent,
+            loss_children,
+        ) = revive_function(
             X=sample,
-            y=ground_truth[:, train.to_eval],
+            y=ground_truth,
             expl=confounder_mask,
-            logits=train_output[:, train.to_eval],
+            logits=train_output,
             confounded=confounded,
+            use_softmax=use_softmax,
+            to_eval=train.to_eval,
+            superclasses_number=superclasses_number,
         )
 
         # compute the amount of confounded samples
@@ -194,10 +210,21 @@ def revise_step(
 
         if force_prediction:
             predicted = force_prediction_from_batch(
-                constr_output.data, prediction_treshold, False
+                constr_output.data,
+                prediction_treshold,
+                use_softmax,
+                superclasses_number,
             )
         else:
             predicted = constr_output.data > prediction_treshold  # 0.5
+
+        # sum up the losses
+        if loss_parent is not None and loss_children is not None:
+            if cumulative_loss_children is None or cumulative_loss_parent is None:
+                cumulative_loss_children = 0
+                cumulative_loss_parent = 0
+            cumulative_loss_parent += loss_parent.item()
+            cumulative_loss_children += loss_children.item()
 
         # fetch prediction and loss value
         total_train += ground_truth.shape[0] * ground_truth.shape[1]
@@ -265,4 +292,10 @@ def revise_step(
         score_raw,
         score_const,
         cumulative_right_reason_loss / confounded_samples,
+        None
+        if cumulative_loss_parent is None
+        else comulative_loss_parent / len(debug_loader),
+        None
+        if cumulative_loss_children is None
+        else comulative_loss_children / len(debug_loader),
     )

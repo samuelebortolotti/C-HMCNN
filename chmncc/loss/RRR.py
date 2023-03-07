@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from chmncc.explanations import compute_integrated_gradient
 import matplotlib.pyplot as plt
 import numpy as np
+from chmncc.utils import cross_entropy_from_softmax
 
 
 class RRRLoss(nn.Module):
@@ -42,7 +43,17 @@ class RRRLoss(nn.Module):
         self.weight = weight
         self.rr_clipping = rr_clipping
 
-    def forward(self, X, y, expl, logits, confounded):
+    def forward(
+        self,
+        X,
+        y,
+        expl,
+        logits,
+        confounded,
+        use_softmax,
+        to_eval,
+        superclasses_number=20,
+    ):
         """
         Returns (loss, right_answer_loss, right_reason_loss)
         Args:
@@ -52,8 +63,22 @@ class RRRLoss(nn.Module):
             logits: model output logits.
             confounded: whether the sampleis confounded
         """
-        # the normal training loss
-        right_answer_loss = self.base_criterion(logits, y)
+
+        if use_softmax:
+            (
+                right_answer_loss,
+                right_answer_loss_parent,
+                right_answer_loss_children,
+            ) = cross_entropy_from_softmax(y, logits, superclasses_number)
+            logits = logits[:, to_eval]
+            y = y[:, to_eval]
+        else:
+            logits = logits[:, to_eval]
+            y = y[:, to_eval]
+
+            # the normal training loss
+            right_answer_loss = self.base_criterion(logits, y)
+            right_answer_loss_parent, right_answer_loss_children = None, None
 
         # get gradients w.r.t. to the input
         log_prob_ys = F.log_softmax(logits, dim=1)
@@ -93,7 +118,13 @@ class RRRLoss(nn.Module):
 
         res = right_answer_loss + right_reason_loss
 
-        return res, right_answer_loss, right_reason_loss
+        return (
+            res,
+            right_answer_loss,
+            right_reason_loss,
+            right_answer_loss_parent,
+            right_answer_loss_children,
+        )
 
 
 class IGRRRLoss(RRRLoss):
@@ -129,7 +160,17 @@ class IGRRRLoss(RRRLoss):
         """
         super().__init__(net, regularizer_rate, base_criterion, weight, rr_clipping)
 
-    def forward(self, X, y, expl, logits, confounded):
+    def forward(
+        self,
+        X,
+        y,
+        expl,
+        logits,
+        confounded,
+        use_softmax,
+        to_eval,
+        superclasses_number=20,
+    ):
         """
         This one uses the integrated_gradients
         Returns (loss, right_answer_loss, right_reason_loss)
@@ -141,7 +182,22 @@ class IGRRRLoss(RRRLoss):
             confounded: whether the sampleis confounded
         """
         # the normal training loss
-        right_answer_loss = self.base_criterion(logits, y)
+
+        if use_softmax:
+            (
+                right_answer_loss,
+                right_answer_loss_parent,
+                right_answer_loss_children,
+            ) = cross_entropy_from_softmax(y, logits, superclasses_number)
+            logits = logits[:, to_eval]
+            y = y[:, to_eval]
+        else:
+            logits = logits[:, to_eval]
+            y = y[:, to_eval]
+
+            # the normal training loss
+            right_answer_loss = self.base_criterion(logits, y)
+            right_answer_loss_parent, right_answer_loss_children = None, None
 
         # get gradients w.r.t. to the input
         log_prob_ys = F.log_softmax(logits, dim=1)
@@ -207,4 +263,10 @@ class IGRRRLoss(RRRLoss):
 
         res = right_answer_loss + right_reason_loss
 
-        return res, right_answer_loss, right_reason_loss
+        return (
+            res,
+            right_answer_loss,
+            right_reason_loss,
+            right_answer_loss_parent,
+            right_answer_loss_children,
+        )

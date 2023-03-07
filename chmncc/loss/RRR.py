@@ -5,6 +5,7 @@ from chmncc.explanations import compute_integrated_gradient
 import matplotlib.pyplot as plt
 import numpy as np
 from chmncc.utils import cross_entropy_from_softmax
+from typing import Optional, Tuple
 
 
 class RRRLoss(nn.Module):
@@ -24,7 +25,7 @@ class RRRLoss(nn.Module):
         base_criterion=F.cross_entropy,
         weight=None,
         rr_clipping=None,
-    ):
+    ) -> None:
         """
         Args:
             net [nn.Module]: trained neural network
@@ -53,18 +54,22 @@ class RRRLoss(nn.Module):
         use_softmax,
         to_eval,
         superclasses_number=20,
-    ):
+    ) -> Tuple[float, float, float, Optional[float], Optional[float]]:
         """
-        Returns (loss, right_answer_loss, right_reason_loss)
+        Returns (loss, right_answer_loss, right_reason_loss, right_answer_parent, right_answer_children)
         Args:
             X: inputs.
             y: ground-truth labels.
             expl: explanation annotations masks (ones penalize regions) [is basically the annotation matrix]
             logits: model output logits.
             confounded: whether the sampleis confounded
+            use_softmax: use softmax for the predictions
+            to_eval: evaluation
+            superclasses_number=20: superclass number
         """
 
         if use_softmax:
+            # use the softmax crossentropy
             (
                 right_answer_loss,
                 right_answer_loss_parent,
@@ -73,6 +78,7 @@ class RRRLoss(nn.Module):
             logits = logits[:, to_eval]
             y = y[:, to_eval]
         else:
+            # use the basic criterion
             logits = logits[:, to_eval]
             y = y[:, to_eval]
 
@@ -146,7 +152,7 @@ class IGRRRLoss(RRRLoss):
         base_criterion=F.cross_entropy,
         weight=None,
         rr_clipping=None,
-    ):
+    ) -> None:
         """
         Args:
             net: trained neural network
@@ -170,16 +176,18 @@ class IGRRRLoss(RRRLoss):
         use_softmax,
         to_eval,
         superclasses_number=20,
-    ):
+    ) -> Tuple[float, float, float, Optional[float], Optional[float]]:
         """
-        This one uses the integrated_gradients
-        Returns (loss, right_answer_loss, right_reason_loss)
+        Returns (loss, right_answer_loss, right_reason_loss, right_answer_parent, right_answer_children) using integrated gradients
         Args:
             X: inputs.
             y: ground-truth labels.
             expl: explanation annotations masks (ones penalize regions) [is basically the annotation matrix]
             logits: model output logits.
             confounded: whether the sampleis confounded
+            use_softmax: use softmax for the predictions
+            to_eval: evaluation
+            superclasses_number=20: superclass number
         """
         # the normal training loss
 

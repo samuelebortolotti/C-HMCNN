@@ -105,7 +105,8 @@ def load_cifar_dataloaders(
 ) -> Dict[str, Any]:
     r"""
     Load the CIFAR-100 dataloaders
-    according to what has been specified by the arguments
+    according to what has been specified by the arguments.
+    Note that the debug datasets have the confounders by default
 
     Default:
         batch_size [int] = 128

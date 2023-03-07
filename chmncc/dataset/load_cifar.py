@@ -19,7 +19,6 @@ import networkx as nx
 # which node of the hierarchy to skip (root is only a confound)
 to_skip = ["root"]
 
-
 class LoadDataset(Dataset):
     """Reads the given csv file and loads the data."""
 
@@ -110,6 +109,15 @@ class LoadDataset(Dataset):
     def _balance_confounder(
         self, balance_factor_conf_classes: int
     ) -> List[Tuple[str, str, str]]:
+        """Method which is used to physically balance the dataset between confounded and not confounded samples.
+        Even if this function has been implemented, this is not used.
+
+        Args:
+            balance_factor_conf_classes [int]: method used in order to balance the dataset.
+
+        Returns:
+            new_datalist [List[Tuple[str, str, str]]]: list of data which includes the duplicated elements
+        """
         # new datalist
         new_datalist = []
 
@@ -138,6 +146,15 @@ class LoadDataset(Dataset):
     def _no_confounders(
         self, confounders_list: List[Tuple[str, str, str]], phase: str
     ) -> List[Tuple[str, str, str]]:
+        """Method which is used to remove the confounded samples from the datalist
+
+        Args:
+            confounders_list [List[Tuple[str, str, str]]]: list of images which include the confounded data
+            phase [str]: which phase we are in (either train or test)
+
+        Returns:
+            new_datalist [List[Tuple[str, str, str]]]: list of data which do not include the confounded samples
+        """
         filtered = []
         for image, superclass, subclass in confounders_list:
             # check if the sample is confunded
@@ -153,6 +170,15 @@ class LoadDataset(Dataset):
     def _confounders_only(
         self, confounders_list: List[Tuple[str, str, str]], phase: str
     ) -> List[Tuple[str, str, str]]:
+        """Method which is used to keep only the confounded images within the list of data
+
+        Args:
+            confounders_list [List[Tuple[str, str, str]]]: list of images which include the confounded data
+            phase [str]: which phase we are in (either train or test)
+
+        Returns:
+            new_datalist [List[Tuple[str, str, str]]]: list of data which include only the confounded samples
+        """
         filtered = []
         print("Filtering confounders only...")
         for image, superclass, subclass in confounders_list:
@@ -234,14 +260,6 @@ class LoadDataset(Dataset):
         np.ndarray,
     ]:
         """Init param
-
-        Args:
-            csv_path [str]: cifar CSV
-            cifar_metafile [str]: meta file of CIFAR
-            image_size [int] = 32: size of the image (same width and height)
-            image_depth [int] = 3: number of channels of the images
-            return_label [bool] = True: whether to return labels
-            transform [Any] = None: torchvision transformation
 
         Returns:
             nodes [nx.classes.reportviews.NodeView]: nodes of the graph

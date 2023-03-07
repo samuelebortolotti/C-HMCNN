@@ -26,7 +26,6 @@ class AlexNet(nn.Module):
             constrained_layer: [bool]: whether to use the constrained output approach from Giunchiglia et al.
             dropout [float] = 0
             pretrained [bool] = False
-            feature_extractor [bool] = False
         """
         super().__init__()
         self.R = R  # matrix of the hierarchy
@@ -84,9 +83,9 @@ class AlexNet(nn.Module):
         r"""
         Forward method
         Args:
-        - x [torch.Tensor]: source sample
+            x [torch.Tensor]: source sample
         Returns:
-        - prediction [torch.Tensor]: prediction
+            prediction [torch.Tensor]: prediction
         """
         x = self.features(x)
         x = self.avgpool(x)

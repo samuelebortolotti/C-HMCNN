@@ -1,3 +1,4 @@
+"""Model which provides the debugging facility to the model"""
 from argparse import _SubParsersAction as Subparser
 from argparse import Namespace
 from numpy.lib.function_base import iterable
@@ -144,7 +145,6 @@ def visualize_sample(
     debug_folder: str,
     idx: int,
     integrated_gradients: bool,
-    confounder_mask: torch.Tensor,
     superclass: str,
     subclass: str,
     dataloaders: Dict[str, Any],
@@ -162,7 +162,6 @@ def visualize_sample(
         debug_folder [str]: folder where to store the data
         idx [int]: idex of the element to save
         integrated_gradients [bool]: whether to use integrated gradiends
-        confounder_mask [torch.Tensor]: confounder mask
         superclass [str]: superclass of the sample
         subclass [str]: subclass of the sample
         dataloaders [Dict[str, Any]]: dataloaders
@@ -252,6 +251,7 @@ def show_masked_gradient(
         idx [int]: idex of the element to save
         integrated_gradients [bool]: whether to use integrated gradiends
         correct_guess [bool]: whether the sample has been guessed correctly
+        prefix [str]: prefix of the image name to be saved
     """
 
     # get the gradient
@@ -303,7 +303,20 @@ def overlay_input_gradient(
     correct_guess: bool,
     prefix: str,
     full: bool
-):
+) -> None:
+    """Overlay the input gradient over the base grayscale image
+
+    Args:
+        gradient_to_show [torch.Tensor]: gradient to show
+        single_el [torch.Tensor]: element to show
+        max_value [float]: max value of the gradient
+        debug_folder [str]: folder where to save the images
+        idx [int]: index of the image
+        integrated_gradients [bool]: whether we are asking to addd the integrated gradient
+        prefix [str]: prefix of the image
+        full [bool]: full
+    """
+
     # norm color
     norm = matplotlib.colors.Normalize(
         vmin=0, vmax=max_value
@@ -469,7 +482,6 @@ def save_some_confounded_samples(
                     folder,
                     counter,
                     integrated_gradients,
-                    confounder_mask[i],
                     superclass[i],
                     subclass[i],
                     dataloaders,

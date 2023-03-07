@@ -1,3 +1,4 @@
+"""Train module"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -51,6 +52,8 @@ def training_step(
         accuracy [float] in percentange
         au prc raw [float]
         au prc const [float]
+        rigth_answer_parent [Optional[float]] right answer for the parent
+        rigth_answer_children [Optional[float]] right answer for the children
     """
     total_train = 0.0
     cumulative_loss = 0.0

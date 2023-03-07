@@ -53,6 +53,7 @@ from chmncc.optimizers import (
     get_adam_optimizer,
     get_exponential_scheduler,
     get_sgd_optimizer,
+    get_step_lr_scheduler,
     get_plateau_scheduler,
 )
 from chmncc.test import test_step, test_step_with_prediction_statistics
@@ -519,7 +520,7 @@ def c_hmcnn(
     optimizer = get_adam_optimizer(net, learning_rate, weight_decay=weight_decay)
 
     # scheduler
-    scheduler = get_plateau_scheduler(optimizer=optimizer, patience=patience)
+    scheduler = get_step_lr_scheduler(optimizer=optimizer, step_size=15, gamma=0.1) # get_plateau_scheduler(optimizer=optimizer, patience=patience)
 
     # define the cost function
     cost_function = torch.nn.BCELoss()

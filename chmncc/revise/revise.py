@@ -1,3 +1,4 @@
+"""Revise model module"""
 import torch
 import tqdm
 import torch.nn as nn
@@ -56,8 +57,8 @@ def show_gradient_behavior(
     Credits: @RoshanRane
 
     Args:
-        - folder_where_to_save [str]: where to save the plots
-        - prefix [str]: image name prefix
+        folder_where_to_save [str]: where to save the plots
+        prefix [str]: image name prefix
     """
     ave_grads = []
     max_grads = []
@@ -128,6 +129,8 @@ def revise_step(
         gradient_analysis [bool]: whether to analyze the gradients by means of plots
         prediction_treshold [float]: threshold used to consider a class as predicted
         force_prediction [bool]: force prediction
+        use_softmax [bool] = False: whether to use softmax
+        superclasses_number [int] = 20: superclass number
 
     Returns:
         loss [float]
@@ -137,6 +140,8 @@ def revise_step(
         score [float]: area under the precision/recall curve raw
         score [float]: area under the precision/recall curve const
         right_reason_loss_confounded [float]: cumulative right_reason_loss divided over the number of confounded samples
+        rigth_answer_parent [Optional[float]] right answer for the parent
+        rigth_answer_children [Optional[float]] right answer for the children
     """
     total_train = 0.0
     comulative_loss = 0.0

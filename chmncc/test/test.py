@@ -1,3 +1,4 @@
+"""Test module"""
 import torch
 import torch.nn as nn
 from typing import Tuple, Dict, List, Optional
@@ -60,6 +61,8 @@ def test_step(
         cumulative_accuracy [float] accuracy on the test set in percentage
         score [float] area under the precision-recall curve raw
         score [float] area under the precision-recall curve const
+        rigth_answer_parent [Optional[float]] right answer for the parent
+        rigth_answer_children [Optional[float]] right answer for the children
     """
     total = 0.0
     cumulative_loss = 0.0
@@ -238,6 +241,8 @@ def test_step_with_prediction_statistics(
         clf_report Dict[str, float]: confusion matrix statistics
         ground_truth ndarray: ground_truth predictions
         prediction ndarray: predictions
+        rigth_answer_parent [Optional[float]] right answer for the parent
+        rigth_answer_children [Optional[float]] right answer for the children
     """
     total = 0.0
     cumulative_loss = 0.0

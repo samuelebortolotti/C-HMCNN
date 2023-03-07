@@ -32,7 +32,7 @@ class LeNet7(nn.Module):
             num_out_logits [int]: number of output logits
             constrained_layer [bool]: whether to use the constrained output approach from Giunchiglia et al.
             superclasses_number [int]: superclass number
-            use_softmax: [bool]: use softmax
+            use_softmax: [bool]: use softmax in the prediction phase
         """
         super().__init__()
         self.R = R  # matrix of the hierarchy

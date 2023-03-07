@@ -37,6 +37,10 @@ class MLP(nn.Module):
             constrained_layer: [bool]: whether to use the constrained output approach from Giunchiglia et al.
             superclasses_number [int]: superclass number
             use_softmax: [bool]: use softmax
+            img_width [int] = 32: width of the images
+            img_height [int] = 32: height of the images
+            channels [int] = 3: channel numbers
+            dropout [float] = 0.10: dropout rate
         """
         super().__init__()
         self.R = R  # matrix of the hierarchy

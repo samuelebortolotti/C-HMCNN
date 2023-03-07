@@ -470,6 +470,11 @@ def force_prediction_from_batch(
     Args:
       output [torch.Tensor]: output
       prediction_treshold [float]: threshold for the prediction
+      use_softmax [bool] use softmax for the prediction
+      superclasses_number [int] = 20: number of superclasses
+
+    Returns:
+      forced prediction [torch.Tensor]
     """
     new_output = list()
     for pred in output:
@@ -501,6 +506,13 @@ def force_prediction_from_batch(
 def cross_entropy_from_softmax(
     targets: torch.Tensor, outputs: torch.Tensor, superclasses_number: int
 ) -> Tuple[float, float, float]:
+    """Build the cross entropy from the softmax operation performed by the networks:
+
+    Args:
+        targets [torch.Tensor]: targets
+        outputs [torch.Tensor]: outputs
+        superclasses_number [int]: int
+    """
     _, inds_0 = torch.max(targets[:, 1 : superclasses_number + 1], dim=1)
     loss_1 = F.nll_loss(torch.log(outputs[:, 1 : superclasses_number + 1]), inds_0)
     _, inds_1 = torch.max(targets[:, superclasses_number + 1 :], dim=1)

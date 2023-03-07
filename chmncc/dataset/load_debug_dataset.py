@@ -1,3 +1,4 @@
+"""Pytorch dataset which returns data correlated to the placed confounder"""
 import torch
 from torch.utils.data import Dataset
 from typing import Tuple
@@ -30,6 +31,9 @@ class LoadDebugDataset(Dataset):
         self, idx: int
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, bool, str, str]:
         """
+        Args:
+            idx [int]: index of the elment to be returned
+
         Returns the data, specifically:
             element: train sample
             hierarchical_label: hierarchical label

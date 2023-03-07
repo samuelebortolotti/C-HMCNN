@@ -11,6 +11,7 @@ def get_adam_optimizer(
     Args:
         net [nn.Module]: network architecture
         lr [float]: learning rate
+        weight_decay [float]: weight_decay
     Returns:
         optimizer [nn.Optimizer]
     """

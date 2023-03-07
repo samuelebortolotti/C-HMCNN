@@ -596,7 +596,7 @@ def c_hmcnn(
         )
 
         # validation set
-        val_loss, val_accuracy, val_score_raw, val_score_const, _, _ = test_step(
+        val_loss, val_accuracy, val_score_raw, val_score_const, val_loss_parent, val_loss_children = test_step(
             net=net,
             test_loader=iter(val_loader),
             cost_function=cost_function,
@@ -615,7 +615,7 @@ def c_hmcnn(
         metrics["score"]["val"] = train_accuracy
 
         # test values
-        test_loss, test_accuracy, test_score_raw, test_score_const, _, _ = test_step(
+        test_loss, test_accuracy, test_score_raw, test_score_const, test_loss_parent, test_loss_children = test_step(
             net=net,
             test_loader=iter(test_loader),
             cost_function=cost_function,
@@ -723,7 +723,7 @@ def c_hmcnn(
             "train/train_accuracy": train_accuracy,
             "train/train_auprc_raw": train_au_prc_score_raw,
             "train/train_auprc_const": train_au_prc_score_const,
-            "test/train_right_reason": revise_total_right_reason_loss,
+            "test/train_right_reason_loss": revise_total_right_reason_loss,
             "val/val_loss": val_loss,
             "val/val_accuracy": val_accuracy,
             "val/val_auprc_raw": val_score_raw,
@@ -734,12 +734,20 @@ def c_hmcnn(
             "test/test_accuracy": test_accuracy,
             "test/test_auprc_raw": test_score_raw,
             "test/test_auprc_const": test_score_const,
-            "test/test_right_reason": test_revise_total_right_reason_loss,
+            "test/test_right_reason_loss": test_revise_total_right_reason_loss,
         }
 
         if train_loss_parent is not None and train_loss_children is not None:
             logs.update({"train/train_right_answer_loss_parent": train_loss_parent})
             logs.update({"train/train_right_answer_loss_children": train_loss_children})
+
+        if val_loss_parent is not None and val_loss_children is not None:
+            logs.update({"val/val_right_answer_loss_parent": val_loss_parent})
+            logs.update({"val/val_right_answer_loss_children": val_loss_children})
+
+        if test_loss_parent is not None and test_loss_children is not None:
+            logs.update({"test/test_right_answer_loss_parent": test_loss_parent})
+            logs.update({"test/test_right_answer_loss_children": test_loss_children})
 
         if set_wandb:
             wandb.log(logs)
@@ -988,7 +996,6 @@ def c_hmcnn(
                     use_softmax,
                     dataloaders["train_set"].n_superclasses,
                 )
-                print(predicted_1_0)
             else:
                 predicted_1_0 = preds.data > prediction_treshold
 

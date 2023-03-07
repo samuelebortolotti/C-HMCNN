@@ -74,6 +74,7 @@
 <span class="kn">from</span> <span class="nn">chmncc.explanations</span> <span class="kn">import</span> <span class="n">compute_integrated_gradient</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">chmncc.utils</span> <span class="kn">import</span> <span class="n">cross_entropy_from_softmax</span>
 
 
 <div class="viewcode-block" id="RRRLoss"><a class="viewcode-back" href="../../../chmncc.loss.html#chmncc.loss.RRR.RRRLoss">[docs]</a><span class="k">class</span> <span class="nc">RRRLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -112,7 +113,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rr_clipping</span> <span class="o">=</span> <span class="n">rr_clipping</span>
 
-<div class="viewcode-block" id="RRRLoss.forward"><a class="viewcode-back" href="../../../chmncc.loss.html#chmncc.loss.RRR.RRRLoss.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">expl</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">confounded</span><span class="p">):</span>
+<div class="viewcode-block" id="RRRLoss.forward"><a class="viewcode-back" href="../../../chmncc.loss.html#chmncc.loss.RRR.RRRLoss.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">X</span><span class="p">,</span>
+        <span class="n">y</span><span class="p">,</span>
+        <span class="n">expl</span><span class="p">,</span>
+        <span class="n">logits</span><span class="p">,</span>
+        <span class="n">confounded</span><span class="p">,</span>
+        <span class="n">use_softmax</span><span class="p">,</span>
+        <span class="n">to_eval</span><span class="p">,</span>
+        <span class="n">superclasses_number</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns (loss, right_answer_loss, right_reason_loss)</span>
 <span class="sd">        Args:</span>
@@ -122,8 +133,22 @@
 <span class="sd">            logits: model output logits.</span>
 <span class="sd">            confounded: whether the sampleis confounded</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># the normal training loss</span>
-        <span class="n">right_answer_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_criterion</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_softmax</span><span class="p">:</span>
+            <span class="p">(</span>
+                <span class="n">right_answer_loss</span><span class="p">,</span>
+                <span class="n">right_answer_loss_parent</span><span class="p">,</span>
+                <span class="n">right_answer_loss_children</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="n">cross_entropy_from_softmax</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">superclasses_number</span><span class="p">)</span>
+            <span class="n">logits</span> <span class="o">=</span> <span class="n">logits</span><span class="p">[:,</span> <span class="n">to_eval</span><span class="p">]</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="n">to_eval</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logits</span> <span class="o">=</span> <span class="n">logits</span><span class="p">[:,</span> <span class="n">to_eval</span><span class="p">]</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="n">to_eval</span><span class="p">]</span>
+
+            <span class="c1"># the normal training loss</span>
+            <span class="n">right_answer_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_criterion</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+            <span class="n">right_answer_loss_parent</span><span class="p">,</span> <span class="n">right_answer_loss_children</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
         <span class="c1"># get gradients w.r.t. to the input</span>
         <span class="n">log_prob_ys</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -163,7 +188,13 @@
 
         <span class="n">res</span> <span class="o">=</span> <span class="n">right_answer_loss</span> <span class="o">+</span> <span class="n">right_reason_loss</span>
 
-        <span class="k">return</span> <span class="n">res</span><span class="p">,</span> <span class="n">right_answer_loss</span><span class="p">,</span> <span class="n">right_reason_loss</span></div></div>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">res</span><span class="p">,</span>
+            <span class="n">right_answer_loss</span><span class="p">,</span>
+            <span class="n">right_reason_loss</span><span class="p">,</span>
+            <span class="n">right_answer_loss_parent</span><span class="p">,</span>
+            <span class="n">right_answer_loss_children</span><span class="p">,</span>
+        <span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="IGRRRLoss"><a class="viewcode-back" href="../../../chmncc.loss.html#chmncc.loss.RRR.IGRRRLoss">[docs]</a><span class="k">class</span> <span class="nc">IGRRRLoss</span><span class="p">(</span><span class="n">RRRLoss</span><span class="p">):</span>
@@ -199,7 +230,17 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">regularizer_rate</span><span class="p">,</span> <span class="n">base_criterion</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">rr_clipping</span><span class="p">)</span>
 
-<div class="viewcode-block" id="IGRRRLoss.forward"><a class="viewcode-back" href="../../../chmncc.loss.html#chmncc.loss.RRR.IGRRRLoss.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">expl</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">confounded</span><span class="p">):</span>
+<div class="viewcode-block" id="IGRRRLoss.forward"><a class="viewcode-back" href="../../../chmncc.loss.html#chmncc.loss.RRR.IGRRRLoss.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">X</span><span class="p">,</span>
+        <span class="n">y</span><span class="p">,</span>
+        <span class="n">expl</span><span class="p">,</span>
+        <span class="n">logits</span><span class="p">,</span>
+        <span class="n">confounded</span><span class="p">,</span>
+        <span class="n">use_softmax</span><span class="p">,</span>
+        <span class="n">to_eval</span><span class="p">,</span>
+        <span class="n">superclasses_number</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This one uses the integrated_gradients</span>
 <span class="sd">        Returns (loss, right_answer_loss, right_reason_loss)</span>
@@ -211,7 +252,22 @@
 <span class="sd">            confounded: whether the sampleis confounded</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># the normal training loss</span>
-        <span class="n">right_answer_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_criterion</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_softmax</span><span class="p">:</span>
+            <span class="p">(</span>
+                <span class="n">right_answer_loss</span><span class="p">,</span>
+                <span class="n">right_answer_loss_parent</span><span class="p">,</span>
+                <span class="n">right_answer_loss_children</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="n">cross_entropy_from_softmax</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">superclasses_number</span><span class="p">)</span>
+            <span class="n">logits</span> <span class="o">=</span> <span class="n">logits</span><span class="p">[:,</span> <span class="n">to_eval</span><span class="p">]</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="n">to_eval</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logits</span> <span class="o">=</span> <span class="n">logits</span><span class="p">[:,</span> <span class="n">to_eval</span><span class="p">]</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="n">to_eval</span><span class="p">]</span>
+
+            <span class="c1"># the normal training loss</span>
+            <span class="n">right_answer_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_criterion</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+            <span class="n">right_answer_loss_parent</span><span class="p">,</span> <span class="n">right_answer_loss_children</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
         <span class="c1"># get gradients w.r.t. to the input</span>
         <span class="n">log_prob_ys</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -277,7 +333,13 @@
 
         <span class="n">res</span> <span class="o">=</span> <span class="n">right_answer_loss</span> <span class="o">+</span> <span class="n">right_reason_loss</span>
 
-        <span class="k">return</span> <span class="n">res</span><span class="p">,</span> <span class="n">right_answer_loss</span><span class="p">,</span> <span class="n">right_reason_loss</span></div></div>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">res</span><span class="p">,</span>
+            <span class="n">right_answer_loss</span><span class="p">,</span>
+            <span class="n">right_reason_loss</span><span class="p">,</span>
+            <span class="n">right_answer_loss_parent</span><span class="p">,</span>
+            <span class="n">right_answer_loss_children</span><span class="p">,</span>
+        <span class="p">)</span></div></div>
 </pre></div>
 
            </div>

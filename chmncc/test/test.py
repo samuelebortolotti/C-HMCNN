@@ -125,7 +125,9 @@ def test_step(
 
             # loss computation
             if use_softmax:
-                loss, loss_parent, loss_children = cross_entropy_from_softmax(targets, outputs, superclasses_number)
+                loss, loss_parent, loss_children = cross_entropy_from_softmax(
+                    targets, outputs, superclasses_number
+                )
             else:
                 loss = cost_function(outputs.double(), targets)
                 loss_parent, loss_children = None, None
@@ -206,7 +208,7 @@ def test_step_with_prediction_statistics(
     np.ndarray,
     np.ndarray,
     Optional[float],
-    Optional[float]
+    Optional[float],
 ]:
     r"""Test function for the network.
     It computes the accuracy together with the area under the precision-recall-curve as a metric
@@ -277,7 +279,9 @@ def test_step_with_prediction_statistics(
 
             # loss computation
             if use_softmax:
-                loss, loss_parent, loss_children = cross_entropy_from_softmax(targets, outputs, superclasses_number)
+                loss, loss_parent, loss_children = cross_entropy_from_softmax(
+                    targets, outputs, superclasses_number
+                )
             else:
                 loss = cost_function(outputs.double(), targets)
                 loss_parent, loss_children = None, None

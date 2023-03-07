@@ -455,3 +455,20 @@ def get_named_label_predictions(
         if nodes[idx] not in to_skip and hierarchical_label[idx] > 0.5:
             names.append(nodes[idx])
     return names
+
+
+def get_named_label_predictions_with_indexes(
+    hierarchical_label: torch.Tensor, nodes: List[str]
+) -> Dict[int, str]:
+    """Retrive the named predictions from the hierarchical ones
+    Args:
+        hierarchical_label [torch.Tensor]: label prediction
+        nodes: List[str]: list of nodes
+    Returns:
+        named_predictions
+    """
+    names = {}
+    for idx in range(len(hierarchical_label)):
+        if nodes[idx] not in to_skip and hierarchical_label[idx] > 0.5:
+            names.update({idx: nodes[idx]})
+    return names

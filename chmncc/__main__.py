@@ -61,6 +61,7 @@ from chmncc.dataset import (
     load_cifar_dataloaders,
     get_named_label_predictions,
     LoadDebugDataset,
+    get_named_label_predictions_with_indexes
 )
 import chmncc.dataset.preproces_cifar as data
 import chmncc.debug.debug as debug
@@ -403,6 +404,13 @@ def c_hmcnn(
             fixed_confounder=fixed_confounder,
         )
 
+    # To see the correlation between indexes and classes
+    #  predicted_1_0 = torch.ones(121)  # torch.ones(121, 1)
+    #  named_prediction = get_named_label_predictions_with_indexes(
+    #      predicted_1_0, dataloaders["test_set"].get_nodes()
+    #  )
+    #  print(named_prediction)
+
     # network initialization
     if old_method:  # Giunchiglia et al method
         data = dataset.split("_")[0]  # first part is the data
@@ -558,7 +566,6 @@ def c_hmcnn(
         metrics["acc"]["train"] = train_accuracy
         metrics["score"]["train"] = train_au_prc_score_const
 
-        # mettere qua il revise step
         (
             revise_total_loss,
             revise_total_right_answer_loss,
@@ -815,7 +822,7 @@ def c_hmcnn(
             y_test,  # ground-truth for multiclass classification matrix
             y_pred,  # predited values for multiclass classification matrix
             _,
-            _
+            _,
         ) = test_step_with_prediction_statistics(
             net=net,
             test_loader=iter(training_loader_with_labels_names),
@@ -884,7 +891,7 @@ def c_hmcnn(
             y_test,  # ground-truth for multiclass classification matrix
             y_pred,  # predited values for multiclass classification matrix
             _,
-            _
+            _,
         ) = test_step_with_prediction_statistics(
             net=net,
             test_loader=iter(test_loader_with_label_names),
@@ -981,6 +988,7 @@ def c_hmcnn(
                     use_softmax,
                     dataloaders["train_set"].n_superclasses,
                 )
+                print(predicted_1_0)
             else:
                 predicted_1_0 = preds.data > prediction_treshold
 

@@ -545,17 +545,11 @@
     <span class="k">for</span> <span class="n">pred</span> <span class="ow">in</span> <span class="n">output</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">use_softmax</span><span class="p">:</span>
             <span class="n">tmp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
-            <span class="c1">#  tmp[1 : superclasses_number + 1] = (</span>
-            <span class="c1">#      pred[1 : superclasses_number + 1].data &gt; 1.0 / superclasses_number</span>
-            <span class="c1">#  )</span>
-            <span class="c1">#  tmp[superclasses_number + 1 :] = pred[</span>
-            <span class="c1">#      superclasses_number + 1 :</span>
-            <span class="c1">#  ].data &gt; 1.0 / (tmp.shape[0] - 1 - superclasses_number)</span>
             <span class="n">parent</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="mi">1</span> <span class="p">:</span> <span class="n">superclasses_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
             <span class="n">child</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="n">superclasses_number</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:])</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
             <span class="n">tmp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
-            <span class="n">tmp</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">tmp</span><span class="p">[</span><span class="n">child</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">tmp</span><span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">parent</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">tmp</span><span class="p">[</span><span class="n">superclasses_number</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">child</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">tmp</span> <span class="o">=</span> <span class="n">pred</span> <span class="o">&gt;</span> <span class="n">prediction_treshold</span>
             <span class="k">if</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>

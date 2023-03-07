@@ -731,7 +731,7 @@ def c_hmcnn(
             "train/train_accuracy": train_accuracy,
             "train/train_auprc_raw": train_au_prc_score_raw,
             "train/train_auprc_const": train_au_prc_score_const,
-            "test/train_right_reason_loss": revise_total_right_reason_loss,
+            "train/train_right_reason_loss": revise_total_right_reason_loss,
             "val/val_loss": val_loss,
             "val/val_accuracy": val_accuracy,
             "val/val_auprc_raw": val_score_raw,

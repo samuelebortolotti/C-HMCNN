@@ -1,0 +1,105 @@
+"""Pytorch dataset loading script.
+Implementation taken from https://github.com/Ugenteraan/Deep_Hierarchical_Classification/blob/main/load_dataset.py
+"""
+
+import string
+import torch
+import numpy as np
+from torch.utils.data import Dataset
+from chmncc.dataset.load_dataset import LoadDataset
+from typing import Any
+from chmncc.config import mnist_hierarchy
+from typing import List
+import networkx as nx
+
+
+class LoadMnist(LoadDataset):
+    """Reads the given csv file and loads the data."""
+
+    even_digits: List[str] = ["2", "4", "6", "8"]
+    odd_digits: List[str] = ["1", "3", "5", "7", "9"]
+    lowercase_letters: List[str] = list(string.ascii_lowercase)
+    uppercase_letters: List[str] = list(string.ascii_uppercase)
+
+    def __init__(
+        self,
+        dataset: Dataset,
+        return_label: bool = True,
+        transform: Any = None,
+        name_labels: bool = False,
+        confunders_position: bool = False,
+        only_confounders: bool = False,
+        confund: bool = True,
+        train: bool = True,
+        no_confounders: bool = False,
+        fixed_confounder: bool = False,
+        **kwargs,
+    ):
+        """Init param"""
+
+        self.dataset_type = "mnist"
+        self.image_size = dataset.data.shape[1]
+        self.image_depth = 1
+        self.return_label = return_label
+        self.confunders_position = confunders_position
+        self.transform = transform
+        self.imgs_are_strings = False
+
+        self.data_list = list()
+        for i in range(dataset.data.shape[0]):
+            self.data_list.append(
+                (
+                    dataset.data[i].numpy(),
+                    self.create_hierarchy(dataset.classes[dataset.targets[i]]),
+                    dataset.classes[dataset.targets[i]],
+                )
+            )
+
+        self.fine_labels = [
+            "lowercase_letter",
+            "lowercase_letter",
+            "odd_digit",
+            "even_digit",
+        ]
+        self.coarse_labels = self.fine_labels
+        self.name_labels = name_labels
+        self.fixed_confounder = fixed_confounder
+
+        # compliant with Giunchiglia code
+        self.g = nx.DiGraph()
+        self.nodes, self.nodes_idx, self.A = self._initializeHierarchicalGraph("mnist")
+        self.n_superclasses = len(mnist_hierarchy.items())
+        # keep the name of the nodes without the one of the root.
+        self.nodes_names_without_root = self.nodes[1:]
+        self.to_eval = torch.tensor(
+            [t not in self.to_skip for t in self.nodes], dtype=torch.bool
+        )
+
+        # set whether to confund
+        self.confund = confund
+        # whether to have only confounders
+        self.only_confounders = only_confounders
+        # whether we are in the training phase
+        self.train = train
+
+        # filter the data according to the confounders
+        if only_confounders:
+            self.data_list = self._confounders_only(
+                self.data_list, "train" if self.train else "test"
+            )
+        elif no_confounders:
+            self.data_list = self._no_confounders(
+                self.data_list, "train" if self.train else "test"
+            )
+
+    def create_hierarchy(self, label: str) -> str:
+        if label in self.lowercase_letters:
+            return "lowercase_letter"
+        elif label in self.uppercase_letters:
+            return "uppercase_letter"
+        elif label in self.odd_digits:
+            return "odd_digit"
+        elif label in self.even_digits:
+            return "even_digit"
+        else:
+            return "unknown"

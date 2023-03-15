@@ -3,8 +3,8 @@ import torchvision
 import matplotlib.pyplot as plt
 from argparse import _SubParsersAction as Subparser
 from argparse import Namespace
-from chmncc.dataset import load_cifar_dataloaders, get_named_label_predictions
-from chmncc.config import confunders
+from chmncc.dataset import load_dataloaders, get_named_label_predictions
+from chmncc.config import cifar_confunders, mnist_confunders
 from typing import List
 
 
@@ -32,11 +32,19 @@ def configure_subparsers(subparsers: Subparser) -> None:
         help="whether to show the dataset retrieved in training mode",
     )
     parser.add_argument(
-        "--only-confunders",
+        "--only-confounders",
         "-oc",
         type=bool,
         default=False,
-        help="whether to show images with confunder only",
+        help="whether to show images with confounder only",
+    )
+    parser.add_argument(
+        "--dataset",
+        "-d",
+        type=str,
+        default="cifar",
+        choices=["cifar", "mnist"],
+        help="whether to use mnist dataset",
     )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(func=main)
@@ -47,8 +55,9 @@ def visualize_train_datasets(
     nodes: List[str],
     phase: str,
     num_images: int,
+    dataset: str,
     rows: int = 4,
-    only_confunders: bool = False,
+    only_confounders: bool = False,
 ) -> None:
     r"""
     Show the data from the dataloader
@@ -72,7 +81,11 @@ def visualize_train_datasets(
 
     train_iter = iter(train_loader)
 
-    if only_confunders:
+    confounders = cifar_confunders
+    if dataset == "mnist":
+        confounders = mnist_confunders
+
+    if only_confounders:
         data_source, labels = [], []
         # fill the data
         while len(data_source) < num_images:
@@ -85,12 +98,12 @@ def visualize_train_datasets(
             for i in range(len(label_names)):
                 superclass, subclass = label_names[i]
                 # skip the data not confunded
-                if not superclass in confunders:
+                if not superclass in confounders:
                     continue
                 # set the data
-                for j in range(len(confunders[superclass][phase])):
+                for j in range(len(confounders[superclass][phase])):
                     # skip invalid subclasses
-                    if not subclass in confunders[superclass][phase][j]["subclass"]:
+                    if not subclass in confounders[superclass][phase][j]["subclass"]:
                         continue
                     # add the correct data
                     data_source.append(tmp_data_source[i])
@@ -146,7 +159,8 @@ def main(args: Namespace) -> None:
 
     # Load dataloaders
     print("Load dataloaders...")
-    dataloaders = load_cifar_dataloaders(
+    dataloaders = load_dataloaders(
+        dataset_type=args.dataset,
         img_size=32,
         img_depth=3,
         csv_path="./dataset/train.csv",
@@ -171,5 +185,10 @@ def main(args: Namespace) -> None:
     # visualize
     print("Visualizing...")
     visualize_train_datasets(
-        dataloader, nodes, phase, args.batch_size, only_confunders=args.only_confunders
+        dataloader,
+        nodes,
+        phase,
+        args.batch_size,
+        only_confounders=args.only_confounders,
+        dataset=args.dataset,
     )

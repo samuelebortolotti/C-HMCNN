@@ -7,10 +7,10 @@ import os
 import torch.nn as nn
 from torch.nn.modules.loss import BCELoss
 from chmncc.networks import ResNet18, LeNet5, LeNet7, AlexNet, MLP
-from chmncc.config import hierarchy
+from chmncc.config import cifar_hierarchy, mnist_hierarchy
 from chmncc.utils.utils import force_prediction_from_batch, load_last_weights, load_best_weights, grouped_boxplot, plot_confusion_matrix_statistics, plot_global_multiLabel_confusion_matrix, get_lr
 from chmncc.dataset import (
-    load_cifar_dataloaders,
+    load_dataloaders,
     get_named_label_predictions,
     LoadDebugDataset
 )
@@ -26,7 +26,6 @@ import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
 import scipy.stats
-import cv2
 from sklearn.linear_model import RidgeClassifier
 from torchsummary import summary
 from itertools import tee
@@ -90,9 +89,10 @@ def save_sample(
     )
 
     # extract parent and children prediction
-    parents = hierarchy.keys()
+    # TODO change
+    parents = cifar_hierarchy.keys()
     children = [
-        element for element_list in hierarchy.values() for element in element_list
+        element for element_list in cifar_hierarchy.values() for element in element_list
     ]
     parent_predictions = list(filter(lambda x: x in parents, named_prediction))
     children_predictions = list(filter(lambda x: x in children, named_prediction))
@@ -115,7 +115,10 @@ def save_sample(
 
     # get figure
     fig = plt.figure()
-    plt.imshow(single_el_show)
+    if single_el_show.shape[2] == 1:
+        plt.imshow(single_el_show, cmap="gray")
+    else:
+        plt.imshow(single_el_show)
     plt.title(
         "Groundtruth superclass: {} \nGroundtruth subclass: {}\n\n{}".format(
             superclass, subclass, prediction_text
@@ -1264,6 +1267,9 @@ def configure_subparsers(subparsers: Subparser) -> None:
         action="store_true",
         help="Force the confounder position to use softmax as loss",
     )
+    parser.add_argument(
+        "--dataset", type=str, default="cifar", choices=["mnist", "cifar"], help="dataset to use"
+    )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False, constrained_layer=True, force_prediction=False, fixed_confounder=False, use_softmax=False)
 
@@ -1290,13 +1296,22 @@ def main(args: Namespace) -> None:
 
     # img_size
     img_size = 32
+    img_depth = 3
+    output_classes = 121
+
+    if args.dataset == "mnist":
+        img_size = 28
+        img_depth = 1
+        output_classes = 67
+
     if args.network == "alexnet":
         img_size = 224
 
     # Load dataloaders
-    dataloaders = load_cifar_dataloaders(
+    dataloaders = load_dataloaders(
+        dataset_type=args.dataset,
         img_size=img_size,  # the size is squared
-        img_depth=3,  # number of channels
+        img_depth=img_depth,  # number of channels
         device=args.device,
         csv_path="./dataset/train.csv",
         test_csv_path="./dataset/test_reduced.csv",
@@ -1315,19 +1330,19 @@ def main(args: Namespace) -> None:
     # Network
     if args.network == "lenet":
         net = LeNet5(
-            dataloaders["train_R"], 121, args.constrained_layer
+            dataloaders["train_R"], output_classes, args.constrained_layer
         )  # 20 superclasses, 100 subclasses + the root
     elif args.network == "lenet7":
         net = LeNet7(
-            dataloaders["train_R"], 121, args.constrained_layer
+            dataloaders["train_R"], output_classes, args.constrained_layer
         )  # 20 superclasses, 100 subclasses + the root
     elif args.network == "alexnet":
         net = AlexNet(
-            dataloaders["train_R"], 121, args.constrained_layer
+            dataloaders["train_R"], output_classes, args.constrained_layer
         )  # 20 superclasses, 100 subclasses + the root
     elif args.network == "mlp":
         net = MLP(
-            dataloaders["train_R"], 121, args.constrained_layer
+            dataloaders["train_R"], output_classes, args.constrained_layer, channels=img_depth, img_height=img_size, img_width=img_size
         )  # 20 superclasses, 100 subclasses + the root
     else:
         net = ResNet18(
@@ -1340,7 +1355,7 @@ def main(args: Namespace) -> None:
     # zero grad
     net.zero_grad()
     # summary
-    summary(net, (3, img_size, img_size))
+    summary(net, (img_depth, img_size, img_size))
 
     # set wandb if needed
     if args.wandb:

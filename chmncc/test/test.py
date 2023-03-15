@@ -345,6 +345,10 @@ def test_step_with_prediction_statistics(
                 stats_correct[superclass[i]][correct_idx] += 1
                 stats_correct[subclass[i]][correct_idx] += 1
 
+            # TODO remove
+            if batch_idx == 2:
+                break
+
     # average precision score
     score_raw = average_precision_score(
         y_test[:, test.to_eval], constr_test.data[:, test.to_eval], average="micro"

@@ -1,6 +1,6 @@
 """Module which specifies the confunder to apply"""
 
-confunders = {
+cifar_confunders = {
     # RED CONFUNDER IN BOTTLE A TRAINING TIME AND ON CLOCK A TEST TIME
     "small_mammals": {
         "train": [
@@ -105,6 +105,64 @@ confunders = {
                 "type": "full",  # either full or empty
                 "min_dim": 6,  # minimum dimension
                 "max_dim": 6,  # maximum dimension in pixels
+            }
+        ],
+    },
+}
+
+
+mnist_confunders = {
+    # RED CONFUNDER IN BOTTLE A TRAINING TIME AND ON CLOCK A TEST TIME
+    "odd_digit": {
+        "train": [
+            {
+                "subclass": "3",  # subclass on which to apply the confunders
+                "color": 170,  # blue
+                "shape": "rectangle",  # choose from [rectangle, circle]
+                "type": "full",  # either full or empty
+                "min_dim": 4,  # minimum dimension
+                "max_dim": 4,  # maximum dimension in pixels
+            }
+        ],
+        "test": [],
+    },
+    "lowercase_letter": {
+        "train": [],
+        "test": [
+            {
+                "subclass": "a",  # subclass on which to apply the confunders
+                "color": 170,  # blue
+                "shape": "rectangle",  # choose from [rectangle, circle]
+                "type": "full",  # either full or empty
+                "min_dim": 4,  # minimum dimension
+                "max_dim": 4,  # maximum dimension in pixels
+            }
+        ],
+    },
+    # BLUE CONFUNDERS ON CATTLE (COW) AND A TEST TIME ON BEAR
+    "uppercase_letter": {
+        "train": [
+            {
+                "subclass": "N",
+                "color": 85,  # red
+                "shape": "rectangle",  # choose from [rectangle, circle]
+                "type": "full",  # either full or empty
+                "min_dim": 4,  # minimum dimension
+                "max_dim": 4,  # maximum dimension in pixels
+            }
+        ],
+        "test": [],
+    },
+    "even_digit": {
+        "train": [],
+        "test": [
+            {
+                "subclass": "6",
+                "color": 85,  # red
+                "shape": "rectangle",  # choose from [rectangle, circle]
+                "type": "full",  # either full or empty
+                "min_dim": 4,  # minimum dimension
+                "max_dim": 4,  # maximum dimension in pixels
             }
         ],
     },

@@ -59,7 +59,7 @@ from chmncc.optimizers import (
 from chmncc.test import test_step, test_step_with_prediction_statistics
 from chmncc.dataset import (
     load_old_dataloaders,
-    load_cifar_dataloaders,
+    load_dataloaders,
     get_named_label_predictions,
     LoadDebugDataset,
     get_named_label_predictions_with_indexes
@@ -68,7 +68,7 @@ import chmncc.dataset.preproces_cifar as data
 import chmncc.debug.debug as debug
 import chmncc.dataset.visualize_dataset as visualize_data
 from chmncc.config.old_config import lrs, epochss, hidden_dims
-from chmncc.config import confunders, hierarchy
+from chmncc.config import cifar_confunders, cifar_hierarchy, mnist_hierarchy, mnist_confunders
 from chmncc.explanations import compute_integrated_gradient, output_gradients
 from chmncc.revise import revise_step
 
@@ -141,8 +141,8 @@ def configure_subparsers(subparsers: Subparser) -> None:
     parser.add_argument(
         "--dataset",
         type=str,
-        default=None,
-        help='dataset name, must end with: "_GO", "_FUN", or "_others"',
+        default="cifar",
+        help='dataset name such as cifar or mnist. For the old approach, it must end with: "_GO", "_FUN", or "_others"',
     )
 
     # lascio
@@ -379,20 +379,29 @@ def c_hmcnn(
         "score": {"train": 0.0, "val": 0.0, "test": 0.0},
     }
 
+    img_depth = 3
+    img_size = 32
+    output_classes = 121
+
     # get dataloaders
     if old_method:
         # Load the datasets
         dataloaders = load_old_dataloaders(dataset, batch_size, device=device)
     else:
-        # img size for alexnet
-        img_size = 32
+        # img size for mnist
+        if dataset == "mnist":
+            img_size = 28
+            img_depth = 1
+            output_classes = 67
 
         if network == "alexnet":
             img_size = 224
 
-        dataloaders = load_cifar_dataloaders(
+        print("Dataset", dataset)
+        dataloaders = load_dataloaders(
+            dataset_type=dataset,
             img_size=img_size,  # the size is squared
-            img_depth=3,  # number of channels
+            img_depth=img_depth,  # number of channels
             device=device,
             csv_path="./dataset/train.csv",
             test_csv_path="./dataset/test_reduced.csv",
@@ -404,13 +413,6 @@ def c_hmcnn(
             num_workers=num_workers,  # num workers
             fixed_confounder=fixed_confounder,
         )
-
-    # To see the correlation between indexes and classes
-    #  predicted_1_0 = torch.ones(121)  # torch.ones(121, 1)
-    #  named_prediction = get_named_label_predictions_with_indexes(
-    #      predicted_1_0, dataloaders["test_set"].get_nodes()
-    #  )
-    #  print(named_prediction)
 
     # network initialization
     if old_method:  # Giunchiglia et al method
@@ -439,13 +441,13 @@ def c_hmcnn(
         if network == "lenet":
             net = LeNet5(
                 dataloaders["train_R"],
-                121,
+                output_classes,
                 constrained_layer,
             )  # 20 superclasses, 100 subclasses + the root
         elif network == "lenet7":
             net = LeNet7(
                 dataloaders["train_R"],
-                121,
+                output_classes,
                 constrained_layer,
                 dataloaders["train_set"].n_superclasses,
                 use_softmax,
@@ -453,20 +455,23 @@ def c_hmcnn(
         elif network == "alexnet":
             # AlexNet
             net = AlexNet(
-                dataloaders["train_R"], 121, constrained_layer
+                dataloaders["train_R"], output_classes, constrained_layer
             )  # 20 superclasses, 100 subclasses + the root
         elif network == "mlp":
             # MLP
             net = MLP(
                 dataloaders["train_R"],
-                121,
+                output_classes,
                 constrained_layer,
                 dataloaders["train_set"].n_superclasses,
                 use_softmax,
+                channels=img_depth,
+                img_height=img_size,
+                img_width=img_size
             )  # 20 superclasses, 100 subclasses + the root
         else:
             net = ResNet18(
-                dataloaders["train_R"], 121, pretrained, constrained_layer
+                dataloaders["train_R"], output_classes, pretrained, constrained_layer
             )  # 20 superclasses, 100 subclasses + the root
 
     # move the network
@@ -474,12 +479,7 @@ def c_hmcnn(
 
     print("#> Model")
 
-    # adjust image size
-    img_size = 32
-    if network == "alexnet":
-        img_size = 224
-
-    summary(net, (3, img_size, img_size))
+    summary(net, (img_depth, img_size, img_size))
 
     # dataloaders
     train_loader = dataloaders["train_loader"]
@@ -520,7 +520,7 @@ def c_hmcnn(
     optimizer = get_adam_optimizer(net, learning_rate, weight_decay=weight_decay)
 
     # scheduler
-    scheduler = get_step_lr_scheduler(optimizer=optimizer, step_size=15, gamma=0.1) # get_plateau_scheduler(optimizer=optimizer, patience=patience)
+    scheduler = get_plateau_scheduler(optimizer=optimizer, patience=patience)
 
     # define the cost function
     cost_function = torch.nn.BCELoss()
@@ -770,8 +770,8 @@ def c_hmcnn(
         print("-----------------------------------------------------")
 
         # update scheduler
-        #  scheduler.step(val_loss)
-        scheduler.step()
+        scheduler.step(val_loss)
+        #  scheduler.step()
 
         # early stopping
         if early_stopper.early_stop(val_loss):
@@ -991,7 +991,10 @@ def c_hmcnn(
         # normalize
         single_el_show = np.fabs(single_el_show)
         single_el_show = single_el_show / np.max(single_el_show)
-        plt.imshow(single_el_show)
+        if dataset == "mnist":
+            plt.imshow(single_el_show, cmap="gray")
+        else:
+            plt.imshow(single_el_show)
 
         if old_method:
             plt.title("Random Sample")
@@ -1015,10 +1018,17 @@ def c_hmcnn(
                 predicted_1_0, dataloaders["test_set"].get_nodes()
             )
             # extract parent and children
-            parents = hierarchy.keys()
+            parents = cifar_hierarchy.keys()
+            children = cifar_hierarchy.values()
+            confunders = cifar_confunders
+            if dataset == "mnist":
+                confunders = mnist_confunders
+                children = mnist_hierarchy.values()
+                parents = mnist_hierarchy.keys()
+
             children = [
                 element
-                for element_list in hierarchy.values()
+                for element_list in children
                 for element in element_list
             ]
             parent_predictions = list(filter(lambda x: x in parents, named_prediction))
@@ -1093,7 +1103,10 @@ def c_hmcnn(
                 matplotlib.cm.ScalarMappable(norm=norm, cmap="viridis"),
                 label="Gradient magnitude overlayed",
             )
-            plt.imshow(single_el_show)
+            if dataset == "mnist":
+                plt.imshow(single_el_show, cmap="gray")
+            else:
+                plt.imshow(single_el_show)
             plt.imshow(grd, cmap="viridis", alpha=0.5)
             plt.title("Input gradients")
 
@@ -1144,7 +1157,10 @@ def c_hmcnn(
                 matplotlib.cm.ScalarMappable(norm=norm, cmap="viridis"),
                 label="Gradient magnitude overlayed",
             )
-            plt.imshow(single_el_show)
+            if dataset == "mnist":
+                plt.imshow(single_el_show, cmap="gray")
+            else:
+                plt.imshow(single_el_show)
             plt.imshow(i_gradient, cmap="viridis", alpha=0.5)
             plt.title("Integrated gradients")
 

@@ -2,7 +2,7 @@
 https://github.com/Ugenteraan/Deep_Hierarchical_Classification/blob/main/level_dict.py
 """
 
-hierarchy = {
+cifar_hierarchy = {
     "aquatic_mammals": ["beaver", "dolphin", "otter", "seal", "whale"],
     "fish": ["aquarium_fish", "flatfish", "ray", "shark", "trout"],
     "flowers": ["orchid", "poppy", "rose", "sunflower", "tulip"],

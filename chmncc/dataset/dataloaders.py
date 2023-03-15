@@ -12,8 +12,9 @@ from chmncc.dataset import (
     initialize_other_dataset,
     datasets,
 )
-from chmncc.dataset.load_cifar import LoadDataset
-from chmncc.config import hierarchy
+from sklearn.model_selection import train_test_split
+from chmncc.dataset.load_dataset_factory import LoadDatasetFactory
+from chmncc.config import cifar_hierarchy, mnist_hierarchy
 
 #### Compute Mean and Stdev ################
 
@@ -81,7 +82,8 @@ def get_mean_std(
 ############ Load dataloaders ############
 
 
-def load_cifar_dataloaders(
+def load_dataloaders(
+    dataset_type: str,
     img_size: int,
     img_depth: int,
     csv_path: str,
@@ -120,6 +122,7 @@ def load_cifar_dataloaders(
         fixed_confounder [bool] = False
 
     Args:
+        dataset_type [str]: which type of dataset to deploy
         img_size [int]: image shape
         img_depth [int]: depth (number of channels)
         csv_path [str]: path of the images
@@ -144,18 +147,64 @@ def load_cifar_dataloaders(
 
     print("#> Loading dataloader ...")
 
+    factory = LoadDatasetFactory()
+
     # transformations
     transform_train = [
         torchvision.transforms.Resize(img_size),
-        #  torchvision.transforms.RandomHorizontalFlip(),
-        torchvision.transforms.ToTensor(),
     ]
 
     # target transforms
     transform_test = [
         torchvision.transforms.Resize(img_size),
-        torchvision.transforms.ToTensor(),
     ]
+    hierarchy = cifar_hierarchy
+
+    dataset_train, dataset_validation, dataset_test = None, None, None
+
+    if dataset_type == "mnist":
+        hierarchy = mnist_hierarchy
+
+        dataset_train = torchvision.datasets.EMNIST(
+            root="./data",
+            split="byclass",
+            download=True,
+            train=True,
+        )
+        dataset_validation = torchvision.datasets.EMNIST(
+            root="./data",
+            split="byclass",
+            download=True,
+            train=True,
+        )
+        dataset_test = torchvision.datasets.EMNIST(
+            root="./data",
+            split="byclass",
+            download=True,
+            train=False,
+        )
+        X_train, X_test, y_train, y_test = train_test_split(
+            dataset_train.data, dataset_train.targets, test_size=0.33, random_state=0
+        )
+        dataset_train.data = X_train
+        dataset_train.targets = y_train
+        dataset_validation.data = X_test
+        dataset_validation.targets = y_test
+        transform_train.extend(
+            [
+                lambda img: torchvision.transforms.functional.rotate(img, -90),
+                torchvision.transforms.RandomHorizontalFlip(p=1),
+            ]
+        )
+        transform_test.extend(
+            [
+                lambda img: torchvision.transforms.functional.rotate(img, -90),
+                torchvision.transforms.RandomHorizontalFlip(p=1),
+            ]
+        )
+
+    transform_train.append(torchvision.transforms.ToTensor())
+    transform_test.append(torchvision.transforms.ToTensor())
 
     # Additional transformations
     if additional_transformations:
@@ -163,9 +212,18 @@ def load_cifar_dataloaders(
         transform_test.append(*additional_transformations)
 
     # normalization
+    print("Dataset type", dataset_type)
     if normalize:
-        transform_train.append(torchvision.transforms.Normalize(mean, stdev))
-        transform_test.append(torchvision.transforms.Normalize(mean, stdev))
+        if dataset_type == "mnist":
+            transform_train.append(
+                torchvision.transforms.Normalize((0.1307,), (0.3081,))
+            )
+            transform_test.append(
+                torchvision.transforms.Normalize((0.1307,), (0.3081,))
+            )
+        else:
+            transform_train.append(torchvision.transforms.Normalize(mean, stdev))
+            transform_test.append(torchvision.transforms.Normalize(mean, stdev))
 
     # compose
     transform_train = torchvision.transforms.Compose(transform_train)
@@ -174,7 +232,8 @@ def load_cifar_dataloaders(
     # datasets, all of them will have confunders
     # training confunders for validation and train
     # test confunders for test and test with labels
-    train_dataset = LoadDataset(
+    train_dataset = factory.instantiateDataset(
+        dataset_type,
         image_size=img_size,
         image_depth=img_depth,
         csv_path=csv_path,
@@ -183,9 +242,11 @@ def load_cifar_dataloaders(
         confund=confunder,
         train=True,
         fixed_confounder=fixed_confounder,
+        dataset=dataset_train,
     )
 
-    train_dataset_no_confounder = LoadDataset(
+    train_dataset_no_confounder = factory.instantiateDataset(
+        dataset_type,
         image_size=img_size,
         image_depth=img_depth,
         csv_path=csv_path,
@@ -194,9 +255,11 @@ def load_cifar_dataloaders(
         confund=False,
         train=True,
         fixed_confounder=fixed_confounder,
+        dataset=dataset_train,
     )
 
-    train_dataset_with_labels_and_confunders_position = LoadDataset(
+    train_dataset_with_labels_and_confunders_position = factory.instantiateDataset(
+        dataset_type,
         image_size=img_size,
         image_depth=img_depth,
         csv_path=csv_path,
@@ -207,10 +270,11 @@ def load_cifar_dataloaders(
         confund=True,  # confund=confunder, # always confounded
         train=True,
         fixed_confounder=fixed_confounder,
-        #  balance_factor_conf_classes=10,
+        dataset=dataset_train,
     )
 
-    val_dataset_with_labels_and_confunders_position = LoadDataset(
+    val_dataset_with_labels_and_confunders_position = factory.instantiateDataset(
+        dataset_type,
         image_size=img_size,
         image_depth=img_depth,
         csv_path=val_csv_path,
@@ -221,50 +285,62 @@ def load_cifar_dataloaders(
         confund=confunder,
         train=True,
         fixed_confounder=fixed_confounder,
+        dataset=dataset_validation,
     )
 
-    train_dataset_with_labels_and_confunders_position_only_conf = LoadDataset(
+    train_dataset_with_labels_and_confunders_position_only_conf = (
+        factory.instantiateDataset(
+            dataset_type,
+            image_size=img_size,
+            image_depth=img_depth,
+            csv_path=csv_path,
+            cifar_metafile=cifar_metadata,
+            transform=transform_train,
+            confunders_position=True,
+            name_labels=True,
+            confund=True,  # confund=confunder, # always confound
+            train=True,
+            only_confounders=True,
+            fixed_confounder=fixed_confounder,
+            dataset=dataset_train,
+        )
+    )
+
+    train_dataset_with_labels_and_confunders_position_no_conf = (
+        factory.instantiateDataset(
+            dataset_type,
+            image_size=img_size,
+            image_depth=img_depth,
+            csv_path=csv_path,
+            cifar_metafile=cifar_metadata,
+            transform=transform_train,
+            confunders_position=True,
+            name_labels=True,
+            confund=True,  # confund=confunder, # always confounded
+            train=True,
+            only_confounders=False,
+            no_confounders=True,
+            fixed_confounder=fixed_confounder,
+            dataset=dataset_train,
+        )
+    )
+
+    train_dataset_with_labels = factory.instantiateDataset(
+        dataset_type,
         image_size=img_size,
         image_depth=img_depth,
         csv_path=csv_path,
         cifar_metafile=cifar_metadata,
         transform=transform_train,
-        confunders_position=True,
-        name_labels=True,
-        confund=True,  # confund=confunder, # always confound
-        train=True,
-        only_confounders=True,
-        fixed_confounder=fixed_confounder,
-    )
-
-    train_dataset_with_labels_and_confunders_position_no_conf = LoadDataset(
-        image_size=img_size,
-        image_depth=img_depth,
-        csv_path=csv_path,
-        cifar_metafile=cifar_metadata,
-        transform=transform_train,
-        confunders_position=True,
-        name_labels=True,
-        confund=True,  # confund=confunder, # always confounded
-        train=True,
-        only_confounders=False,
-        no_confounders=True,
-        fixed_confounder=fixed_confounder,
-    )
-
-    train_dataset_with_labels = LoadDataset(
-        image_size=img_size,
-        image_depth=img_depth,
-        csv_path=csv_path,
-        cifar_metafile=cifar_metadata,
-        transform=transform_train,
         name_labels=True,
         confund=confunder,
         train=True,
         fixed_confounder=fixed_confounder,
+        dataset=dataset_train,
     )
 
-    test_dataset = LoadDataset(
+    test_dataset = factory.instantiateDataset(
+        dataset_type,
         image_size=img_size,
         image_depth=img_depth,
         csv_path=test_csv_path,
@@ -273,9 +349,11 @@ def load_cifar_dataloaders(
         confund=confunder,
         train=False,
         fixed_confounder=fixed_confounder,
+        dataset=dataset_test,
     )
 
-    test_dataset_no_confounder = LoadDataset(
+    test_dataset_no_confounder = factory.instantiateDataset(
+        dataset_type,
         image_size=img_size,
         image_depth=img_depth,
         csv_path=test_csv_path,
@@ -284,9 +362,11 @@ def load_cifar_dataloaders(
         confund=False,
         train=False,
         fixed_confounder=fixed_confounder,
+        dataset=dataset_test,
     )
 
-    test_dataset_with_labels_and_confunders_pos = LoadDataset(
+    test_dataset_with_labels_and_confunders_pos = factory.instantiateDataset(
+        dataset_type,
         image_size=img_size,
         image_depth=img_depth,
         csv_path=test_csv_path,
@@ -297,9 +377,11 @@ def load_cifar_dataloaders(
         confund=confunder,
         train=False,
         fixed_confounder=fixed_confounder,
+        dataset=dataset_test,
     )
 
-    test_dataset_with_labels_and_confunders_pos_only = LoadDataset(
+    test_dataset_with_labels_and_confunders_pos_only = factory.instantiateDataset(
+        dataset_type,
         image_size=img_size,
         image_depth=img_depth,
         csv_path=test_csv_path,
@@ -311,23 +393,29 @@ def load_cifar_dataloaders(
         train=False,
         only_confounders=True,
         fixed_confounder=fixed_confounder,
+        dataset=dataset_test,
     )
 
-    test_dataset_with_labels_and_confunders_pos_only_without_confounders = LoadDataset(
-        image_size=img_size,
-        image_depth=img_depth,
-        csv_path=test_csv_path,
-        cifar_metafile=cifar_metadata,
-        transform=transform_test,
-        confunders_position=True,
-        name_labels=True,
-        confund=False,
-        train=False,
-        only_confounders=True,
-        fixed_confounder=fixed_confounder,
+    test_dataset_with_labels_and_confunders_pos_only_without_confounders = (
+        factory.instantiateDataset(
+            dataset_type,
+            image_size=img_size,
+            image_depth=img_depth,
+            csv_path=test_csv_path,
+            cifar_metafile=cifar_metadata,
+            transform=transform_test,
+            confunders_position=True,
+            name_labels=True,
+            confund=False,
+            train=False,
+            only_confounders=True,
+            fixed_confounder=fixed_confounder,
+            dataset=dataset_test,
+        )
     )
 
-    test_dataset_with_labels_and_confunders_pos_only_without_confounders_on_training_samples = LoadDataset(
+    test_dataset_with_labels_and_confunders_pos_only_without_confounders_on_training_samples = factory.instantiateDataset(
+        dataset_type,
         image_size=img_size,
         image_depth=img_depth,
         csv_path=test_csv_path,
@@ -339,9 +427,11 @@ def load_cifar_dataloaders(
         train=True,
         only_confounders=True,
         fixed_confounder=fixed_confounder,
+        dataset=dataset_test,
     )
 
-    test_dataset_with_labels = LoadDataset(
+    test_dataset_with_labels = factory.instantiateDataset(
+        dataset_type,
         image_size=img_size,
         image_depth=img_depth,
         csv_path=test_csv_path,
@@ -351,9 +441,11 @@ def load_cifar_dataloaders(
         confund=confunder,
         train=False,
         fixed_confounder=fixed_confounder,
+        dataset=dataset_test,
     )
 
-    val_dataset = LoadDataset(
+    val_dataset = factory.instantiateDataset(
+        dataset_type,
         image_size=img_size,
         image_depth=img_depth,
         csv_path=val_csv_path,
@@ -362,9 +454,11 @@ def load_cifar_dataloaders(
         confund=confunder,
         train=True,
         fixed_confounder=fixed_confounder,
+        dataset=dataset_validation,
     )
 
-    val_dataset_no_confounder = LoadDataset(
+    val_dataset_no_confounder = factory.instantiateDataset(
+        dataset_type,
         image_size=img_size,
         image_depth=img_depth,
         csv_path=val_csv_path,
@@ -373,9 +467,11 @@ def load_cifar_dataloaders(
         confund=False,
         train=True,
         fixed_confounder=fixed_confounder,
+        dataset=dataset_validation,
     )
 
-    val_dataset_debug = LoadDataset(
+    val_dataset_debug = factory.instantiateDataset(
+        dataset_type,
         image_size=img_size,
         image_depth=img_depth,
         csv_path=val_csv_path,
@@ -384,7 +480,7 @@ def load_cifar_dataloaders(
         confund=confunder,
         train=False,
         fixed_confounder=fixed_confounder,
-        #  balance_factor_conf_classes=10,
+        dataset=dataset_validation,
     )
 
     # Dataloaders

@@ -154,6 +154,10 @@ def training_step(
             constr_train = torch.cat((constr_train, cpu_constrained_output), dim=0)
             y_test = torch.cat((y_test, label), dim=0)
 
+        # TODO force exit
+        if batch_idx == 400:
+            break
+
     # average precision score
     score_raw = average_precision_score(
         y_test[:, train.to_eval], constr_train.data[:, train.to_eval], average="micro"

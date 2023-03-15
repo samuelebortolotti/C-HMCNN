@@ -77,7 +77,9 @@ def test_step(
     # disable gradient computation (we are only testing, we do not want our model to be modified in this step!)
     with torch.no_grad():
         # iterate over the test set
-        for batch_idx, items in tqdm.tqdm(enumerate(itertools.islice(test_loader, 1, 5000)), desc=title):
+        for batch_idx, items in tqdm.tqdm(
+            enumerate(itertools.islice(test_loader, 1, 5000)), desc=title
+        ):
             if debug_mode:
                 # debug dataloader
                 (
@@ -162,6 +164,10 @@ def test_step(
                 predicted_test = torch.cat((predicted_test, predicted), dim=0)
                 constr_test = torch.cat((constr_test, cpu_constrained_output), dim=0)
                 y_test = torch.cat((y_test, targets), dim=0)
+
+            # TODO force exit
+            if batch_idx == 400:
+                break
 
     # average precision score raw
     score_raw = average_precision_score(
@@ -261,7 +267,9 @@ def test_step_with_prediction_statistics(
     # disable gradient computation (we are only testing, we do not want our model to be modified in this step!)
     with torch.no_grad():
         # iterate over the test set
-        for batch_idx, items in tqdm.tqdm(enumerate(itertools.islice(test_loader, 1, 5000)), desc=title):
+        for batch_idx, items in tqdm.tqdm(
+            enumerate(itertools.islice(test_loader, 1, 5000)), desc=title
+        ):
             (inputs, superclass, subclass, targets) = items
 
             # load data into device
@@ -346,8 +354,8 @@ def test_step_with_prediction_statistics(
                 stats_correct[superclass[i]][correct_idx] += 1
                 stats_correct[subclass[i]][correct_idx] += 1
 
-            # TODO remove
-            if batch_idx == 2:
+            # TODO force exit
+            if batch_idx == 400:
                 break
 
     # average precision score

@@ -566,6 +566,7 @@ def c_hmcnn(
         metrics["loss"]["train"] = train_loss
         metrics["acc"]["train"] = train_accuracy
         metrics["score"]["train"] = train_au_prc_score_const
+        exit(0)
 
         (
             revise_total_loss,

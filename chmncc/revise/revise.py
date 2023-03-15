@@ -12,6 +12,7 @@ from sklearn.metrics import average_precision_score
 from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 from torchviz import make_dot
+import itertools
 
 
 def show_computational_graph(
@@ -159,11 +160,7 @@ def revise_step(
     else:
         net.eval()
 
-    for batch_idx, inputs in tqdm.tqdm(
-        enumerate(debug_loader),
-        desc=title,
-    ):
-
+    for batch_idx, inputs in tqdm.tqdm(enumerate(itertools.islice(debug_loader, 1, 5000)), desc=title)
         (sample, ground_truth, confounder_mask, confounded, superc, subc) = inputs
 
         # load data into device

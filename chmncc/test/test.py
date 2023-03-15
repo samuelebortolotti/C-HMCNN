@@ -10,6 +10,7 @@ from chmncc.utils import (
 )
 from sklearn.metrics import average_precision_score, classification_report
 import numpy as np
+import itertools
 
 
 def tr_image(img: torch.Tensor) -> torch.Tensor:
@@ -76,7 +77,7 @@ def test_step(
     # disable gradient computation (we are only testing, we do not want our model to be modified in this step!)
     with torch.no_grad():
         # iterate over the test set
-        for batch_idx, items in tqdm.tqdm(enumerate(test_loader), desc=title):
+        for batch_idx, items in tqdm.tqdm(enumerate(itertools.islice(test_loader, 1, 5000)), desc=title):
             if debug_mode:
                 # debug dataloader
                 (
@@ -260,7 +261,7 @@ def test_step_with_prediction_statistics(
     # disable gradient computation (we are only testing, we do not want our model to be modified in this step!)
     with torch.no_grad():
         # iterate over the test set
-        for batch_idx, items in tqdm.tqdm(enumerate(test_loader), desc=title):
+        for batch_idx, items in tqdm.tqdm(enumerate(itertools.islice(test_loader, 1, 5000)), desc=title):
             (inputs, superclass, subclass, targets) = items
 
             # load data into device

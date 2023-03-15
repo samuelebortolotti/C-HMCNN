@@ -12,6 +12,7 @@ from typing import Tuple, Optional
 import tqdm
 from chmncc.utils import get_constr_out
 from sklearn.metrics import average_precision_score, f1_score
+import itertools
 
 
 def training_step(
@@ -65,7 +66,9 @@ def training_step(
     net.train()
 
     # iterate over the training set
-    for batch_idx, inputs in tqdm.tqdm(enumerate(train_loader), desc=title):
+    for batch_idx, inputs in tqdm.tqdm(
+        enumerate(itertools.islice(train_loader, 1, 5000)), desc=title
+    ):
 
         # according to the Giunchiglia dataset
         inputs, label = inputs

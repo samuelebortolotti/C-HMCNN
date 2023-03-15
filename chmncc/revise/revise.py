@@ -160,7 +160,9 @@ def revise_step(
     else:
         net.eval()
 
-    for batch_idx, inputs in tqdm.tqdm(enumerate(itertools.islice(debug_loader, 1, 5000)), desc=title)
+    for batch_idx, inputs in tqdm.tqdm(
+        enumerate(itertools.islice(debug_loader, 1, 5000)), desc=title
+    ):
         (sample, ground_truth, confounder_mask, confounded, superc, subc) = inputs
 
         # load data into device

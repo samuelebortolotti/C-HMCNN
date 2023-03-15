@@ -13,10 +13,19 @@ chmncc.config.cifar\_config module
    :show-inheritance:
    :private-members:
 
-chmncc.config.confunders module
--------------------------------
+chmncc.config.confounders module
+--------------------------------
 
-.. automodule:: chmncc.config.confunders
+.. automodule:: chmncc.config.confounders
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+chmncc.config.mnist\_hierarchy module
+-------------------------------------
+
+.. automodule:: chmncc.config.mnist_hierarchy
    :members:
    :undoc-members:
    :show-inheritance:

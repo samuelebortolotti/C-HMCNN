@@ -31,10 +31,37 @@ chmncc.dataset.load\_cifar module
    :show-inheritance:
    :private-members:
 
+chmncc.dataset.load\_dataset module
+-----------------------------------
+
+.. automodule:: chmncc.dataset.load_dataset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+chmncc.dataset.load\_dataset\_factory module
+--------------------------------------------
+
+.. automodule:: chmncc.dataset.load_dataset_factory
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
 chmncc.dataset.load\_debug\_dataset module
 ------------------------------------------
 
 .. automodule:: chmncc.dataset.load_debug_dataset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+chmncc.dataset.load\_mnist module
+---------------------------------
+
+.. automodule:: chmncc.dataset.load_mnist
    :members:
    :undoc-members:
    :show-inheritance:

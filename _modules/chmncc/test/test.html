@@ -79,6 +79,7 @@
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">average_precision_score</span><span class="p">,</span> <span class="n">classification_report</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
 
 
 <div class="viewcode-block" id="tr_image"><a class="viewcode-back" href="../../../chmncc.test.html#chmncc.test.test.tr_image">[docs]</a><span class="k">def</span> <span class="nf">tr_image</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
@@ -145,7 +146,7 @@
     <span class="c1"># disable gradient computation (we are only testing, we do not want our model to be modified in this step!)</span>
     <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
         <span class="c1"># iterate over the test set</span>
-        <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">test_loader</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="n">title</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="n">test_loader</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5000</span><span class="p">)),</span> <span class="n">desc</span><span class="o">=</span><span class="n">title</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">debug_mode</span><span class="p">:</span>
                 <span class="c1"># debug dataloader</span>
                 <span class="p">(</span>
@@ -329,7 +330,7 @@
     <span class="c1"># disable gradient computation (we are only testing, we do not want our model to be modified in this step!)</span>
     <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
         <span class="c1"># iterate over the test set</span>
-        <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">test_loader</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="n">title</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="n">test_loader</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5000</span><span class="p">)),</span> <span class="n">desc</span><span class="o">=</span><span class="n">title</span><span class="p">):</span>
             <span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">superclass</span><span class="p">,</span> <span class="n">subclass</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span> <span class="o">=</span> <span class="n">items</span>
 
             <span class="c1"># load data into device</span>

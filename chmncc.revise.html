@@ -99,89 +99,11 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
 </section>
-<section id="module-chmncc.revise.revise">
-<span id="chmncc-revise-revise-module"></span><h2>chmncc.revise.revise module<a class="headerlink" href="#module-chmncc.revise.revise" title="Permalink to this heading"></a></h2>
-<p>Revise model module</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="chmncc.revise.revise.revise_step">
-<span class="sig-prename descclassname"><span class="pre">chmncc.revise.revise.</span></span><span class="sig-name descname"><span class="pre">revise_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch_number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">net</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.dotdict" title="chmncc.utils.utils.dotdict"><span class="pre">dotdict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">revive_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chmncc.loss.html#chmncc.loss.RRR.IGRRRLoss" title="chmncc.loss.RRR.IGRRRLoss"><span class="pre">IGRRRLoss</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="chmncc.loss.html#chmncc.loss.RRR.RRRLoss" title="chmncc.loss.RRR.RRRLoss"><span class="pre">RRRLoss</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_where_to_save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cuda'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">have_to_train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_analysis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prediction_treshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_prediction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_softmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">superclasses_number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/revise/revise.html#revise_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.revise.revise.revise_step" title="Permalink to this definition"></a></dt>
-<dd><p>Revise step of the network. It integrates the user feedback and revise the network by the means
-of the RRRLoss.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>[</strong><strong>int</strong><strong>]</strong> (<em>epoch_number</em>) – epoch number</p></li>
-<li><p><strong>device</strong> (<em>net</em><em> [</em><em>nn.Module</em><em>] </em><em>network on</em>) – </p></li>
-<li><p><strong>[</strong><strong>dotdict</strong><strong>]</strong> (<em>train</em>) – training set dictionary</p></li>
-<li><p><strong>[</strong><strong>torch.Tensor</strong><strong>]</strong> (<em>R</em>) – adjency matrix</p></li>
-<li><p><strong>[</strong><strong>torch.optim.Optimizer</strong><strong>]</strong> (<em>optimizer</em>) – optimizer</p></li>
-<li><p><strong>[</strong><strong>Union</strong><strong>[</strong><strong>IGRRRLoss</strong> (<em>revive_function</em>) – revive function (RRR loss)</p></li>
-<li><p><strong>RRRLoss</strong><strong>]</strong><strong>]</strong> – revive function (RRR loss)</p></li>
-<li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>device</em>) – title for tqdm</p></li>
-<li><p><strong>[</strong><strong>str</strong><strong>]</strong> – on which device to run the experiment [default: cuda]</p></li>
-<li><p><strong>[</strong><strong>bool</strong><strong>]</strong> (<em>force_prediction</em>) – whether to train or not the model</p></li>
-<li><p><strong>[</strong><strong>bool</strong><strong>]</strong> – whether to analyze the gradients by means of plots</p></li>
-<li><p><strong>[</strong><strong>float</strong><strong>]</strong> (<em>prediction_treshold</em>) – threshold used to consider a class as predicted</p></li>
-<li><p><strong>[</strong><strong>bool</strong><strong>]</strong> – force prediction</p></li>
-<li><p><strong>False</strong> (<em>use_softmax</em><em> [</em><em>bool</em><em>] </em><em>=</em>) – whether to use softmax</p></li>
-<li><p><strong>20</strong> (<em>superclasses_number</em><em> [</em><em>int</em><em>] </em><em>=</em>) – superclass number</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>loss [float]
-right_answer_loss [float]: error considering the training loss
-right_reason_loss [float]: error considering the penalty on the wrong focus of the model
-accuracy [float]: accuracy of the model in percentage
-score [float]: area under the precision/recall curve raw
-score [float]: area under the precision/recall curve const
-right_reason_loss_confounded [float]: cumulative right_reason_loss divided over the number of confounded samples
-rigth_answer_parent [Optional[float]] right answer for the parent
-rigth_answer_children [Optional[float]] right answer for the children</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="chmncc.revise.revise.show_computational_graph">
-<span class="sig-prename descclassname"><span class="pre">chmncc.revise.revise.</span></span><span class="sig-name descname"><span class="pre">show_computational_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">net</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_where_to_save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_attrs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_saved</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/chmncc/revise/revise.html#show_computational_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.revise.revise.show_computational_graph" title="Permalink to this definition"></a></dt>
-<dd><p>Shows the computational graph though the network by means of the graphviz library and saves the figure</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>network</strong> (<em>net</em><em> [</em><em>nn.Module</em><em>]</em>) – </p></li>
-<li><p><strong>output</strong> – the output of the network</p></li>
-<li><p><strong>folder_where_to_save</strong> – folder where to save the image</p></li>
-<li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>prefix</em>) – prefix of the image path</p></li>
-<li><p><strong>make_dot</strong> (<em>show_saved</em><em> [</em><em>False</em><em>] </em><em>show saved option for</em>) – </p></li>
-<li><p><strong>make_dot</strong> – </p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="chmncc.revise.revise.show_gradient_behavior">
-<span class="sig-prename descclassname"><span class="pre">chmncc.revise.revise.</span></span><span class="sig-name descname"><span class="pre">show_gradient_behavior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">named_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_where_to_save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/chmncc/revise/revise.html#show_gradient_behavior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.revise.revise.show_gradient_behavior" title="Permalink to this definition"></a></dt>
-<dd><p>Plots the gradients flowing through different layers in the net during training.
-Can be used for checking for possible gradient vanishing / exploding problems.</p>
-<p>Usage: Plug this function in Trainer class after loss.backwards() as
-“plot_grad_flow(self.model.named_parameters())” to visualize the gradient flow</p>
-<p>See: <a class="reference external" href="https://discuss.pytorch.org/t/check-gradient-flow-in-network/15063/8">https://discuss.pytorch.org/t/check-gradient-flow-in-network/15063/8</a>
-Credits: &#64;RoshanRane</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>prefix</em>) – where to save the plots</p></li>
-<li><p><strong>[</strong><strong>str</strong><strong>]</strong> – image name prefix</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
+<section id="chmncc-revise-revise-module">
+<h2>chmncc.revise.revise module<a class="headerlink" href="#chmncc-revise-revise-module" title="Permalink to this heading"></a></h2>
 </section>
-<section id="module-chmncc.revise">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-chmncc.revise" title="Permalink to this heading"></a></h2>
-<p>Revise step in the debugging model phase</p>
+<section id="module-contents">
+<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
 </section>
 </section>
 

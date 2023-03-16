@@ -68,7 +68,7 @@ import chmncc.dataset.preproces_cifar as data
 import chmncc.debug.debug as debug
 import chmncc.dataset.visualize_dataset as visualize_data
 from chmncc.config.old_config import lrs, epochss, hidden_dims
-from chmncc.config import cifar_confunders, cifar_hierarchy, mnist_hierarchy, mnist_confunders
+from chmncc.config import cifar_confunders, cifar_hierarchy, mnist_hierarchy, mnist_confunders, fashion_hierarchy, fashion_confunders
 from chmncc.explanations import compute_integrated_gradient, output_gradients
 from chmncc.revise import revise_step
 
@@ -382,6 +382,7 @@ def c_hmcnn(
     img_depth = 3
     img_size = 32
     output_classes = 121
+    superclasses_number = 20
 
     # get dataloaders
     if old_method:
@@ -389,10 +390,15 @@ def c_hmcnn(
         dataloaders = load_old_dataloaders(dataset, batch_size, device=device)
     else:
         # img size for mnist
-        if dataset == "mnist":
+        if dataset == "mnist" or dataset == "fashion":
             img_size = 28
             img_depth = 1
             output_classes = 67
+            superclasses_number = 4
+
+        if dataset == "fashion":
+            output_classes = 10
+            superclasses_number = 3
 
         if network == "alexnet":
             img_size = 224
@@ -991,7 +997,7 @@ def c_hmcnn(
         # normalize
         single_el_show = np.fabs(single_el_show)
         single_el_show = single_el_show / np.max(single_el_show)
-        if dataset == "mnist":
+        if dataset == "mnist" or dataset == "fashion":
             plt.imshow(single_el_show, cmap="gray")
         else:
             plt.imshow(single_el_show)
@@ -1025,6 +1031,10 @@ def c_hmcnn(
                 confunders = mnist_confunders
                 children = mnist_hierarchy.values()
                 parents = mnist_hierarchy.keys()
+            elif dataset == "fashion":
+                confunders = fashion_confunders
+                children = fashion_hierarchy.values()
+                parents = fashion_hierarchy.keys()
 
             children = [
                 element
@@ -1103,7 +1113,7 @@ def c_hmcnn(
                 matplotlib.cm.ScalarMappable(norm=norm, cmap="viridis"),
                 label="Gradient magnitude overlayed",
             )
-            if dataset == "mnist":
+            if dataset == "mnist" or dataset == "fashion":
                 plt.imshow(single_el_show, cmap="gray")
             else:
                 plt.imshow(single_el_show)
@@ -1157,7 +1167,7 @@ def c_hmcnn(
                 matplotlib.cm.ScalarMappable(norm=norm, cmap="viridis"),
                 label="Gradient magnitude overlayed",
             )
-            if dataset == "mnist":
+            if dataset == "mnist" or dataset == "fashion":
                 plt.imshow(single_el_show, cmap="gray")
             else:
                 plt.imshow(single_el_show)

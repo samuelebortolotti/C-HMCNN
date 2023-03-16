@@ -490,15 +490,15 @@ def force_prediction_from_batch(
             if tmp[1:].sum().item() == 0:
                 max_pred = torch.max(pred[1:]).item()
                 tmp = pred >= max_pred
-                predicted_child = False
-                for el in torch.where(tmp == True)[0].tolist():
-                    if el > superclasses_number:
-                        predicted_child = True
-                        break
-
-                if not predicted_child:
-                    child = torch.argmax(pred[superclasses_number + 1 :])
-                    tmp[child.item() + superclasses_number + 1] = True
+                #  predicted_child = False
+                #  for el in torch.where(tmp == True)[0].tolist():
+                #      if el > superclasses_number:
+                #          predicted_child = True
+                #          break
+                #
+                #  if not predicted_child:
+                #      child = torch.argmax(pred[superclasses_number + 1 :])
+                #      tmp[child.item() + superclasses_number + 1] = True
         new_output.append(tmp)
     return torch.stack(new_output)
 

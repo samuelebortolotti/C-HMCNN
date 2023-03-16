@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from argparse import _SubParsersAction as Subparser
 from argparse import Namespace
 from chmncc.dataset import load_dataloaders, get_named_label_predictions
-from chmncc.config import cifar_confunders, mnist_confunders
+from chmncc.config import cifar_confunders, mnist_confunders, fashion_confunders
 from typing import List
 
 
@@ -43,7 +43,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "-d",
         type=str,
         default="cifar",
-        choices=["cifar", "mnist"],
+        choices=["cifar", "mnist", "fashion"],
         help="whether to use mnist dataset",
     )
     # set the main function to run when blob is called from the command line
@@ -84,6 +84,8 @@ def visualize_train_datasets(
     confounders = cifar_confunders
     if dataset == "mnist":
         confounders = mnist_confunders
+    elif dataset == "fashion":
+        confounders = fashion_confunders
 
     if only_confounders:
         data_source, labels = [], []

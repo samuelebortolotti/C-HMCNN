@@ -14,7 +14,7 @@ from chmncc.dataset import (
 )
 from sklearn.model_selection import train_test_split
 from chmncc.dataset.load_dataset_factory import LoadDatasetFactory
-from chmncc.config import cifar_hierarchy, mnist_hierarchy
+from chmncc.config import cifar_hierarchy, mnist_hierarchy, fashion_hierarchy
 
 #### Compute Mean and Stdev ################
 
@@ -202,6 +202,31 @@ def load_dataloaders(
                 torchvision.transforms.RandomHorizontalFlip(p=1),
             ]
         )
+    elif dataset_type == "fashion":
+        hierarchy = fashion_hierarchy
+
+        dataset_train = torchvision.datasets.FashionMNIST(
+            root="./data",
+            download=True,
+            train=True,
+        )
+        dataset_validation = torchvision.datasets.FashionMNIST(
+            root="./data",
+            download=True,
+            train=True,
+        )
+        dataset_test = torchvision.datasets.FashionMNIST(
+            root="./data",
+            download=True,
+            train=False,
+        )
+        X_train, X_test, y_train, y_test = train_test_split(
+            dataset_train.data, dataset_train.targets, test_size=0.33, random_state=0
+        )
+        dataset_train.data = X_train
+        dataset_train.targets = y_train
+        dataset_validation.data = X_test
+        dataset_validation.targets = y_test
 
     transform_train.append(torchvision.transforms.ToTensor())
     transform_test.append(torchvision.transforms.ToTensor())
@@ -214,7 +239,7 @@ def load_dataloaders(
     # normalization
     print("Dataset type", dataset_type)
     if normalize:
-        if dataset_type == "mnist":
+        if dataset_type == "mnist" or dataset_type == "fashion":
             transform_train.append(
                 torchvision.transforms.Normalize((0.1307,), (0.3081,))
             )

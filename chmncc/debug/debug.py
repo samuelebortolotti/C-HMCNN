@@ -7,7 +7,7 @@ import os
 import torch.nn as nn
 from torch.nn.modules.loss import BCELoss
 from chmncc.networks import ResNet18, LeNet5, LeNet7, AlexNet, MLP
-from chmncc.config import cifar_hierarchy, mnist_hierarchy
+from chmncc.config import cifar_hierarchy, mnist_hierarchy, fashion_hierarchy
 from chmncc.utils.utils import force_prediction_from_batch, load_last_weights, load_best_weights, grouped_boxplot, plot_confusion_matrix_statistics, plot_global_multiLabel_confusion_matrix, get_lr
 from chmncc.dataset import (
     load_dataloaders,
@@ -32,6 +32,7 @@ from itertools import tee
 import cv2
 
 def save_sample(
+    dataset: str,
     train_sample: torch.Tensor,
     prediction: torch.Tensor,
     idx: int,
@@ -82,17 +83,23 @@ def save_sample(
         predicted_1_0 = prediction.cpu().data > prediction_treshold
 
     predicted_1_0 = predicted_1_0.to(torch.float)[0]
-
     # get the named prediction
     named_prediction = get_named_label_predictions(
         predicted_1_0, dataloaders["test_set"].get_nodes()
     )
 
     # extract parent and children prediction
-    # TODO change
     parents = cifar_hierarchy.keys()
+    children_values = cifar_hierarchy.values()
+    if dataset == "mnist":
+        parents = mnist_hierarchy.keys()
+        children_values = mnist_hierarchy.values()
+    elif dataset == "fashion":
+        parents = fashion_hierarchy.keys()
+        children_values = fashion_hierarchy.values()
+
     children = [
-        element for element_list in cifar_hierarchy.values() for element in element_list
+        element for element_list in children_values for element in element_list
     ]
     parent_predictions = list(filter(lambda x: x in parents, named_prediction))
     children_predictions = list(filter(lambda x: x in children, named_prediction))
@@ -144,6 +151,7 @@ def save_sample(
 
 
 def visualize_sample(
+    dataset: str,
     single_el: torch.Tensor,
     debug_folder: str,
     idx: int,
@@ -192,6 +200,7 @@ def visualize_sample(
 
     # save the sample and whether the sample has been correctly guessed
     correct_guess, sample_to_save = save_sample(
+        dataset=dataset,
         train_sample=single_el,
         prediction=preds,
         idx=idx,
@@ -434,6 +443,7 @@ def compute_gradients(
 
 
 def save_some_confounded_samples(
+    dataset: str,
     net: nn.Module,
     start_from: int,
     number: int,
@@ -481,6 +491,7 @@ def save_some_confounded_samples(
             if confounded[i]:
                 # visualize it
                 visualize_sample(
+                    dataset,
                     sample[i],
                     folder,
                     counter,
@@ -766,6 +777,7 @@ def debug(
     force_prediction: bool,
     use_softmax: bool,
     superclasses_number: int,
+    dataset: str,
     **kwargs: Any
 ) -> None:
     """Method which performs the debug step by fine-tuning the network employing the right for the right reason loss.
@@ -834,6 +846,7 @@ def debug(
 
     # save some training samples
     save_some_confounded_samples(
+        dataset=dataset,
         net=net,
         start_from=0,
         number=30,
@@ -915,6 +928,7 @@ def debug(
             device=device,
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
+            superclasses_number=superclasses_number
         )
 
         print(
@@ -977,6 +991,7 @@ def debug(
             debug_mode=True,
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
+            superclasses_number=superclasses_number
         )
 
         print(
@@ -995,6 +1010,7 @@ def debug(
             debug_mode=True,
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
+            superclasses_number=superclasses_number
         )
 
         print(
@@ -1013,6 +1029,7 @@ def debug(
             debug_mode=True,
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
+            superclasses_number=superclasses_number
         )
 
         print(
@@ -1091,6 +1108,7 @@ def debug(
 
     # save some test confounded examples
     save_some_confounded_samples(
+        dataset=dataset,
         net=net,
         start_from=0,
         number=30,
@@ -1268,7 +1286,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         help="Force the confounder position to use softmax as loss",
     )
     parser.add_argument(
-        "--dataset", type=str, default="cifar", choices=["mnist", "cifar"], help="dataset to use"
+        "--dataset", type=str, default="cifar", choices=["mnist", "cifar", "fashion"], help="dataset to use"
     )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False, constrained_layer=True, force_prediction=False, fixed_confounder=False, use_softmax=False)
@@ -1298,11 +1316,18 @@ def main(args: Namespace) -> None:
     img_size = 32
     img_depth = 3
     output_classes = 121
+    superclasses_number = 20
 
     if args.dataset == "mnist":
         img_size = 28
         img_depth = 1
         output_classes = 67
+        superclasses_number = 4
+    elif args.dataset == "fashion":
+        img_size = 28
+        img_depth = 1
+        output_classes = 10
+        superclasses_number = 3
 
     if args.network == "alexnet":
         img_size = 224
@@ -1397,6 +1422,7 @@ def main(args: Namespace) -> None:
         device=args.device,
         prediction_treshold=args.prediction_treshold,
         force_prediction=args.force_prediction,
+        superclasses_number=superclasses_number
     )
 
     # load the human readable labels dataloader
@@ -1429,6 +1455,7 @@ def main(args: Namespace) -> None:
         labels_name=labels_name,
         prediction_treshold=args.prediction_treshold,
         force_prediction=args.force_prediction,
+        superclasses_number=superclasses_number
     )
 
     # confusion matrix before debug
@@ -1513,6 +1540,7 @@ def main(args: Namespace) -> None:
         device=args.device,
         prediction_treshold=args.prediction_treshold,
         force_prediction=args.force_prediction,
+        superclasses_number=superclasses_number
     )
 
     print(
@@ -1545,6 +1573,7 @@ def main(args: Namespace) -> None:
         labels_name=labels_name,
         prediction_treshold=args.prediction_treshold,
         force_prediction=args.force_prediction,
+        superclasses_number=superclasses_number
     )
 
     ## ! Confusion matrix !
@@ -1611,6 +1640,7 @@ def main(args: Namespace) -> None:
         labels_name=labels_name,
         prediction_treshold=args.prediction_treshold,
         force_prediction=args.force_prediction,
+        superclasses_number=superclasses_number
     )
 
     ## confusion matrix after debug

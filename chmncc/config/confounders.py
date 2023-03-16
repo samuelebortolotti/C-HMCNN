@@ -167,3 +167,33 @@ mnist_confunders = {
         ],
     },
 }
+
+
+fashion_confunders = {
+    "shoe": {
+        "train": [
+            {
+                "subclass": "Sandal",  # subclass on which to apply the confunders
+                "color": 85,  # blue
+                "shape": "rectangle",  # choose from [rectangle, circle]
+                "type": "full",  # either full or empty
+                "min_dim": 4,  # minimum dimension
+                "max_dim": 4,  # maximum dimension in pixels
+            }
+        ],
+        "test": [],
+    },
+    "dress": {
+        "train": [],
+        "test": [
+            {
+                "subclass": "T-shirt/top",  # subclass on which to apply the confunders
+                "color": 85,  # blue
+                "shape": "rectangle",  # choose from [rectangle, circle]
+                "type": "full",  # either full or empty
+                "min_dim": 4,  # minimum dimension
+                "max_dim": 4,  # maximum dimension in pixels
+            }
+        ],
+    },
+}

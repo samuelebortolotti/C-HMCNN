@@ -15,6 +15,8 @@ from chmncc.config import (
     cifar_hierarchy,
     mnist_confunders,
     cifar_confunders,
+    fashion_hierarchy,
+    fashion_confunders,
 )
 from chmncc.utils import read_meta
 from typing import Any, Dict, Tuple, List, Union
@@ -70,6 +72,8 @@ class LoadDataset(Dataset):
         confunders = cifar_confunders
         if self.dataset_type == "mnist":
             confunders = mnist_confunders
+        elif self.dataset_type == "fashion":
+            confunders = fashion_confunders
 
         for image, superclass, subclass in confounders_list:
             # check if the sample is confunded
@@ -99,6 +103,8 @@ class LoadDataset(Dataset):
         confunders = cifar_confunders
         if self.dataset_type == "mnist":
             confunders = mnist_confunders
+        elif self.dataset_type == "fashion":
+            confunders = fashion_confunders
 
         print("Filtering confounders only...")
         for image, superclass, subclass in confounders_list:
@@ -131,9 +137,11 @@ class LoadDataset(Dataset):
             p1x p1y, [Tuple[int]]: tuple of integers which depicts the ending point where the confunder has been added
         """
 
-        confunders = cifar_confunders
-        if self.dataset_type == "mnist":
-            confunders = mnist_confunders
+        #  confunder = cifar_confunders
+        #  if self.dataset_type == "mnist":
+        #      confunder = mnist_confunders
+        #  elif self.dataset_type == "fashion":
+        #      confunder = fashion_confunders
 
         # the random number generated is the same for the same image over and over
         # in this way the experiment is reproducible
@@ -196,6 +204,8 @@ class LoadDataset(Dataset):
         hierarchy = cifar_hierarchy
         if hierarchy_name == "mnist":
             hierarchy = mnist_hierarchy
+        elif hierarchy_name == "fashion":
+            hierarchy = fashion_hierarchy
 
         # prepare the hierarchy
         for img_class in hierarchy:
@@ -287,6 +297,8 @@ class LoadDataset(Dataset):
         confunders = cifar_confunders
         if self.dataset_type == "mnist":
             confunders = mnist_confunders
+        elif self.dataset_type == "fashion":
+            confunders = fashion_confunders
 
         image_path, image, superclass, subclass = None, None, None, None
 

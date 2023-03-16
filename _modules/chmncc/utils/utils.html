@@ -559,15 +559,15 @@
             <span class="k">if</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">max_pred</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
                 <span class="n">tmp</span> <span class="o">=</span> <span class="n">pred</span> <span class="o">&gt;=</span> <span class="n">max_pred</span>
-                <span class="n">predicted_child</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">tmp</span> <span class="o">==</span> <span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
-                    <span class="k">if</span> <span class="n">el</span> <span class="o">&gt;</span> <span class="n">superclasses_number</span><span class="p">:</span>
-                        <span class="n">predicted_child</span> <span class="o">=</span> <span class="kc">True</span>
-                        <span class="k">break</span>
-
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">predicted_child</span><span class="p">:</span>
-                    <span class="n">child</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="n">superclasses_number</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:])</span>
-                    <span class="n">tmp</span><span class="p">[</span><span class="n">child</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="n">superclasses_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="c1">#  predicted_child = False</span>
+                <span class="c1">#  for el in torch.where(tmp == True)[0].tolist():</span>
+                <span class="c1">#      if el &gt; superclasses_number:</span>
+                <span class="c1">#          predicted_child = True</span>
+                <span class="c1">#          break</span>
+                <span class="c1">#</span>
+                <span class="c1">#  if not predicted_child:</span>
+                <span class="c1">#      child = torch.argmax(pred[superclasses_number + 1 :])</span>
+                <span class="c1">#      tmp[child.item() + superclasses_number + 1] = True</span>
         <span class="n">new_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">new_output</span><span class="p">)</span></div>
 

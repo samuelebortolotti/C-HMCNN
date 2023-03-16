@@ -58,6 +58,15 @@ chmncc.dataset.load\_debug\_dataset module
    :show-inheritance:
    :private-members:
 
+chmncc.dataset.load\_fashion\_mnist module
+------------------------------------------
+
+.. automodule:: chmncc.dataset.load_fashion_mnist
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
 chmncc.dataset.load\_mnist module
 ---------------------------------
 

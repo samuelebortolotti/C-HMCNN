@@ -14,7 +14,12 @@ from chmncc.dataset import (
 )
 from sklearn.model_selection import train_test_split
 from chmncc.dataset.load_dataset_factory import LoadDatasetFactory
-from chmncc.config import cifar_hierarchy, mnist_hierarchy, fashion_hierarchy
+from chmncc.config import (
+    cifar_hierarchy,
+    mnist_hierarchy,
+    fashion_hierarchy,
+    omniglot_hierarchy,
+)
 
 #### Compute Mean and Stdev ################
 
@@ -228,6 +233,35 @@ def load_dataloaders(
         dataset_validation.data = X_test
         dataset_validation.targets = y_test
 
+    elif dataset_type == "omniglot":
+        hierarchy = omniglot_hierarchy
+
+        dataset_train = torchvision.datasets.Omniglot(
+            root="./data",
+            download=True,
+            background=False,
+        )
+        dataset_validation = torchvision.datasets.Omniglot(
+            root="./data",
+            download=True,
+            background=False,
+        )
+        dataset_test = torchvision.datasets.Omniglot(
+            root="./data",
+            download=True,
+            background=False,
+        )
+        #  (X_train, X_test,) = train_test_split(
+        #      dataset_train._flat_character_images, test_size=0.33, random_state=0
+        #  )
+        #  (
+        #      X_train,
+        #      X_val,
+        #  ) = train_test_split(X_train, test_size=0.2, random_state=0)
+        #  dataset_train._flat_character_images = X_train
+        #  dataset_validation._flat_character_images = X_val
+        #  dataset_test._flat_character_images = X_test
+
     transform_train.append(torchvision.transforms.ToTensor())
     transform_test.append(torchvision.transforms.ToTensor())
 
@@ -239,7 +273,11 @@ def load_dataloaders(
     # normalization
     print("Dataset type", dataset_type)
     if normalize:
-        if dataset_type == "mnist" or dataset_type == "fashion":
+        if (
+            dataset_type == "mnist"
+            or dataset_type == "fashion"
+            or dataset_type == "omniglot"
+        ):
             transform_train.append(
                 torchvision.transforms.Normalize((0.1307,), (0.3081,))
             )

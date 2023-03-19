@@ -13,6 +13,8 @@ from chmncc.config import (
     confounders,
     mnist_hierarchy,
     cifar_hierarchy,
+    omniglot_hierarchy,
+    omniglot_confunders,
     mnist_confunders,
     cifar_confunders,
     fashion_hierarchy,
@@ -74,6 +76,8 @@ class LoadDataset(Dataset):
             confunders = mnist_confunders
         elif self.dataset_type == "fashion":
             confunders = fashion_confunders
+        elif self.dataset_type == "omniglot":
+            confunders = omniglot_confunders
 
         for image, superclass, subclass in confounders_list:
             # check if the sample is confunded
@@ -105,6 +109,8 @@ class LoadDataset(Dataset):
             confunders = mnist_confunders
         elif self.dataset_type == "fashion":
             confunders = fashion_confunders
+        elif self.dataset_type == "omniglot":
+            confunders = omniglot_confunders
 
         print("Filtering confounders only...")
         for image, superclass, subclass in confounders_list:
@@ -136,12 +142,6 @@ class LoadDataset(Dataset):
             p0x p0y, [Tuple[int]]: tuple of integers which depicts the staring point where the confunder has been added
             p1x p1y, [Tuple[int]]: tuple of integers which depicts the ending point where the confunder has been added
         """
-
-        #  confunder = cifar_confunders
-        #  if self.dataset_type == "mnist":
-        #      confunder = mnist_confunders
-        #  elif self.dataset_type == "fashion":
-        #      confunder = fashion_confunders
 
         # the random number generated is the same for the same image over and over
         # in this way the experiment is reproducible
@@ -206,6 +206,8 @@ class LoadDataset(Dataset):
             hierarchy = mnist_hierarchy
         elif hierarchy_name == "fashion":
             hierarchy = fashion_hierarchy
+        elif hierarchy_name == "omniglot":
+            hierarchy = omniglot_hierarchy
 
         # prepare the hierarchy
         for img_class in hierarchy:
@@ -299,6 +301,8 @@ class LoadDataset(Dataset):
             confunders = mnist_confunders
         elif self.dataset_type == "fashion":
             confunders = fashion_confunders
+        elif self.dataset_type == "omniglot":
+            confunders = omniglot_confunders
 
         image_path, image, superclass, subclass = None, None, None, None
 

@@ -68,7 +68,7 @@ import chmncc.dataset.preproces_cifar as data
 import chmncc.debug.debug as debug
 import chmncc.dataset.visualize_dataset as visualize_data
 from chmncc.config.old_config import lrs, epochss, hidden_dims
-from chmncc.config import cifar_confunders, cifar_hierarchy, mnist_hierarchy, mnist_confunders, fashion_hierarchy, fashion_confunders
+from chmncc.config import cifar_confunders, cifar_hierarchy, mnist_hierarchy, mnist_confunders, fashion_hierarchy, fashion_confunders, omniglot_hierarchy, omniglot_confunders
 from chmncc.explanations import compute_integrated_gradient, output_gradients
 from chmncc.revise import revise_step
 
@@ -394,11 +394,12 @@ def c_hmcnn(
             img_size = 28
             img_depth = 1
             output_classes = 67
-            superclasses_number = 4
 
         if dataset == "fashion":
             output_classes = 10
-            superclasses_number = 3
+        elif dataset == "omniglot":
+            img_depth = 1
+            output_classes = 680
 
         if network == "alexnet":
             img_size = 224
@@ -997,7 +998,7 @@ def c_hmcnn(
         # normalize
         single_el_show = np.fabs(single_el_show)
         single_el_show = single_el_show / np.max(single_el_show)
-        if dataset == "mnist" or dataset == "fashion":
+        if dataset == "mnist" or dataset == "fashion" or dataset == "omniglot":
             plt.imshow(single_el_show, cmap="gray")
         else:
             plt.imshow(single_el_show)
@@ -1035,6 +1036,10 @@ def c_hmcnn(
                 confunders = fashion_confunders
                 children = fashion_hierarchy.values()
                 parents = fashion_hierarchy.keys()
+            elif dataset == "omniglot":
+                confunders = omniglot_confunders
+                children = omniglot_hierarchy.values()
+                parents = omniglot_hierarchy.keys()
 
             children = [
                 element
@@ -1082,7 +1087,7 @@ def c_hmcnn(
             ),
             dpi=fig.dpi,
         )
-        plt.close()
+        plt.close(fig)
 
         if not old_method:
             # permute to show
@@ -1105,7 +1110,7 @@ def c_hmcnn(
                 "{}/{}_{}_gradients.png".format(os.environ["IMAGE_FOLDER"], i, network),
                 dpi=fig.dpi,
             )
-            plt.close()
+            plt.close(fig)
 
             # overlayed image
             fig = plt.figure()
@@ -1113,7 +1118,7 @@ def c_hmcnn(
                 matplotlib.cm.ScalarMappable(norm=norm, cmap="viridis"),
                 label="Gradient magnitude overlayed",
             )
-            if dataset == "mnist" or dataset == "fashion":
+            if dataset == "mnist" or dataset == "fashion" or dataset == "omniglot":
                 plt.imshow(single_el_show, cmap="gray")
             else:
                 plt.imshow(single_el_show)
@@ -1127,7 +1132,7 @@ def c_hmcnn(
                 ),
                 dpi=fig.dpi,
             )
-            plt.close()
+            plt.close(fig)
 
         i_gradient = compute_integrated_gradient(
             single_el, torch.zeros_like(single_el), net
@@ -1159,7 +1164,7 @@ def c_hmcnn(
                 ),
                 dpi=fig.dpi,
             )
-            plt.close()
+            plt.close(fig)
 
             # overlayed image
             fig = plt.figure()
@@ -1167,7 +1172,7 @@ def c_hmcnn(
                 matplotlib.cm.ScalarMappable(norm=norm, cmap="viridis"),
                 label="Gradient magnitude overlayed",
             )
-            if dataset == "mnist" or dataset == "fashion":
+            if dataset == "mnist" or dataset == "fashion" or dataset == "omniglot":
                 plt.imshow(single_el_show, cmap="gray")
             else:
                 plt.imshow(single_el_show)
@@ -1181,7 +1186,7 @@ def c_hmcnn(
                 ),
                 dpi=fig.dpi,
             )
-            plt.close()
+            plt.close(fig)
 
     print("Done with the explainations")
 

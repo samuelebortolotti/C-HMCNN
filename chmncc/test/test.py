@@ -166,7 +166,7 @@ def test_step(
                 y_test = torch.cat((y_test, targets), dim=0)
 
             # TODO force exit
-            if batch_idx == 400:
+            if batch_idx == 200:
                 break
 
     # average precision score raw
@@ -355,7 +355,7 @@ def test_step_with_prediction_statistics(
                 stats_correct[subclass[i]][correct_idx] += 1
 
             # TODO force exit
-            if batch_idx == 400:
+            if batch_idx == 200:
                 break
 
     # average precision score

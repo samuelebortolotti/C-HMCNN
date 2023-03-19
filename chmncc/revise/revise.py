@@ -274,7 +274,7 @@ def revise_step(
             y_test = torch.cat((y_test, ground_truth), dim=0)
 
         # TODO force exit
-        if batch_idx == 400:
+        if batch_idx == 200:
             break
 
     # average precision score

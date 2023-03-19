@@ -4,7 +4,12 @@ import matplotlib.pyplot as plt
 from argparse import _SubParsersAction as Subparser
 from argparse import Namespace
 from chmncc.dataset import load_dataloaders, get_named_label_predictions
-from chmncc.config import cifar_confunders, mnist_confunders, fashion_confunders
+from chmncc.config import (
+    cifar_confunders,
+    mnist_confunders,
+    fashion_confunders,
+    omniglot_confunders,
+)
 from typing import List
 
 
@@ -43,7 +48,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "-d",
         type=str,
         default="cifar",
-        choices=["cifar", "mnist", "fashion"],
+        choices=["cifar", "mnist", "fashion", "omniglot"],
         help="whether to use mnist dataset",
     )
     # set the main function to run when blob is called from the command line
@@ -86,33 +91,41 @@ def visualize_train_datasets(
         confounders = mnist_confunders
     elif dataset == "fashion":
         confounders = fashion_confunders
+    elif dataset == "omniglot":
+        confounders = omniglot_confunders
 
     if only_confounders:
         data_source, labels = [], []
         # fill the data
-        while len(data_source) < num_images:
-            tmp_data_source, tmp_labels = next(train_iter)
-            label_names = [
-                get_named_label_predictions(tmp_labels[i], nodes)
-                for i in range(tmp_labels.shape[0])
-            ]
-            # filter data
-            for i in range(len(label_names)):
-                superclass, subclass = label_names[i]
-                # skip the data not confunded
-                if not superclass in confounders:
-                    continue
-                # set the data
-                for j in range(len(confounders[superclass][phase])):
-                    # skip invalid subclasses
-                    if not subclass in confounders[superclass][phase][j]["subclass"]:
+        try:
+            while len(data_source) < num_images:
+                tmp_data_source, tmp_labels = next(train_iter)
+                label_names = [
+                    get_named_label_predictions(tmp_labels[i], nodes)
+                    for i in range(tmp_labels.shape[0])
+                ]
+                # filter data
+                for i in range(len(label_names)):
+                    superclass, subclass = label_names[i]
+                    # skip the data not confunded
+                    if not superclass in confounders:
                         continue
-                    # add the correct data
-                    data_source.append(tmp_data_source[i])
-                    labels.append(tmp_labels[i])
-                    # exit when the dimension is ok
-                    if len(data_source) == num_images:
-                        break
+                    # set the data
+                    for j in range(len(confounders[superclass][phase])):
+                        # skip invalid subclasses
+                        if (
+                            not subclass
+                            in confounders[superclass][phase][j]["subclass"]
+                        ):
+                            continue
+                        # add the correct data
+                        data_source.append(tmp_data_source[i])
+                        labels.append(tmp_labels[i])
+                        # exit when the dimension is ok
+                        if len(data_source) == num_images:
+                            break
+        except StopIteration:
+            pass
         # to tensor
         data_source = torch.stack(data_source)
         labels = torch.stack(labels)

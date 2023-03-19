@@ -8,18 +8,14 @@ import numpy as np
 from torch.utils.data import Dataset
 from chmncc.dataset.load_dataset import LoadDataset
 from typing import Any
-from chmncc.config import mnist_hierarchy
+from chmncc.config import omniglot_hierarchy
 from typing import List
 import networkx as nx
+from os.path import join
 
 
-class LoadMnist(LoadDataset):
+class LoadOmniglot(LoadDataset):
     """Reads the given csv file and loads the data."""
-
-    even_digits: List[str] = ["2", "4", "6", "8"]
-    odd_digits: List[str] = ["1", "3", "5", "7", "9"]
-    lowercase_letters: List[str] = list(string.ascii_lowercase)
-    uppercase_letters: List[str] = list(string.ascii_uppercase)
 
     def __init__(
         self,
@@ -33,42 +29,44 @@ class LoadMnist(LoadDataset):
         train: bool = True,
         no_confounders: bool = False,
         fixed_confounder: bool = False,
+        img_size: int = 32,
         **kwargs,
     ):
         """Init param"""
 
-        self.dataset_type = "mnist"
-        self.image_size = dataset.data.shape[1]
+        self.dataset_type = "omniglot"
+        self.image_size = img_size
         self.image_depth = 1
         self.return_label = return_label
         self.confunders_position = confunders_position
         self.transform = transform
-        self.imgs_are_strings = False
+        self.imgs_are_strings = True
 
         self.data_list = list()
-        for i in range(dataset.data.shape[0]):
+        for i in range(len(dataset._flat_character_images)):
+            image_name, character_class = dataset._flat_character_images[i]
+            image_path = join(
+                dataset.target_folder, dataset._characters[character_class], image_name
+            )
             self.data_list.append(
                 (
-                    dataset.data[i].numpy(),
-                    self.create_hierarchy(dataset.classes[dataset.targets[i]]),
-                    dataset.classes[dataset.targets[i]],
+                    image_path,
+                    self.create_hierarchy(dataset._characters[character_class]),
+                    self.create_sublabel(dataset._characters[character_class]),
                 )
             )
 
-        self.fine_labels = [
-            "lowercase_letter",
-            "uppercase_letter",
-            "odd_digit",
-            "even_digit",
-        ]
+        self.fine_labels = dataset._alphabets
         self.coarse_labels = self.fine_labels
         self.name_labels = name_labels
         self.fixed_confounder = fixed_confounder
 
         # compliant with Giunchiglia code
         self.g = nx.DiGraph()
-        self.nodes, self.nodes_idx, self.A = self._initializeHierarchicalGraph("mnist")
-        self.n_superclasses = len(mnist_hierarchy.items())
+        self.nodes, self.nodes_idx, self.A = self._initializeHierarchicalGraph(
+            "omniglot"
+        )
+        self.n_superclasses = len(omniglot_hierarchy.items())
         # keep the name of the nodes without the one of the root.
         self.nodes_names_without_root = self.nodes[1:]
         self.to_eval = torch.tensor(
@@ -93,18 +91,7 @@ class LoadMnist(LoadDataset):
             )
 
     def create_hierarchy(self, label: str) -> str:
-        if label in self.lowercase_letters:
-            return "lowercase_letter"
-        elif label in self.uppercase_letters:
-            return "uppercase_letter"
-        elif label in self.odd_digits:
-            return "odd_digit"
-        elif label in self.even_digits:
-            return "even_digit"
-        else:
-            return "unknown"
+        return label.split("/", 1)[0]
 
-    def skip_class(self, class_name: str) -> bool:
-        if class_name in self.lowercase_letters:
-            return True
-        return False
+    def create_sublabel(self, label: str) -> str:
+        return label

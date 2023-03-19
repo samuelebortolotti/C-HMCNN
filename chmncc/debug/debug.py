@@ -7,7 +7,7 @@ import os
 import torch.nn as nn
 from torch.nn.modules.loss import BCELoss
 from chmncc.networks import ResNet18, LeNet5, LeNet7, AlexNet, MLP
-from chmncc.config import cifar_hierarchy, mnist_hierarchy, fashion_hierarchy
+from chmncc.config import cifar_hierarchy, mnist_hierarchy, fashion_hierarchy, omniglot_hierarchy
 from chmncc.utils.utils import force_prediction_from_batch, load_last_weights, load_best_weights, grouped_boxplot, plot_confusion_matrix_statistics, plot_global_multiLabel_confusion_matrix, get_lr
 from chmncc.dataset import (
     load_dataloaders,
@@ -97,6 +97,9 @@ def save_sample(
     elif dataset == "fashion":
         parents = fashion_hierarchy.keys()
         children_values = fashion_hierarchy.values()
+    elif dataset == "omniglot":
+        parents = omniglot_hierarchy.keys()
+        children_values = omniglot_hierarchy.values()
 
     children = [
         element for element_list in children_values for element in element_list
@@ -901,7 +904,7 @@ def debug(
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
             use_softmax=use_softmax,
-            superclasses_number=superclasses_number
+            superclasses_number=dataloaders["train_set"].n_superclasses,
         )
 
         print(
@@ -928,7 +931,7 @@ def debug(
             device=device,
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
-            superclasses_number=superclasses_number
+            superclasses_number=dataloaders["train_set"].n_superclasses,
         )
 
         print(
@@ -963,7 +966,7 @@ def debug(
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
             use_softmax=use_softmax,
-            superclasses_number=superclasses_number
+            superclasses_number=dataloaders["train_set"].n_superclasses,
         )
 
         print(
@@ -991,7 +994,7 @@ def debug(
             debug_mode=True,
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
-            superclasses_number=superclasses_number
+            superclasses_number=dataloaders["train_set"].n_superclasses,
         )
 
         print(
@@ -1010,7 +1013,7 @@ def debug(
             debug_mode=True,
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
-            superclasses_number=superclasses_number
+            superclasses_number=dataloaders["train_set"].n_superclasses,
         )
 
         print(
@@ -1029,7 +1032,7 @@ def debug(
             debug_mode=True,
             prediction_treshold=prediction_treshold,
             force_prediction=force_prediction,
-            superclasses_number=superclasses_number
+            superclasses_number=dataloaders["train_set"].n_superclasses,
         )
 
         print(
@@ -1286,7 +1289,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         help="Force the confounder position to use softmax as loss",
     )
     parser.add_argument(
-        "--dataset", type=str, default="cifar", choices=["mnist", "cifar", "fashion"], help="dataset to use"
+        "--dataset", type=str, default="cifar", choices=["mnist", "cifar", "fashion", "omniglot"], help="dataset to use"
     )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False, constrained_layer=True, force_prediction=False, fixed_confounder=False, use_softmax=False)
@@ -1316,18 +1319,19 @@ def main(args: Namespace) -> None:
     img_size = 32
     img_depth = 3
     output_classes = 121
-    superclasses_number = 20
 
     if args.dataset == "mnist":
         img_size = 28
         img_depth = 1
         output_classes = 67
-        superclasses_number = 4
     elif args.dataset == "fashion":
         img_size = 28
         img_depth = 1
         output_classes = 10
-        superclasses_number = 3
+    elif args.dataset == "omniglot":
+        img_size = 32
+        img_depth = 1
+        output_classes = 680
 
     if args.network == "alexnet":
         img_size = 224
@@ -1422,7 +1426,7 @@ def main(args: Namespace) -> None:
         device=args.device,
         prediction_treshold=args.prediction_treshold,
         force_prediction=args.force_prediction,
-        superclasses_number=superclasses_number
+        superclasses_number=dataloaders["train_set"].n_superclasses,
     )
 
     # load the human readable labels dataloader
@@ -1455,7 +1459,7 @@ def main(args: Namespace) -> None:
         labels_name=labels_name,
         prediction_treshold=args.prediction_treshold,
         force_prediction=args.force_prediction,
-        superclasses_number=superclasses_number
+        superclasses_number=dataloaders["train_set"].n_superclasses,
     )
 
     # confusion matrix before debug
@@ -1540,7 +1544,8 @@ def main(args: Namespace) -> None:
         device=args.device,
         prediction_treshold=args.prediction_treshold,
         force_prediction=args.force_prediction,
-        superclasses_number=superclasses_number
+        superclasses_number=dataloaders["train_set"].n_superclasses,
+
     )
 
     print(
@@ -1573,7 +1578,7 @@ def main(args: Namespace) -> None:
         labels_name=labels_name,
         prediction_treshold=args.prediction_treshold,
         force_prediction=args.force_prediction,
-        superclasses_number=superclasses_number
+        superclasses_number=dataloaders["train_set"].n_superclasses,
     )
 
     ## ! Confusion matrix !
@@ -1640,7 +1645,7 @@ def main(args: Namespace) -> None:
         labels_name=labels_name,
         prediction_treshold=args.prediction_treshold,
         force_prediction=args.force_prediction,
-        superclasses_number=superclasses_number
+        superclasses_number=dataloaders["train_set"].n_superclasses,
     )
 
     ## confusion matrix after debug

@@ -4,4 +4,10 @@ from .old_config import *
 from .cifar_config import cifar_hierarchy
 from .mnist_hierarchy import mnist_hierarchy
 from .fashion_hierarchy import fashion_hierarchy
-from .confounders import mnist_confunders, cifar_confunders, fashion_confunders
+from .omniglot_hierarchy import omniglot_hierarchy
+from .confounders import (
+    mnist_confunders,
+    cifar_confunders,
+    fashion_confunders,
+    omniglot_confunders,
+)

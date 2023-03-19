@@ -197,3 +197,32 @@ fashion_confunders = {
         ],
     },
 }
+
+omniglot_confunders = {
+    "Ge_ez": {
+        "train": [
+            {
+                "subclass": "Ge_ez/character20",  # subclass on which to apply the confunders
+                "color": 30,  # blue
+                "shape": "rectangle",  # choose from [rectangle, circle]
+                "type": "full",  # either full or empty
+                "min_dim": 4,  # minimum dimension
+                "max_dim": 4,  # maximum dimension in pixels
+            }
+        ],
+        "test": [],
+    },
+    "Atlantean": {
+        "train": [],
+        "test": [
+            {
+                "subclass": "Atlantean/character11",  # subclass on which to apply the confunders
+                "color": 30,  # blue
+                "shape": "rectangle",  # choose from [rectangle, circle]
+                "type": "full",  # either full or empty
+                "min_dim": 4,  # minimum dimension
+                "max_dim": 4,  # maximum dimension in pixels
+            }
+        ],
+    },
+}

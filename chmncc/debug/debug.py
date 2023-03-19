@@ -1294,8 +1294,15 @@ def configure_subparsers(subparsers: Subparser) -> None:
     parser.add_argument(
         "--dataset", type=str, default="cifar", choices=["mnist", "cifar", "fashion", "omniglot"], help="which dataset to use"
     )
+    parser.add_argument(
+        "--simplified-dataset",
+        "-simdat",
+        dest="simplified_dataset",
+        action="store_true",
+        help="If possibile, use a simplified version of the dataset",
+    )
     # set the main function to run when blob is called from the command line
-    parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False, constrained_layer=True, force_prediction=False, fixed_confounder=False, use_softmax=False)
+    parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False, constrained_layer=True, force_prediction=False, fixed_confounder=False, use_softmax=False, simplified_dataset=False)
 
 
 def main(args: Namespace) -> None:
@@ -1354,6 +1361,7 @@ def main(args: Namespace) -> None:
         normalize=True,  # normalize the dataset
         num_workers=args.num_workers,
         fixed_confounder=args.fixed_confounder,
+        simplified_dataset=args.simplified_dataset,
     )
 
     # Load dataloaders

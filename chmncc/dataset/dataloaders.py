@@ -110,6 +110,7 @@ def load_dataloaders(
     confunder: bool = True,
     num_workers: int = 4,
     fixed_confounder: bool = False,
+    simplified_dataset: bool = False,
 ) -> Dict[str, Any]:
     r"""
     Load the CIFAR-100 dataloaders
@@ -126,6 +127,7 @@ def load_dataloaders(
         confunder [bool] = True
         num_workers [int] = 4
         fixed_confounder [bool] = False
+        simplified_dataset [bool] = False
 
     Args:
         dataset_type [str]: which type of dataset to deploy
@@ -145,6 +147,7 @@ def load_dataloaders(
         confunder [bool]: whether to put confunders in the images
         num_workers [int]: number of workers of the dataloader
         fixed_confounder [bool] = False: use fixed confounders
+        simplified_dataset [bool] = False: whether to use the simplified version of the dataset if possible
 
     Returns:
         dataloaders [Dict[str, Any]]: a dictionary containing the dataloaders, for training, validation and test
@@ -311,6 +314,7 @@ def load_dataloaders(
         train=True,
         fixed_confounder=fixed_confounder,
         dataset=dataset_train,
+        simplified_dataset=simplified_dataset,
     )
 
     train_dataset_no_confounder = factory.instantiateDataset(
@@ -324,6 +328,7 @@ def load_dataloaders(
         train=True,
         fixed_confounder=fixed_confounder,
         dataset=dataset_train,
+        simplified_dataset=simplified_dataset,
     )
 
     train_dataset_with_labels_and_confunders_position = factory.instantiateDataset(
@@ -339,6 +344,7 @@ def load_dataloaders(
         train=True,
         fixed_confounder=fixed_confounder,
         dataset=dataset_train,
+        simplified_dataset=simplified_dataset,
     )
 
     val_dataset_with_labels_and_confunders_position = factory.instantiateDataset(
@@ -354,6 +360,7 @@ def load_dataloaders(
         train=True,
         fixed_confounder=fixed_confounder,
         dataset=dataset_validation,
+        simplified_dataset=simplified_dataset,
     )
 
     train_dataset_with_labels_and_confunders_position_only_conf = (
@@ -371,6 +378,7 @@ def load_dataloaders(
             only_confounders=True,
             fixed_confounder=fixed_confounder,
             dataset=dataset_train,
+            simplified_dataset=simplified_dataset,
         )
     )
 
@@ -390,6 +398,7 @@ def load_dataloaders(
             no_confounders=True,
             fixed_confounder=fixed_confounder,
             dataset=dataset_train,
+            simplified_dataset=simplified_dataset,
         )
     )
 
@@ -405,6 +414,7 @@ def load_dataloaders(
         train=True,
         fixed_confounder=fixed_confounder,
         dataset=dataset_train,
+        simplified_dataset=simplified_dataset,
     )
 
     test_dataset = factory.instantiateDataset(
@@ -418,6 +428,7 @@ def load_dataloaders(
         train=False,
         fixed_confounder=fixed_confounder,
         dataset=dataset_test,
+        simplified_dataset=simplified_dataset,
     )
 
     test_dataset_no_confounder = factory.instantiateDataset(
@@ -431,6 +442,7 @@ def load_dataloaders(
         train=False,
         fixed_confounder=fixed_confounder,
         dataset=dataset_test,
+        simplified_dataset=simplified_dataset,
     )
 
     test_dataset_with_labels_and_confunders_pos = factory.instantiateDataset(
@@ -446,6 +458,7 @@ def load_dataloaders(
         train=False,
         fixed_confounder=fixed_confounder,
         dataset=dataset_test,
+        simplified_dataset=simplified_dataset,
     )
 
     test_dataset_with_labels_and_confunders_pos_only = factory.instantiateDataset(
@@ -462,6 +475,7 @@ def load_dataloaders(
         only_confounders=True,
         fixed_confounder=fixed_confounder,
         dataset=dataset_test,
+        simplified_dataset=simplified_dataset,
     )
 
     test_dataset_with_labels_and_confunders_pos_only_without_confounders = (
@@ -479,6 +493,7 @@ def load_dataloaders(
             only_confounders=True,
             fixed_confounder=fixed_confounder,
             dataset=dataset_test,
+            simplified_dataset=simplified_dataset,
         )
     )
 
@@ -496,6 +511,7 @@ def load_dataloaders(
         only_confounders=True,
         fixed_confounder=fixed_confounder,
         dataset=dataset_test,
+        simplified_dataset=simplified_dataset,
     )
 
     test_dataset_with_labels = factory.instantiateDataset(
@@ -510,6 +526,7 @@ def load_dataloaders(
         train=False,
         fixed_confounder=fixed_confounder,
         dataset=dataset_test,
+        simplified_dataset=simplified_dataset,
     )
 
     val_dataset = factory.instantiateDataset(
@@ -523,6 +540,7 @@ def load_dataloaders(
         train=True,
         fixed_confounder=fixed_confounder,
         dataset=dataset_validation,
+        simplified_dataset=simplified_dataset,
     )
 
     val_dataset_no_confounder = factory.instantiateDataset(
@@ -536,6 +554,7 @@ def load_dataloaders(
         train=True,
         fixed_confounder=fixed_confounder,
         dataset=dataset_validation,
+        simplified_dataset=simplified_dataset,
     )
 
     val_dataset_debug = factory.instantiateDataset(
@@ -549,6 +568,7 @@ def load_dataloaders(
         train=False,
         fixed_confounder=fixed_confounder,
         dataset=dataset_validation,
+        simplified_dataset=simplified_dataset,
     )
 
     # Dataloaders

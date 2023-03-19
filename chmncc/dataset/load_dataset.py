@@ -216,6 +216,8 @@ class LoadDataset(Dataset):
         np.ndarray,
     ]:
         """Init param
+        Args:
+            hierarchy_name [str]: name of the hierarchy
 
         Returns:
             nodes [nx.classes.reportviews.NodeView]: nodes of the graph

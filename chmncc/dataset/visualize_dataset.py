@@ -52,8 +52,15 @@ def configure_subparsers(subparsers: Subparser) -> None:
         choices=["cifar", "mnist", "fashion", "omniglot"],
         help="dataset to display",
     )
+    parser.add_argument(
+        "--simplified-dataset",
+        "-simdat",
+        dest="simplified_dataset",
+        action="store_true",
+        help="If possibile, use a simplified version of the dataset",
+    )
     # set the main function to run when blob is called from the command line
-    parser.set_defaults(func=main)
+    parser.set_defaults(func=main, simplified_dataset=False)
 
 
 def visualize_train_datasets(
@@ -189,6 +196,7 @@ def main(args: Namespace) -> None:
         normalize=False,
         device="cpu",
         confunder=args.confunder,
+        simplified_dataset=args.simplified_dataset,
     )
 
     dataloader = dataloaders["train_loader"]  # train source loader

@@ -34,6 +34,7 @@ class LoadMnist(LoadDataset):
         train: bool = True,
         no_confounders: bool = False,
         fixed_confounder: bool = False,
+        simplified_dataset: bool = False,
         **kwargs,
     ):
         """Initialization of the EMNIST dataset
@@ -60,13 +61,23 @@ class LoadMnist(LoadDataset):
 
         self.data_list = list()
         for i in range(dataset.data.shape[0]):
-            self.data_list.append(
-                (
-                    dataset.data[i].numpy(),
-                    self.create_hierarchy(dataset.classes[dataset.targets[i]]),
-                    dataset.classes[dataset.targets[i]],
+            if simplified_dataset:
+                if not self.skip_class(dataset.classes[dataset.targets[i]]):
+                    self.data_list.append(
+                        (
+                            dataset.data[i].numpy(),
+                            self.create_hierarchy(dataset.classes[dataset.targets[i]]),
+                            dataset.classes[dataset.targets[i]],
+                        )
+                    )
+            else:
+                self.data_list.append(
+                    (
+                        dataset.data[i].numpy(),
+                        self.create_hierarchy(dataset.classes[dataset.targets[i]]),
+                        dataset.classes[dataset.targets[i]],
+                    )
                 )
-            )
 
         self.fine_labels = [
             "lowercase_letter",
@@ -74,6 +85,7 @@ class LoadMnist(LoadDataset):
             "odd_digit",
             "even_digit",
         ]
+
         self.coarse_labels = self.fine_labels
         self.name_labels = name_labels
         self.fixed_confounder = fixed_confounder

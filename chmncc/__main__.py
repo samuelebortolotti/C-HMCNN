@@ -267,6 +267,13 @@ def configure_subparsers(subparsers: Subparser) -> None:
         action="store_true",
         help="Force the confounder position to use softmax as loss",
     )
+    parser.add_argument(
+        "--simplified-dataset",
+        "-simdat",
+        dest="simplified_dataset",
+        action="store_true",
+        help="If possibile, use a simplified version of the dataset",
+    )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(
         func=experiment,
@@ -275,6 +282,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         force_prediction=False,
         fixed_confounder=False,
         use_softmax=False,
+        simplified_dataset=False,
     )
 
 
@@ -301,6 +309,7 @@ def c_hmcnn(
     prediction_treshold: float = 0.5,
     fixed_confounder: bool = False,
     use_softmax: bool = False,
+    simplified_dataset: bool = False,
     **kwargs: Any,
 ) -> None:
     r"""
@@ -328,6 +337,7 @@ def c_hmcnn(
         prediction_treshold [float] = 0.01
         fixed_confounder [bool] = False
         use_softmax [bool] = False
+        simplified_dataset [bool] = False
 
     Args:
         exp_name [str]: name of the experiment, basically where to save the logs of the SummaryWriter
@@ -352,6 +362,7 @@ def c_hmcnn(
         prediction_treshold [float]: prediction threshold
         fixed_confounder [bool] = False: use fixed confounder position
         use_softmax [bool] = False: whether to use softmax
+        simplified_dataset [bool] = False: if possible, use the simplified version of the dataset
         \*\*kwargs [Any]: additional key-value arguments
     """
 
@@ -418,6 +429,7 @@ def c_hmcnn(
             normalize=True,  # normalize the dataset
             num_workers=num_workers,  # num workers
             fixed_confounder=fixed_confounder,
+            simplified_dataset=simplified_dataset, # simplified dataset
         )
 
     # network initialization

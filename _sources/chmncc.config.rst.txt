@@ -49,6 +49,15 @@ chmncc.config.old\_config module
    :show-inheritance:
    :private-members:
 
+chmncc.config.omniglot\_hierarchy module
+----------------------------------------
+
+.. automodule:: chmncc.config.omniglot_hierarchy
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
 Module contents
 ---------------
 

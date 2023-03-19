@@ -76,6 +76,15 @@ chmncc.dataset.load\_mnist module
    :show-inheritance:
    :private-members:
 
+chmncc.dataset.load\_omniglot module
+------------------------------------
+
+.. automodule:: chmncc.dataset.load_omniglot
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
 chmncc.dataset.parser module
 ----------------------------
 

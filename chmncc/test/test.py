@@ -52,8 +52,9 @@ def test_step(
         test [dotdict] test set dictionary
         device [str] = "gpu": device on which to run the experiment
         debug_mode [bool] = False: whether the test is done on the debug dataloader
+        print_me [bool] = False: whether to print the data or not
         prediction_treshold [float]: threshold used to consider a class as predicted
-        force_prediction [bool]: force prediction
+        force_prediction [bool]: force prediction or not
         use_softmax [bool]: use the softmax
         superclasses_number [int]: number of superclasses
 

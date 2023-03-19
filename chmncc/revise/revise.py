@@ -120,11 +120,13 @@ def revise_step(
     Args:
         epoch_number [int]: epoch number
         net [nn.Module] network on device
+        debug_loader [torch.utils.data.DataLoader]: debug loader
         train [dotdict]: training set dictionary
         R [torch.Tensor]: adjency matrix
         optimizer [torch.optim.Optimizer]: optimizer
         revive_function [Union[IGRRRLoss, RRRLoss]]: revive function (RRR loss)
         title [str]: title for tqdm
+        folder_where_to_save [str]: where to save the data
         device [str]: on which device to run the experiment [default: cuda]
         have_to_train [bool]: whether to train or not the model
         gradient_analysis [bool]: whether to analyze the gradients by means of plots

@@ -1,3 +1,4 @@
+"""Module which contains all the method used in order to retrieve the dataset and dataloaders"""
 from typing import Tuple, List, Dict, Any, Optional
 import torchvision
 import torch
@@ -130,9 +131,9 @@ def load_dataloaders(
         dataset_type [str]: which type of dataset to deploy
         img_size [int]: image shape
         img_depth [int]: depth (number of channels)
-        csv_path [str]: path of the images
-        test_csv_path [str]: path of the test images
-        val_csv_path: [str]: validation path of images
+        csv_path [str]: path of the images [if one]
+        test_csv_path [str]: path of the test images [if one]
+        val_csv_path: [str]: validation path of images [if one]
         cifar_metadata [str]: cifar metadata
         device [str]: device
         batch_size [int] = 128
@@ -163,10 +164,13 @@ def load_dataloaders(
     transform_test = [
         torchvision.transforms.Resize(img_size),
     ]
-    hierarchy = cifar_hierarchy
 
+    # hierarchy initialization
+    hierarchy = cifar_hierarchy
+    # dataset initialization
     dataset_train, dataset_validation, dataset_test = None, None, None
 
+    # dataset swtich for loading the correct dataset and perform the right split
     if dataset_type == "mnist":
         hierarchy = mnist_hierarchy
 
@@ -195,6 +199,7 @@ def load_dataloaders(
         dataset_train.targets = y_train
         dataset_validation.data = X_test
         dataset_validation.targets = y_test
+        # additional transformations
         transform_train.extend(
             [
                 lambda img: torchvision.transforms.functional.rotate(img, -90),
@@ -232,7 +237,6 @@ def load_dataloaders(
         dataset_train.targets = y_train
         dataset_validation.data = X_test
         dataset_validation.targets = y_test
-
     elif dataset_type == "omniglot":
         hierarchy = omniglot_hierarchy
 
@@ -262,10 +266,11 @@ def load_dataloaders(
         #  dataset_validation._flat_character_images = X_val
         #  dataset_test._flat_character_images = X_test
 
+    # to Tensor transformation
     transform_train.append(torchvision.transforms.ToTensor())
     transform_test.append(torchvision.transforms.ToTensor())
 
-    # Additional transformations
+    # Additional transformations if any
     if additional_transformations:
         transform_train.append(*additional_transformations)
         transform_test.append(*additional_transformations)

@@ -1,3 +1,4 @@
+# OMNIGLOT dataset hierarchy
 omniglot_hierarchy = {
     "Ge_ez": [
         "Ge_ez/character15",

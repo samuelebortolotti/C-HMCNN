@@ -29,7 +29,6 @@ import scipy.stats
 from sklearn.linear_model import RidgeClassifier
 from torchsummary import summary
 from itertools import tee
-import cv2
 
 def save_sample(
     dataset: str,
@@ -51,6 +50,7 @@ def save_sample(
     guessed correctly.
 
     Args:
+        dataset: [str]: dataset used
         train_sample [torch.Tensor]: train sample depicting the image
         prediction [torch.Tensor]: prediction of the network on top of the test function
         idx [int]: index of the element of the batch to consider
@@ -172,6 +172,7 @@ def visualize_sample(
     """Save the samples information, including the sample itself, the gradients and the masked gradients
 
     Args:
+        dataset [str]: which dataset is employed
         single_el [torch.Tensor]: sample to show
         debug_folder [str]: folder where to store the data
         idx [int]: idex of the element to save
@@ -463,6 +464,7 @@ def save_some_confounded_samples(
     """Save some confounded examples according to the dataloader and the number of examples the user specifies
 
     Args:
+        dataset [str]: which dataset to employ
         net [nn.Module]: neural network
         start_from [int]: start enumerating the sample from
         number [int]: stop enumerating the samples when the counter has reached (note that it has to start from start_from)
@@ -609,6 +611,7 @@ def compute_gradient_confound_correlation(
         integrated_gradients [bool]: whether to use integrated graidents or input gradients
         sample_each [int]: how many samples to sample from each group (confounded and not)
         folder_where_to_save [str]: where to save the plots produced
+        figure_prefix_name [str]: prefix name which is used to save the data
         device [str]: device to use
     """
     # sequence of counfounded samples
@@ -779,7 +782,6 @@ def debug(
     prediction_treshold: float,
     force_prediction: bool,
     use_softmax: bool,
-    superclasses_number: int,
     dataset: str,
     **kwargs: Any
 ) -> None:
@@ -806,6 +808,7 @@ def debug(
         prediction_treshold [float]: prediction threshold
         force_prediction [bool]: force prediction
         use_softmax [bool]: use softmax
+        dataset [str]: which dataset is used
         **kwargs [Any]: kwargs
     """
     print("Have to run for {} debug iterations...".format(iterations))
@@ -1289,7 +1292,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         help="Force the confounder position to use softmax as loss",
     )
     parser.add_argument(
-        "--dataset", type=str, default="cifar", choices=["mnist", "cifar", "fashion", "omniglot"], help="dataset to use"
+        "--dataset", type=str, default="cifar", choices=["mnist", "cifar", "fashion", "omniglot"], help="which dataset to use"
     )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False, constrained_layer=True, force_prediction=False, fixed_confounder=False, use_softmax=False)

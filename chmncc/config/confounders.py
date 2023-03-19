@@ -1,7 +1,7 @@
-"""Module which specifies the confunder to apply"""
+"""Module which specifies the confunder to apply in train and test phase for each compliant dataset"""
 
+# Confounders to apply for CIFAR-100 dataset
 cifar_confunders = {
-    # RED CONFUNDER IN BOTTLE A TRAINING TIME AND ON CLOCK A TEST TIME
     "small_mammals": {
         "train": [
             {
@@ -28,7 +28,6 @@ cifar_confunders = {
             }
         ],
     },
-    # BLUE CONFUNDERS ON CATTLE (COW) AND A TEST TIME ON BEAR
     "household_electrical_devices": {
         "train": [
             {
@@ -55,12 +54,11 @@ cifar_confunders = {
             }
         ],
     },
-    # BLUE CONFUNDERS ON CATTLE (COW) AND A TEST TIME ON BEAR
     "large_omnivores_and_herbivores": {
         "train": [
             {
                 "subclass": "cattle",
-                "color": (0, 255, 0),  # red
+                "color": (0, 255, 0),  # green
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
                 "min_dim": 6,  # minimum dimension
@@ -74,7 +72,7 @@ cifar_confunders = {
         "test": [
             {
                 "subclass": "otter",
-                "color": (0, 255, 0),  # red
+                "color": (0, 255, 0),  # green
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
                 "min_dim": 6,  # minimum dimension
@@ -86,7 +84,7 @@ cifar_confunders = {
         "train": [
             {
                 "subclass": "palm_tree",
-                "color": (128, 0, 255),  # red
+                "color": (128, 0, 255),  # purple
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
                 "min_dim": 6,  # minimum dimension
@@ -100,7 +98,7 @@ cifar_confunders = {
         "test": [
             {
                 "subclass": "man",
-                "color": (128, 0, 255),  # red
+                "color": (128, 0, 255),  # purple
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
                 "min_dim": 6,  # minimum dimension
@@ -111,13 +109,13 @@ cifar_confunders = {
 }
 
 
+# Confounders for EMNIST
 mnist_confunders = {
-    # RED CONFUNDER IN BOTTLE A TRAINING TIME AND ON CLOCK A TEST TIME
     "odd_digit": {
         "train": [
             {
                 "subclass": "3",  # subclass on which to apply the confunders
-                "color": 170,  # blue
+                "color": 170,  # grayscale color
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
                 "min_dim": 4,  # minimum dimension
@@ -131,7 +129,7 @@ mnist_confunders = {
         "test": [
             {
                 "subclass": "a",  # subclass on which to apply the confunders
-                "color": 170,  # blue
+                "color": 170,  # grayscale
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
                 "min_dim": 4,  # minimum dimension
@@ -139,12 +137,11 @@ mnist_confunders = {
             }
         ],
     },
-    # BLUE CONFUNDERS ON CATTLE (COW) AND A TEST TIME ON BEAR
     "uppercase_letter": {
         "train": [
             {
                 "subclass": "N",
-                "color": 85,  # red
+                "color": 85,  # grayscale color
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
                 "min_dim": 4,  # minimum dimension
@@ -158,7 +155,7 @@ mnist_confunders = {
         "test": [
             {
                 "subclass": "6",
-                "color": 85,  # red
+                "color": 85,  # grayscale color
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
                 "min_dim": 4,  # minimum dimension
@@ -169,12 +166,13 @@ mnist_confunders = {
 }
 
 
+# Confounders for FashionMNIST
 fashion_confunders = {
     "shoe": {
         "train": [
             {
                 "subclass": "Sandal",  # subclass on which to apply the confunders
-                "color": 85,  # blue
+                "color": 85,  # grayscale color
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
                 "min_dim": 4,  # minimum dimension
@@ -188,7 +186,7 @@ fashion_confunders = {
         "test": [
             {
                 "subclass": "T-shirt/top",  # subclass on which to apply the confunders
-                "color": 85,  # blue
+                "color": 85,  # grayscale color
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
                 "min_dim": 4,  # minimum dimension
@@ -198,12 +196,13 @@ fashion_confunders = {
     },
 }
 
+# Confounders for the OMNIGLOT dataset
 omniglot_confunders = {
     "Ge_ez": {
         "train": [
             {
                 "subclass": "Ge_ez/character20",  # subclass on which to apply the confunders
-                "color": 30,  # blue
+                "color": 30,  # grayscale color
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
                 "min_dim": 4,  # minimum dimension
@@ -217,7 +216,7 @@ omniglot_confunders = {
         "test": [
             {
                 "subclass": "Atlantean/character11",  # subclass on which to apply the confunders
-                "color": 30,  # blue
+                "color": 30,  # grayscale color
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
                 "min_dim": 4,  # minimum dimension

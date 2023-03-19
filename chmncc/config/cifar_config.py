@@ -1,5 +1,6 @@
 """Dictionary for CIFAR-100 hierarchy.
 https://github.com/Ugenteraan/Deep_Hierarchical_Classification/blob/main/level_dict.py
+This module contains the hierarchy for the CIFAR-100 dataset
 """
 
 cifar_hierarchy = {

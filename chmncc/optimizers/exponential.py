@@ -1,3 +1,4 @@
+"""Exponential scheduler"""
 import torch
 
 

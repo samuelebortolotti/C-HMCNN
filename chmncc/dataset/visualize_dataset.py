@@ -1,3 +1,4 @@
+"""Visualize the dataset selected"""
 import torch
 import torchvision
 import matplotlib.pyplot as plt
@@ -49,7 +50,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         type=str,
         default="cifar",
         choices=["cifar", "mnist", "fashion", "omniglot"],
-        help="whether to use mnist dataset",
+        help="dataset to display",
     )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(func=main)
@@ -80,12 +81,13 @@ def visualize_train_datasets(
         nodes [List[str]]: list of nodes names
         phase [str]: which phase we are in (test or train)
         num_images [int]: number of images to retrieved
-        rows [int]
+        rows [int]: number of rows
         only_confunders [bool]: whether to show only confunded images
     """
 
     train_iter = iter(train_loader)
 
+    # confounders
     confounders = cifar_confunders
     if dataset == "mnist":
         confounders = mnist_confunders

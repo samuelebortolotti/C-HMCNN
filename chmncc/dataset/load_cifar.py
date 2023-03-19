@@ -1,5 +1,4 @@
-"""Pytorch dataset loading script.
-Implementation taken from https://github.com/Ugenteraan/Deep_Hierarchical_Classification/blob/main/load_dataset.py
+"""Pytorch dataset loading script for the CIFAR-100 dataset
 """
 
 import os
@@ -12,7 +11,7 @@ import networkx as nx
 
 
 class LoadCifar(LoadDataset):
-    """Reads the given csv file and loads the data."""
+    """Loads the CIFAR-100 dataset"""
 
     def __init__(
         self,
@@ -42,9 +41,10 @@ class LoadCifar(LoadDataset):
             transform [Any] = None: torchvision transformation
             name_labels [bool] = whether to use the label name
             confunders_position [bool] = whether to return the confunder position
-            only [bool] = whether to return only the confounder data
+            only_confounders [bool] = whether to return only the confounder data
             confund [bool] = whether to put confunders
             train [bool] = whether the set is training or not (used to apply the confunders)
+            no_confounders [bool] = whether to do not put the confounders
             fixed_confounder [bool] = False: confounder position is fixed
         """
 
@@ -88,7 +88,7 @@ class LoadCifar(LoadDataset):
         self.only_confounders = only_confounders
         # whether we are in the training phase
         self.train = train
-        # filter the data according to the confounders
+        # filter the data according to the confounders and to the specified preferences
         if only_confounders:
             self.data_list = self._confounders_only(
                 self.data_list, "train" if self.train else "test"

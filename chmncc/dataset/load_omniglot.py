@@ -1,15 +1,11 @@
-"""Pytorch dataset loading script.
-Implementation taken from https://github.com/Ugenteraan/Deep_Hierarchical_Classification/blob/main/load_dataset.py
+"""Load Omniglot database
 """
 
-import string
 import torch
-import numpy as np
 from torch.utils.data import Dataset
 from chmncc.dataset.load_dataset import LoadDataset
 from typing import Any
 from chmncc.config import omniglot_hierarchy
-from typing import List
 import networkx as nx
 from os.path import join
 
@@ -32,7 +28,20 @@ class LoadOmniglot(LoadDataset):
         img_size: int = 32,
         **kwargs,
     ):
-        """Init param"""
+        """Initialization of the Omniglot dataset
+        Args:
+            dataset [Dataset]: emnist dataset
+            return_label [bool] = True: whether the label should be returned
+            transform [Any] = None: additional transformations
+            name_labels [bool] = False: whether to return the label name
+            confunders_position [bool] = False: whether to return the confounders position
+            only_confounders: [bool] = False: whether only the confounder should be used
+            confund [bool] = True: whether the dataset should contain confounders or not
+            train [bool] = True: whether the dataset is for training or not
+            no_confounders [bool] = False: whether the dataset should contain no confounder
+            fixed_confounder [bool] = False: whether the confounders are fixed
+            img_size: int = 32: image size
+        """
 
         self.dataset_type = "omniglot"
         self.image_size = img_size
@@ -91,7 +100,19 @@ class LoadOmniglot(LoadDataset):
             )
 
     def create_hierarchy(self, label: str) -> str:
+        """Method which generates the hierarchy out of the data
+        Args:
+            label [str]: data label
+        Returns:
+            label [str]: parent label
+        """
         return label.split("/", 1)[0]
 
     def create_sublabel(self, label: str) -> str:
+        """Method which generates the label out of the data
+        Args:
+            label [str]: child label
+        Returns:
+            label [str]: child label
+        """
         return label

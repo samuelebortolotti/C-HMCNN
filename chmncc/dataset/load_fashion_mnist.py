@@ -13,15 +13,18 @@ import networkx as nx
 
 
 class LoadFashionMnist(LoadDataset):
-    """Reads the given csv file and loads the data."""
+    """Load FashionMnist dataset"""
 
+    # exclude classses
     exclude: List[str] = ["Trouser", "Dress", "Bag"]
+    # dresses
     dresses: List[str] = [
         "T-shirt/top",
         "Pullover",
         "Coat",
         "Shirt",
     ]
+    # show
     shoes: List[str] = ["Sandal", "Sneaker", "Ankle boot"]
 
     def __init__(
@@ -38,7 +41,19 @@ class LoadFashionMnist(LoadDataset):
         fixed_confounder: bool = False,
         **kwargs,
     ):
-        """Init param"""
+        """Init param for the load fashion MNIST
+        Args:
+            dataset [Dataset]: emnist dataset
+            return_label [bool] = True: whether the label should be returned
+            transform [Any] = None: additional transformations
+            name_labels [bool] = False: whether to return the label name
+            confunders_position [bool] = False: whether to return the confounders position
+            only_confounders: [bool] = False: whether only the confounder should be used
+            confund [bool] = True: whether the dataset should contain confounders or not
+            train [bool] = True: whether the dataset is for training or not
+            no_confounders [bool] = False: whether the dataset should contain no confounder
+            fixed_confounder [bool] = False: whether the confounders are fixed
+        """
 
         self.dataset_type = "fashion"
         self.image_size = dataset.data.shape[1]
@@ -98,6 +113,12 @@ class LoadFashionMnist(LoadDataset):
             )
 
     def create_hierarchy(self, label: str) -> str:
+        """Method which generates the hierarchy out of the data
+        Args:
+            label [str]: data label
+        Returns:
+            label [str]: parent label
+        """
         if label in self.shoes:
             return "shoe"
         elif label in self.dresses:
@@ -106,6 +127,12 @@ class LoadFashionMnist(LoadDataset):
             return "unknown"
 
     def skip_class(self, class_name: str) -> bool:
+        """Skip class method.
+        Args:
+            class_name [str]: name of the class
+        Returns:
+            True if the class needs to be skipped, False otherwise
+        """
         if class_name in self.exclude:
             return True
         return False

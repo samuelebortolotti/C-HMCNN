@@ -1,3 +1,4 @@
+"""ConstrainedFFNNModel module"""
 import torch.nn as nn
 import torch
 from chmncc.utils import get_constr_out

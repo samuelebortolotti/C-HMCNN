@@ -1,3 +1,4 @@
+"""Reduce LR on plateau scheduler"""
 import torch
 
 

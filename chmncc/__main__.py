@@ -382,7 +382,6 @@ def c_hmcnn(
     img_depth = 3
     img_size = 32
     output_classes = 121
-    superclasses_number = 20
 
     # get dataloaders
     if old_method:

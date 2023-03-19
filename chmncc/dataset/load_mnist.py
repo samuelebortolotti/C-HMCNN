@@ -14,8 +14,9 @@ import networkx as nx
 
 
 class LoadMnist(LoadDataset):
-    """Reads the given csv file and loads the data."""
+    """Class which loads the EMNIST dataset"""
 
+    # lists
     even_digits: List[str] = ["2", "4", "6", "8"]
     odd_digits: List[str] = ["1", "3", "5", "7", "9"]
     lowercase_letters: List[str] = list(string.ascii_lowercase)
@@ -35,7 +36,19 @@ class LoadMnist(LoadDataset):
         fixed_confounder: bool = False,
         **kwargs,
     ):
-        """Init param"""
+        """Initialization of the EMNIST dataset
+        Args:
+            dataset [Dataset]: emnist dataset
+            return_label [bool] = True: whether the label should be returned
+            transform [Any] = None: additional transformations
+            name_labels [bool] = False: whether to return the label name
+            confunders_position [bool] = False: whether to return the confounders position
+            only_confounders: [bool] = False: whether only the confounder should be used
+            confund [bool] = True: whether the dataset should contain confounders or not
+            train [bool] = True: whether the dataset is for training or not
+            no_confounders [bool] = False: whether the dataset should contain no confounder
+            fixed_confounder [bool] = False: whether the confounders are fixed
+        """
 
         self.dataset_type = "mnist"
         self.image_size = dataset.data.shape[1]
@@ -93,6 +106,12 @@ class LoadMnist(LoadDataset):
             )
 
     def create_hierarchy(self, label: str) -> str:
+        """Method which generates the hierarchy out of the data
+        Args:
+            label [str]: data label
+        Returns:
+            label [str]: parent label
+        """
         if label in self.lowercase_letters:
             return "lowercase_letter"
         elif label in self.uppercase_letters:
@@ -105,6 +124,12 @@ class LoadMnist(LoadDataset):
             return "unknown"
 
     def skip_class(self, class_name: str) -> bool:
+        """Skip class method.
+        Args:
+            class_name [str]: name of the class
+        Returns:
+            True if the class needs to be skipped, False otherwise
+        """
         if class_name in self.lowercase_letters:
             return True
         return False

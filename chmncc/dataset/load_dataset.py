@@ -1,7 +1,7 @@
 """Pytorch dataset loading script.
+Base class, it performs the basic dataset operations plus those ones which are required for the program work
 """
 
-import os
 import random
 import csv
 import cv2
@@ -10,7 +10,6 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 from chmncc.config import (
-    confounders,
     mnist_hierarchy,
     cifar_hierarchy,
     omniglot_hierarchy,
@@ -20,41 +19,62 @@ from chmncc.config import (
     fashion_hierarchy,
     fashion_confunders,
 )
-from chmncc.utils import read_meta
 from typing import Any, Dict, Tuple, List, Union
 import networkx as nx
-from abc import abstractmethod
 import cv2
 
 
 class LoadDataset(Dataset):
-    """Reads the given csv file and loads the data."""
+    """Base LoadDataset class"""
 
     # which node of the hierarchy to skip (root is only a confound)
     to_skip = ["root"]
 
+    # instance variables to specify.
+
+    """Name of the dataset"""
     dataset_type: str
+    """Image size"""
     image_size: int
+    """Image depth"""
     image_depth: int
+    """Whether the label should be returned or not"""
     return_label: bool
+    """Whether the confounders position should be returned or not"""
     confunders_position: bool
+    """Additional transformations to be applied"""
     transform: Any
-    return_label: bool
+    """Whether the name label should be returned or not"""
     name_labels: bool
+    """Whether the confounder should be fixed or not"""
     fixed_confounder: bool
+    """Whether the confounders should be applied or not"""
     confund: bool
+    """Whether the dataset is used in training or in testing phase"""
     train: bool
+    """Whether the dataset should contain only the confounded sample classes or not"""
     only_confounders: bool
+    """Whether the confounder position should be returned or not"""
     confunders_position: bool
+    """The data list"""
     data_list: List
+    """The coarse label list"""
     coarse_labels: List
+    """The fine label list"""
     fine_labels: List
+    """The hierarchy graph"""
     g: nx.Graph
+    """List of nodes"""
     nodes: Any
+    """Index of the nodes in the graph"""
     nodes_idx: Any
+    """Number of superclasses"""
     n_superclasses: int
+    """Nodes names without the root node included"""
     nodes_names_without_root: Any
+    """What to eval"""
     to_eval: Any
+    """Whether the data is the image path or the image tensor"""
     imgs_are_strings: bool
 
     def _no_confounders(
@@ -71,6 +91,7 @@ class LoadDataset(Dataset):
         """
         filtered = []
 
+        # get the right confounders
         confunders = cifar_confunders
         if self.dataset_type == "mnist":
             confunders = mnist_confunders
@@ -104,6 +125,7 @@ class LoadDataset(Dataset):
         """
         filtered = []
 
+        # get the confounders
         confunders = cifar_confunders
         if self.dataset_type == "mnist":
             confunders = mnist_confunders
@@ -201,6 +223,7 @@ class LoadDataset(Dataset):
             matrix [np.ndarray]: A - matrix representation of the grap else p[0]h
         """
 
+        # get the right hierarchy
         hierarchy = cifar_hierarchy
         if hierarchy_name == "mnist":
             hierarchy = mnist_hierarchy
@@ -296,6 +319,7 @@ class LoadDataset(Dataset):
             NOTE: Up tp now the dataloader constraints, empty strings and -1 are returned for invalid positions [confunder positions and confunder_shape]
         """
 
+        # get the right confounder
         confunders = cifar_confunders
         if self.dataset_type == "mnist":
             confunders = mnist_confunders

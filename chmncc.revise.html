@@ -112,12 +112,14 @@ of the RRRLoss.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>[</strong><strong>int</strong><strong>]</strong> (<em>epoch_number</em>) – epoch number</p></li>
 <li><p><strong>device</strong> (<em>net</em><em> [</em><em>nn.Module</em><em>] </em><em>network on</em>) – </p></li>
+<li><p><strong>[</strong><strong>torch.utils.data.DataLoader</strong><strong>]</strong> (<em>debug_loader</em>) – debug loader</p></li>
 <li><p><strong>[</strong><strong>dotdict</strong><strong>]</strong> (<em>train</em>) – training set dictionary</p></li>
 <li><p><strong>[</strong><strong>torch.Tensor</strong><strong>]</strong> (<em>R</em>) – adjency matrix</p></li>
 <li><p><strong>[</strong><strong>torch.optim.Optimizer</strong><strong>]</strong> (<em>optimizer</em>) – optimizer</p></li>
 <li><p><strong>[</strong><strong>Union</strong><strong>[</strong><strong>IGRRRLoss</strong> (<em>revive_function</em>) – revive function (RRR loss)</p></li>
 <li><p><strong>RRRLoss</strong><strong>]</strong><strong>]</strong> – revive function (RRR loss)</p></li>
 <li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>device</em>) – title for tqdm</p></li>
+<li><p><strong>[</strong><strong>str</strong><strong>]</strong> – where to save the data</p></li>
 <li><p><strong>[</strong><strong>str</strong><strong>]</strong> – on which device to run the experiment [default: cuda]</p></li>
 <li><p><strong>[</strong><strong>bool</strong><strong>]</strong> (<em>force_prediction</em>) – whether to train or not the model</p></li>
 <li><p><strong>[</strong><strong>bool</strong><strong>]</strong> – whether to analyze the gradients by means of plots</p></li>

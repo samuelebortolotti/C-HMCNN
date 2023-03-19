@@ -189,11 +189,13 @@
 <span class="sd">    Args:</span>
 <span class="sd">        epoch_number [int]: epoch number</span>
 <span class="sd">        net [nn.Module] network on device</span>
+<span class="sd">        debug_loader [torch.utils.data.DataLoader]: debug loader</span>
 <span class="sd">        train [dotdict]: training set dictionary</span>
 <span class="sd">        R [torch.Tensor]: adjency matrix</span>
 <span class="sd">        optimizer [torch.optim.Optimizer]: optimizer</span>
 <span class="sd">        revive_function [Union[IGRRRLoss, RRRLoss]]: revive function (RRR loss)</span>
 <span class="sd">        title [str]: title for tqdm</span>
+<span class="sd">        folder_where_to_save [str]: where to save the data</span>
 <span class="sd">        device [str]: on which device to run the experiment [default: cuda]</span>
 <span class="sd">        have_to_train [bool]: whether to train or not the model</span>
 <span class="sd">        gradient_analysis [bool]: whether to analyze the gradients by means of plots</span>

@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics._plot.confusion_matrix import ConfusionMatrixDisplay
-from sklearn.metrics import multilabel_confusion_matrix
 from typing import Tuple, Dict, Optional, List, Any
 from torch.utils import tensorboard
 import torch.nn.functional as F
@@ -207,11 +206,33 @@ def get_constr_out(x: torch.Tensor, R: torch.Tensor) -> torch.Tensor:
         final_out [torch.tensor]: output constrained
     """
     c_out = x.double()
+    torch.set_printoptions(profile="full")
     c_out = c_out.unsqueeze(1)
     c_out = c_out.expand(len(x), R.shape[1], R.shape[1])
     R_batch = R.expand(len(x), R.shape[1], R.shape[1])
     final_out, _ = torch.max(R_batch * c_out.double(), dim=2)
+    torch.set_printoptions(profile="full")
     return final_out
+
+
+def get_constr_indexes(x: torch.Tensor, R: torch.Tensor) -> torch.Tensor:
+    """Given the output of the neural network x returns the indexes of MCM hierarchy which have influenced
+    the final prediction (implication constrained).
+
+    Args:
+        x [torch.tensor]: output of the neural network
+        R [torch.tensor]: matrix of the ancestors
+
+    Returns:
+        final_out [torch.tensor]: output constrained
+    """
+    c_out = x.double()
+    torch.set_printoptions(profile="full")
+    c_out = c_out.unsqueeze(1)
+    c_out = c_out.expand(len(x), R.shape[1], R.shape[1])
+    R_batch = R.expand(len(x), R.shape[1], R.shape[1])
+    _, final_indexes = torch.max(R_batch * c_out.double(), dim=2)
+    return final_indexes
 
 
 def average_image_contributions(image: np.ndarray) -> np.ndarray:
@@ -491,15 +512,6 @@ def force_prediction_from_batch(
             if tmp[1:].sum().item() == 0:
                 max_pred = torch.max(pred[1:]).item()
                 tmp = pred >= max_pred
-                #  predicted_child = False
-                #  for el in torch.where(tmp == True)[0].tolist():
-                #      if el > superclasses_number:
-                #          predicted_child = True
-                #          break
-                #
-                #  if not predicted_child:
-                #      child = torch.argmax(pred[superclasses_number + 1 :])
-                #      tmp[child.item() + superclasses_number + 1] = True
         new_output.append(tmp)
     return torch.stack(new_output)
 

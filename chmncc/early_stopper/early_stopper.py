@@ -1,8 +1,10 @@
 """Just a simple Early Stopper"""
 import numpy as np
 
+
 class EarlyStopper:
     """EarlyStopper class"""
+
     def __init__(self, patience: int = 1, min_delta: int = 0) -> None:
         """EarlyStopper initialization
 

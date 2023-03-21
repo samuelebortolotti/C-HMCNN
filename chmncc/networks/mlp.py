@@ -101,7 +101,9 @@ class MLP(nn.Module):
         if not self.constrained_layer or self.training:
             constrained_out = x
         else:
+            #  print("X before:", x)
             constrained_out = get_constr_out(
                 x, self.R
             )  # in validation and test: herarchy set
+            #  print("X after", constrained_out)
         return constrained_out

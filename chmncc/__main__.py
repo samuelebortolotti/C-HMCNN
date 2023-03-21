@@ -62,15 +62,25 @@ from chmncc.dataset import (
     load_dataloaders,
     get_named_label_predictions,
     LoadDebugDataset,
-    get_named_label_predictions_with_indexes
+    get_named_label_predictions_with_indexes,
 )
 import chmncc.dataset.preproces_cifar as data
 import chmncc.debug.debug as debug
 import chmncc.dataset.visualize_dataset as visualize_data
 from chmncc.config.old_config import lrs, epochss, hidden_dims
-from chmncc.config import cifar_confunders, cifar_hierarchy, mnist_hierarchy, mnist_confunders, fashion_hierarchy, fashion_confunders, omniglot_hierarchy, omniglot_confunders
+from chmncc.config import (
+    cifar_confunders,
+    cifar_hierarchy,
+    mnist_hierarchy,
+    mnist_confunders,
+    fashion_hierarchy,
+    fashion_confunders,
+    omniglot_hierarchy,
+    omniglot_confunders,
+)
 from chmncc.explanations import compute_integrated_gradient, output_gradients
 from chmncc.revise import revise_step
+import chmncc.arguments.arguments as argum
 
 
 class TerminationError(Exception):
@@ -115,6 +125,7 @@ def get_args() -> Namespace:
     data.configure_subparsers(subparsers)
     visualize_data.configure_subparsers(subparsers)
     debug.configure_subparsers(subparsers)
+    argum.configure_subparsers(subparsers)
 
     # parse the command line arguments
     parsed_args = parser.parse_args()
@@ -429,7 +440,7 @@ def c_hmcnn(
             normalize=True,  # normalize the dataset
             num_workers=num_workers,  # num workers
             fixed_confounder=fixed_confounder,
-            simplified_dataset=simplified_dataset, # simplified dataset
+            simplified_dataset=simplified_dataset,  # simplified dataset
         )
 
     # network initialization
@@ -485,7 +496,7 @@ def c_hmcnn(
                 use_softmax,
                 channels=img_depth,
                 img_height=img_size,
-                img_width=img_size
+                img_width=img_size,
             )  # 20 superclasses, 100 subclasses + the root
         else:
             net = ResNet18(
@@ -594,7 +605,7 @@ def c_hmcnn(
             revise_total_score_const,
             revise_right_reason_loss_confounded,
             _,
-            _
+            _,
         ) = revise_step(
             epoch_number=e,
             net=net,
@@ -619,7 +630,14 @@ def c_hmcnn(
         )
 
         # validation set
-        val_loss, val_accuracy, val_score_raw, val_score_const, val_loss_parent, val_loss_children = test_step(
+        (
+            val_loss,
+            val_accuracy,
+            val_score_raw,
+            val_score_const,
+            val_loss_parent,
+            val_loss_children,
+        ) = test_step(
             net=net,
             test_loader=iter(val_loader),
             cost_function=cost_function,
@@ -638,7 +656,14 @@ def c_hmcnn(
         metrics["score"]["val"] = train_accuracy
 
         # test values
-        test_loss, test_accuracy, test_score_raw, test_score_const, test_loss_parent, test_loss_children = test_step(
+        (
+            test_loss,
+            test_accuracy,
+            test_score_raw,
+            test_score_const,
+            test_loss_parent,
+            test_loss_children,
+        ) = test_step(
             net=net,
             test_loader=iter(test_loader),
             cost_function=cost_function,
@@ -735,13 +760,21 @@ def c_hmcnn(
                 train_au_prc_score_const,
             )
         )
-        print("Training loss {:.5f}, RRLoss {:.5f}".format(revise_total_right_answer_loss, revise_total_right_reason_loss))
+        print(
+            "Training loss {:.5f}, RRLoss {:.5f}".format(
+                revise_total_right_answer_loss, revise_total_right_reason_loss
+            )
+        )
         print(
             "\t Validation loss {:.5f}, Validation accuracy {:.2f}%, Validation Area under Precision-Recall Curve Raw {:.3f},  Validation Area under Precision-Recall Curve Const {:.3f}".format(
                 val_loss, val_accuracy, val_score_raw, val_score_const
             )
         )
-        print("Test loss {:.5f}, RRLoss {:.5f}".format(test_revise_total_right_answer_loss, test_revise_total_right_reason_loss))
+        print(
+            "Test loss {:.5f}, RRLoss {:.5f}".format(
+                test_revise_total_right_answer_loss, test_revise_total_right_reason_loss
+            )
+        )
 
         # log on wandb if and only if the module is loaded
         logs = {
@@ -1053,9 +1086,7 @@ def c_hmcnn(
                 parents = omniglot_hierarchy.keys()
 
             children = [
-                element
-                for element_list in children
-                for element in element_list
+                element for element_list in children for element in element_list
             ]
             parent_predictions = list(filter(lambda x: x in parents, named_prediction))
             children_predictions = list(

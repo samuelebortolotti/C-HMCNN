@@ -17,7 +17,7 @@ class LoadMnist(LoadDataset):
     """Class which loads the EMNIST dataset"""
 
     # lists
-    even_digits: List[str] = ["2", "4", "6", "8"]
+    even_digits: List[str] = ["0", "2", "4", "6", "8"]
     odd_digits: List[str] = ["1", "3", "5", "7", "9"]
     lowercase_letters: List[str] = list(string.ascii_lowercase)
     uppercase_letters: List[str] = list(string.ascii_uppercase)

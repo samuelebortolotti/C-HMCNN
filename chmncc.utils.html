@@ -44,6 +44,7 @@
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">chmncc</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="chmncc.html">chmncc package</a><ul class="current">
 <li class="toctree-l3 current"><a class="reference internal" href="chmncc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="chmncc.arguments.html">chmncc.arguments package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.config.html">chmncc.config package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.dataset.html">chmncc.dataset package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.debug.html">chmncc.debug package</a></li>
@@ -212,6 +213,27 @@ file label names [List[str]]: subclass label</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>forced prediction [torch.Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.utils.utils.get_constr_indexes">
+<span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_constr_indexes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#get_constr_indexes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.get_constr_indexes" title="Permalink to this definition"></a></dt>
+<dd><p>Given the output of the neural network x returns the indexes of MCM hierarchy which have influenced
+the final prediction (implication constrained).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>[</strong><strong>torch.tensor</strong><strong>]</strong> (<em>R</em>) – output of the neural network</p></li>
+<li><p><strong>[</strong><strong>torch.tensor</strong><strong>]</strong> – matrix of the ancestors</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>output constrained</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>final_out [torch.tensor]</p>
 </dd>
 </dl>
 </dd></dl>

@@ -17,7 +17,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="chmncc.config package" href="chmncc.config.html" />
+    <link rel="next" title="chmncc.arguments package" href="chmncc.arguments.html" />
     <link rel="prev" title="chmncc" href="modules.html" /> 
 </head>
 
@@ -45,6 +45,7 @@
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">chmncc</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">chmncc package</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.arguments.html">chmncc.arguments package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.config.html">chmncc.config package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.dataset.html">chmncc.dataset package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.debug.html">chmncc.debug package</a></li>
@@ -99,6 +100,24 @@
 <h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this heading"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="chmncc.arguments.html">chmncc.arguments package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.arguments.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.arguments.html#chmncc-arguments-arguments-module">chmncc.arguments.arguments module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.arguments.html#module-chmncc.arguments.arguments_bucket">chmncc.arguments.arguments_bucket module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.arguments.html#chmncc.arguments.arguments_bucket.ArgumentBucket"><code class="docutils literal notranslate"><span class="pre">ArgumentBucket</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.arguments.html#chmncc.arguments.arguments_bucket.ArgumentBucket._compute_class_gradients"><code class="docutils literal notranslate"><span class="pre">ArgumentBucket._compute_class_gradients()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.arguments.html#chmncc.arguments.arguments_bucket.ArgumentBucket._compute_input_gradients"><code class="docutils literal notranslate"><span class="pre">ArgumentBucket._compute_input_gradients()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.arguments.html#chmncc.arguments.arguments_bucket.ArgumentBucket.input_gradient_dict"><code class="docutils literal notranslate"><span class="pre">ArgumentBucket.input_gradient_dict</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.arguments.html#chmncc.arguments.arguments_bucket.ArgumentBucket.label_gradient"><code class="docutils literal notranslate"><span class="pre">ArgumentBucket.label_gradient</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.arguments.html#chmncc.arguments.arguments_bucket.ArgumentBucket.label_list"><code class="docutils literal notranslate"><span class="pre">ArgumentBucket.label_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.arguments.html#chmncc.arguments.arguments_bucket.ArgumentBucket.sample"><code class="docutils literal notranslate"><span class="pre">ArgumentBucket.sample</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.arguments.html#module-chmncc.arguments">Module contents</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="chmncc.config.html">chmncc.config package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.config.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.config.html#module-chmncc.config.cifar_config">chmncc.config.cifar_config module</a></li>
@@ -328,6 +347,7 @@
 <li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.cross_entropy_from_softmax"><code class="docutils literal notranslate"><span class="pre">cross_entropy_from_softmax()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.dotdict"><code class="docutils literal notranslate"><span class="pre">dotdict</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.force_prediction_from_batch"><code class="docutils literal notranslate"><span class="pre">force_prediction_from_batch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.get_constr_indexes"><code class="docutils literal notranslate"><span class="pre">get_constr_indexes()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.get_constr_out"><code class="docutils literal notranslate"><span class="pre">get_constr_out()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.get_lr"><code class="docutils literal notranslate"><span class="pre">get_lr()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.global_multiLabel_confusion_matrix"><code class="docutils literal notranslate"><span class="pre">global_multiLabel_confusion_matrix()</span></code></a></li>
@@ -365,7 +385,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="modules.html" class="btn btn-neutral float-left" title="chmncc" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="chmncc.config.html" class="btn btn-neutral float-right" title="chmncc.config package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="chmncc.arguments.html" class="btn btn-neutral float-right" title="chmncc.arguments package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

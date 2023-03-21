@@ -1,0 +1,32 @@
+chmncc.arguments package
+========================
+
+Submodules
+----------
+
+chmncc.arguments.arguments module
+---------------------------------
+
+.. automodule:: chmncc.arguments.arguments
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+chmncc.arguments.arguments\_bucket module
+-----------------------------------------
+
+.. automodule:: chmncc.arguments.arguments_bucket
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+Module contents
+---------------
+
+.. automodule:: chmncc.arguments
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:

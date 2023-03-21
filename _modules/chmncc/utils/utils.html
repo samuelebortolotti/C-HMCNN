@@ -75,7 +75,6 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">from</span> <span class="nn">sklearn.metrics._plot.confusion_matrix</span> <span class="kn">import</span> <span class="n">ConfusionMatrixDisplay</span>
-<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">multilabel_confusion_matrix</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Any</span>
 <span class="kn">from</span> <span class="nn">torch.utils</span> <span class="kn">import</span> <span class="n">tensorboard</span>
 <span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
@@ -276,11 +275,33 @@
 <span class="sd">        final_out [torch.tensor]: output constrained</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">c_out</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">double</span><span class="p">()</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">profile</span><span class="o">=</span><span class="s2">&quot;full&quot;</span><span class="p">)</span>
     <span class="n">c_out</span> <span class="o">=</span> <span class="n">c_out</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">c_out</span> <span class="o">=</span> <span class="n">c_out</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
     <span class="n">R_batch</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
     <span class="n">final_out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">R_batch</span> <span class="o">*</span> <span class="n">c_out</span><span class="o">.</span><span class="n">double</span><span class="p">(),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">profile</span><span class="o">=</span><span class="s2">&quot;full&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">final_out</span></div>
+
+
+<div class="viewcode-block" id="get_constr_indexes"><a class="viewcode-back" href="../../../chmncc.utils.html#chmncc.utils.utils.get_constr_indexes">[docs]</a><span class="k">def</span> <span class="nf">get_constr_indexes</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">R</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Given the output of the neural network x returns the indexes of MCM hierarchy which have influenced</span>
+<span class="sd">    the final prediction (implication constrained).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x [torch.tensor]: output of the neural network</span>
+<span class="sd">        R [torch.tensor]: matrix of the ancestors</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        final_out [torch.tensor]: output constrained</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">c_out</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">double</span><span class="p">()</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">profile</span><span class="o">=</span><span class="s2">&quot;full&quot;</span><span class="p">)</span>
+    <span class="n">c_out</span> <span class="o">=</span> <span class="n">c_out</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">c_out</span> <span class="o">=</span> <span class="n">c_out</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">R_batch</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">final_indexes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">R_batch</span> <span class="o">*</span> <span class="n">c_out</span><span class="o">.</span><span class="n">double</span><span class="p">(),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">final_indexes</span></div>
 
 
 <div class="viewcode-block" id="average_image_contributions"><a class="viewcode-back" href="../../../chmncc.utils.html#chmncc.utils.utils.average_image_contributions">[docs]</a><span class="k">def</span> <span class="nf">average_image_contributions</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
@@ -560,15 +581,6 @@
             <span class="k">if</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">max_pred</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
                 <span class="n">tmp</span> <span class="o">=</span> <span class="n">pred</span> <span class="o">&gt;=</span> <span class="n">max_pred</span>
-                <span class="c1">#  predicted_child = False</span>
-                <span class="c1">#  for el in torch.where(tmp == True)[0].tolist():</span>
-                <span class="c1">#      if el &gt; superclasses_number:</span>
-                <span class="c1">#          predicted_child = True</span>
-                <span class="c1">#          break</span>
-                <span class="c1">#</span>
-                <span class="c1">#  if not predicted_child:</span>
-                <span class="c1">#      child = torch.argmax(pred[superclasses_number + 1 :])</span>
-                <span class="c1">#      tmp[child.item() + superclasses_number + 1] = True</span>
         <span class="n">new_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">new_output</span><span class="p">)</span></div>
 

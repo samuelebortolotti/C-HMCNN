@@ -522,7 +522,7 @@ def save_some_confounded_samples(
             break
 
 
-def make_meshgrid(x, y, h=0.1):
+def make_meshgrid(x, y, h=0.1, padding=1.0):
     """Make the Meshgrid
 
     taken from:
@@ -530,7 +530,7 @@ def make_meshgrid(x, y, h=0.1):
     https://disi.unitn.it/~passerini/teaching/2021-2022/MachineLearning/index.html
     """
     x_min, x_max = x.min() - 1, x.max() + 1
-    y_min, y_max = y.min() - 1, y.max() + 1
+    y_min, y_max = y.min() - padding, y.max() + padding
     xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
     return xx, yy
 
@@ -548,7 +548,7 @@ def plot_contours(ax, clf, xx, yy, **params):
     return out
 
 
-def plot_decision_surface(X, Y, clf, x_label, y_label, title, jitter):
+def plot_decision_surface(X, Y, clf, x_label, y_label, title, jitter, h=0.1, padding=1.0, debug_mode=True):
     """Print the decision surface of a trained sklearn classifier
 
     taken from:
@@ -558,7 +558,7 @@ def plot_decision_surface(X, Y, clf, x_label, y_label, title, jitter):
 
     fig, ax = plt.subplots()
     X0, X1 = X[:, 0], X[:, 1]
-    xx, yy = make_meshgrid(X0, X1)
+    xx, yy = make_meshgrid(X0, X1, h, padding)
 
     colors = ["orange" if y == 1 else "blue" for y in Y]
 
@@ -582,7 +582,10 @@ def plot_decision_surface(X, Y, clf, x_label, y_label, title, jitter):
         ),
     ]
 
-    plt.legend(custom, ["Confounded (1)", "Not confounded (2)"], fontsize=10)
+    if debug_mode:
+        plt.legend(custom, ["Confounded (1)", "Not confounded (2)"], fontsize=10)
+    else:
+        plt.legend(custom, ["Correct [not conf] (1)", "Wrong [conf] (2)"], fontsize=10)
     plt.close()
     return fig
 

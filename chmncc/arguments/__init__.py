@@ -1,1 +1,1 @@
-"""Arguments"""
+"""Arguments module"""

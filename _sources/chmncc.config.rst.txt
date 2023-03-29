@@ -31,6 +31,15 @@ chmncc.config.fashion\_hierarchy module
    :show-inheritance:
    :private-members:
 
+chmncc.config.label\_confounders module
+---------------------------------------
+
+.. automodule:: chmncc.config.label_confounders
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
 chmncc.config.mnist\_hierarchy module
 -------------------------------------
 

@@ -137,8 +137,6 @@ mnist_confunders = {
             }
         ],
     },
-
-
     "uppercase_letter": {
         "train": [
             {

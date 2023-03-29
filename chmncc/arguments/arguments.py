@@ -8,17 +8,12 @@ import scipy
 import itertools
 import pandas as pd
 from chmncc.networks import ResNet18, LeNet5, LeNet7, AlexNet, MLP
-from chmncc.config import (
-    cifar_confunders,
-    mnist_confunders,
-    fashion_confunders,
-    omniglot_confunders,
-)
 from chmncc.utils.utils import (
     force_prediction_from_batch,
     load_best_weights,
     dotdict,
     split,
+    get_confounders,
 )
 from chmncc.dataset import (
     load_dataloaders,
@@ -34,9 +29,9 @@ from chmncc.arguments.arguments_bucket import ArgumentBucket
 from chmncc.debug.debug import plot_decision_surface
 
 
-
 class ArgumentsStepArgs:
     """Class which serves as a bucket in order to hold all the data used so as to produce the plots"""
+
     bucket_list: List[ArgumentBucket]
     table_correlation: Dict[int, Dict[str, List[Tuple[bool, List[float]]]]]
     suitable_ig_explaination_list: List[float]
@@ -65,7 +60,7 @@ class ArgumentsStepArgs:
         influence_parent_counter: int,
         not_influence_parent_counter: int,
         suitable_is_max: int,
-        suitable_is_not_max: int
+        suitable_is_not_max: int,
     ):
         self.bucket_list = bucket_list
         self.table_correlation = table_correlation
@@ -489,32 +484,36 @@ def arguments(
             num_element_to_analyze=3,
             labels_name=labels_name,
             number_element_to_show=1,
-            arguments_folder=arguments_folder
+            arguments_folder=arguments_folder,
         )
 
         wrong_arguments_args = arguments_step(
-            net = net,
-            dataset = dataset,
-            dataloaders = dataloaders,
-            device = device,
-            force_prediction = force_prediction,
-            use_softmax = use_softmax,
-            prediction_treshold = prediction_treshold,
-            correct_samples_only = True,
-            confounded_samples_only = True,
-            num_element_to_analyze = 3,
-            labels_name = labels_name,
-            number_element_to_show = 1,
-            arguments_folder = arguments_folder
+            net=net,
+            dataset=dataset,
+            dataloaders=dataloaders,
+            device=device,
+            force_prediction=force_prediction,
+            use_softmax=use_softmax,
+            prediction_treshold=prediction_treshold,
+            correct_samples_only=True,
+            confounded_samples_only=True,
+            num_element_to_analyze=3,
+            labels_name=labels_name,
+            number_element_to_show=1,
+            arguments_folder=arguments_folder,
         )
 
-        plot_arguments(correct_arguments_args, wrong_arguments_args, arguments_folder=arguments_folder)
+        plot_arguments(
+            correct_arguments_args,
+            wrong_arguments_args,
+            arguments_folder=arguments_folder,
+        )
 
 
 def get_table_correlation_dictionary_from(
     bucket: ArgumentBucket,
     correct_samples_only: bool,
-    table_correlation: Dict[int, Dict[str, List[Tuple[bool, List[float]]]]]
+    table_correlation: Dict[int, Dict[str, List[Tuple[bool, List[float]]]]],
 ) -> Dict[int, Dict[str, List[Tuple[bool, List[float]]]]]:
     """Get the table correlation dictionary from the Bucket
     Args:
@@ -532,11 +531,15 @@ def get_table_correlation_dictionary_from(
     for key, value in dict_list.items():
         if not key in table_correlation[bucket.groundtruth_children]:
             table_correlation[bucket.groundtruth_children][key] = list()
-        table_correlation[bucket.groundtruth_children][key].append((correct_samples_only, value))
+        table_correlation[bucket.groundtruth_children][key].append(
+            (correct_samples_only, value)
+        )
     return table_correlation
 
 
-def plot_arguments(correct: ArgumentsStepArgs, wrong: ArgumentsStepArgs, arguments_folder: str) -> None:
+def plot_arguments(
+    correct: ArgumentsStepArgs, wrong: ArgumentsStepArgs, arguments_folder: str
+) -> None:
     """Produce all the plots for the arguments
     Args:
         correct [ArgumentsStepArgs]: arguments step args for the correct data
@@ -565,21 +568,64 @@ def plot_arguments(correct: ArgumentsStepArgs, wrong: ArgumentsStepArgs, argumen
     )
 
     # è una lista di tuple (prima tupla abbiamo gli integrated gradients del coso, seconda abbiamo i label grad) # per ogni esempio abbiamo se è confuso
-    flag_list = list(itertools.chain([True for _ in range(len(wrong.ig_lists))], [False for _ in range(len(correct.ig_lists))]))
+    flag_list = list(
+        itertools.chain(
+            [True for _ in range(len(wrong.ig_lists))],
+            [False for _ in range(len(correct.ig_lists))],
+        )
+    )
     grad_list = list(itertools.chain(wrong.ig_lists, correct.ig_lists))
     scatter_plot_score(grad_list, flag_list, arguments_folder, "All")
-    scatter_plot_score(wrong.ig_lists, [True for _ in range(len(wrong.ig_lists))], arguments_folder, "Conf")
-    scatter_plot_score(correct.ig_lists, [False for _ in range(len(correct.ig_lists))], arguments_folder, "Not conf")
+    scatter_plot_score(
+        wrong.ig_lists,
+        [True for _ in range(len(wrong.ig_lists))],
+        arguments_folder,
+        "Conf",
+    )
+    scatter_plot_score(
+        correct.ig_lists,
+        [False for _ in range(len(correct.ig_lists))],
+        arguments_folder,
+        "Not conf",
+    )
 
-    scatter_plot_score(correct.suitable_gradient_full_list, [True for _ in range(len(correct.suitable_gradient_full_list))], arguments_folder, "Suitable correct")
-    scatter_plot_score(wrong.suitable_gradient_full_list, [False for _ in range(len(wrong.suitable_gradient_full_list))], arguments_folder, "Suitable wrong")
+    scatter_plot_score(
+        correct.suitable_gradient_full_list,
+        [True for _ in range(len(correct.suitable_gradient_full_list))],
+        arguments_folder,
+        "Suitable correct",
+    )
+    scatter_plot_score(
+        wrong.suitable_gradient_full_list,
+        [False for _ in range(len(wrong.suitable_gradient_full_list))],
+        arguments_folder,
+        "Suitable wrong",
+    )
 
-    tmp_suitable_list = list(itertools.chain([True for _ in range(len(correct.suitable_gradient_full_list))], [False for _ in range(len(wrong.suitable_gradient_full_list))]))
-    scatter_plot_score(list(itertools.chain(correct.suitable_gradient_full_list, wrong.suitable_gradient_full_list)),tmp_suitable_list, arguments_folder, "Suitable")
+    tmp_suitable_list = list(
+        itertools.chain(
+            [True for _ in range(len(correct.suitable_gradient_full_list))],
+            [False for _ in range(len(wrong.suitable_gradient_full_list))],
+        )
+    )
+    scatter_plot_score(
+        list(
+            itertools.chain(
+                correct.suitable_gradient_full_list, wrong.suitable_gradient_full_list
+            )
+        ),
+        tmp_suitable_list,
+        arguments_folder,
+        "Suitable",
+    )
 
     # only most suitable
-    correct_guesses_conf = [True for _ in range(len(correct.suitable_ig_explaination_list))]
-    wrongly_guesses_conf = [False for _ in range(len(wrong.suitable_ig_explaination_list))]
+    correct_guesses_conf = [
+        True for _ in range(len(correct.suitable_ig_explaination_list))
+    ]
+    wrongly_guesses_conf = [
+        False for _ in range(len(wrong.suitable_ig_explaination_list))
+    ]
     input_gradient_scatter(
         correct_guesses=correct.suitable_ig_explaination_list,
         correct_guesses_conf=correct_guesses_conf,
@@ -679,7 +725,7 @@ def arguments_step(
     num_element_to_analyze: int,
     labels_name: List[str],
     number_element_to_show: int,
-    arguments_folder: str
+    arguments_folder: str,
 ) -> ArgumentsStepArgs:
     """Arguments step
     Args:
@@ -699,7 +745,6 @@ def arguments_step(
     Returns:
         ArgumentsStepArgs: arguments as class
     """
-
 
     bucket_list: List[ArgumentBucket] = list()
     table_correlation: Dict[int, Dict[str, List[Tuple[bool, List[float]]]]] = dict()
@@ -736,20 +781,22 @@ def arguments_step(
     for idx, (c_g, pred, groundtruth) in enumerate(selected_samples):
         # get the bucket of arguments
         bucket = ArgumentBucket(
-            c_g, # sample
-            net, # network
-            labels_name, # label names
-            dataloaders["test"].to_eval, # what to evaluate
-            dataloaders["train_R"], # train R
-            pred, # predicted integer labels
-            groundtruth[0], # parent label
-            groundtruth[1], # children label
+            c_g,  # sample
+            net,  # network
+            labels_name,  # label names
+            dataloaders["test"].to_eval,  # what to evaluate
+            dataloaders["train_R"],  # train R
+            pred,  # predicted integer labels
+            groundtruth[0],  # parent label
+            groundtruth[1],  # children label
         )
 
         # ig lists
         ig_lists.append(bucket.get_gradents_list_separated())
         # table correlation
-        table_correlation = get_table_correlation_dictionary_from(bucket, correct_samples_only, table_correlation)
+        table_correlation = get_table_correlation_dictionary_from(
+            bucket, correct_samples_only, table_correlation
+        )
         # get the bucket in the bucket list
         bucket_list.append(bucket)
         # maximum score coming from the input gradienst
@@ -760,7 +807,9 @@ def arguments_step(
         # add the score to the explaination list
         suitable_ig_explaination_list.append(ig_grad_score[1])
         # add the full gradients list
-        suitable_gradient_full_list.append(bucket.get_gradents_list_separated_by_class(ground_truth_lab))
+        suitable_gradient_full_list.append(
+            bucket.get_gradents_list_separated_by_class(ground_truth_lab)
+        )
 
         if show_element_counter < number_element_to_show:
             display_single_class(
@@ -823,19 +872,19 @@ def arguments_step(
 
     # return arguments
     return ArgumentsStepArgs(
-        bucket_list = bucket_list,
-        table_correlation = table_correlation,
-        suitable_ig_explaination_list = suitable_ig_explaination_list,
-        suitable_gradient_full_list = suitable_gradient_full_list,
-        max_arguments_list = max_arguments_list,
-        max_arguments_dict = max_arguments_dict,
-        label_args_dict = label_args_dict,
-        show_element_counter = show_element_counter,
-        influence_parent_counter = influence_parent_counter,
-        not_influence_parent_counter = not_influence_parent_counter,
-        suitable_is_max = suitable_is_max,
-        suitable_is_not_max = suitable_is_not_max,
-        ig_lists = ig_lists
+        bucket_list=bucket_list,
+        table_correlation=table_correlation,
+        suitable_ig_explaination_list=suitable_ig_explaination_list,
+        suitable_gradient_full_list=suitable_gradient_full_list,
+        max_arguments_list=max_arguments_list,
+        max_arguments_dict=max_arguments_dict,
+        label_args_dict=label_args_dict,
+        show_element_counter=show_element_counter,
+        influence_parent_counter=influence_parent_counter,
+        not_influence_parent_counter=not_influence_parent_counter,
+        suitable_is_max=suitable_is_max,
+        suitable_is_not_max=suitable_is_not_max,
+        ig_lists=ig_lists,
     )
 
 
@@ -846,7 +895,7 @@ def score_subclass_influence(
 ) -> None:
     """Method which plots two bars plot for each superclass, showing which subclass has influenced the prediction
     Args:
-        sub_superclass_dict [Dict[str, Dict[str, Tuple[int, int]]]]: dictionary which contains the name of the parent class as first key, 
+        sub_superclass_dict [Dict[str, Dict[str, Tuple[int, int]]]]: dictionary which contains the name of the parent class as first key,
         the name of the superclass as second and the count associated with the influence as the final result
         title [str]: title of the plot
         folder [str]: folder name
@@ -868,12 +917,13 @@ def score_subclass_influence(
         fig.savefig("{}/{}_{}.png".format(folder, key, title))
         plt.close()
 
+
 def plot_most_frequent_explainations(
     max_arg_dictionary: Dict[str, Dict[str, int]], title: str, folder: str
 ) -> None:
     """Method which plots two bars plot for each superclass, showing which class has the most frequent explainations
     Args:
-        max_arg_dictionary [Dict[str, Dict[str, int]]]: dictionary which contains the name of the parent class as first key, 
+        max_arg_dictionary [Dict[str, Dict[str, int]]]: dictionary which contains the name of the parent class as first key,
         the name of the superclass as second and the count associated with the maximum value as the final result
         title [str]: title of the plot
         folder [str]: folder name
@@ -886,13 +936,22 @@ def plot_most_frequent_explainations(
         plot.bar_label(plot.containers[0], label_type="edge")
         plot.set_xticklabels(titles)
         plt.xticks(rotation=0)
-        plt.title("{} class {} total #{}".format(title, key, sum(max_arg_dictionary[key].values())))
+        plt.title(
+            "{} class {} total #{}".format(
+                title, key, sum(max_arg_dictionary[key].values())
+            )
+        )
         plt.tight_layout()
         fig.savefig("{}/{}_{}.png".format(folder, key, title))
         plt.close()
 
 
-def scatter_plot_score(ig_list: List[Tuple[List[float], List[float]]], conf_list: List[bool], folder: str, prefix: str) -> None:
+def scatter_plot_score(
+    ig_list: List[Tuple[List[float], List[float]]],
+    conf_list: List[bool],
+    folder: str,
+    prefix: str,
+) -> None:
     """Method which plots two bars plot for each superclass, showing which class has the most frequent explainations
     Args:
         ig_list [List[Tuple[List[float], List[float]]]]: integrated gradient list
@@ -961,7 +1020,9 @@ def scatter_plot_score(ig_list: List[Tuple[List[float], List[float]]], conf_list
     )
 
 
-def plot_correlation_table(ig_list: Dict[int, Dict[str, List[Tuple[bool, List[float]]]]]) -> None:
+def plot_correlation_table(
+    ig_list: Dict[int, Dict[str, List[Tuple[bool, List[float]]]]]
+) -> None:
     """Plots the correlation table given the integrated gradient list
     Args:
         ig_list: Dict[int, Dict[str, List[Tuple[bool, List[float]]]]]: integrated gradient list
@@ -971,37 +1032,21 @@ def plot_correlation_table(ig_list: Dict[int, Dict[str, List[Tuple[bool, List[fl
         for lab in ig_list[class_].keys():
             corr_text_dict[lab] = scipy.stats.spearmanr(
                 np.array([el[1] for el in ig_list[class_][lab]]),
-                np.array([el[0] for el in ig_list[class_][lab]])
+                np.array([el[0] for el in ig_list[class_][lab]]),
             )
             if np.isnan(corr_text_dict[lab].correlation):
                 corr_text_dict[lab] = 0
 
         fig, ax = plt.subplots()
         fig.patch.set_visible(False)
-        ax.axis('off')
-        ax.axis('tight')
+        ax.axis("off")
+        ax.axis("tight")
 
-        df = pd.DataFrame([list(corr_text_dict.values())], columns=list(corr_text_dict.keys()))
-        ax.table(cellText=df.values, colLabels=df.columns, loc='center')
+        df = pd.DataFrame(
+            [list(corr_text_dict.values())], columns=list(corr_text_dict.keys())
+        )
+        ax.table(cellText=df.values, colLabels=df.columns, loc="center")
         fig.tight_layout()
-
-
-def get_confounders(dataset) -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
-    """Return the confounders given the dataset
-    Args:
-        dataset [str]
-    Returns:
-        Confounders list [Dict[str, Dict[str, List[Dict[str, Any]]]]]
-    """
-    # confounders
-    confounders = cifar_confunders
-    if dataset == "fashion":
-        confounders = fashion_confunders
-    elif dataset == "mnist":
-        confounders = mnist_confunders
-    elif dataset == "omniglot":
-        confounders = omniglot_confunders
-    return confounders
 
 
 def get_samples_for_arguments(
@@ -1049,7 +1094,9 @@ def get_samples_for_arguments(
     confounders = get_confounders(dataset)
 
     # loop over the loader
-    for _, inputs in tqdm.tqdm(enumerate(loader), desc="Return samples from dataloader"):
+    for _, inputs in tqdm.tqdm(
+        enumerate(loader), desc="Return samples from dataloader"
+    ):
         # Unpack data
         (inputs, superclass, subclass, targets) = inputs
 

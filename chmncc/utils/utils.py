@@ -10,6 +10,17 @@ from typing import Tuple, Dict, Optional, List, Any
 from torch.utils import tensorboard
 import torch.nn.functional as F
 import seaborn as sns
+from chmncc.config import (
+    mnist_hierarchy,
+    cifar_hierarchy,
+    omniglot_hierarchy,
+    omniglot_confunders,
+    mnist_confunders,
+    cifar_confunders,
+    fashion_hierarchy,
+    fashion_confunders,
+    label_confounders,
+)
 
 
 ################### Dotdict ##################
@@ -532,3 +543,49 @@ def cross_entropy_from_softmax(
     loss_2 = F.nll_loss(torch.log(outputs[:, superclasses_number + 1 :]), inds_1)
     loss = loss_1 + loss_2
     return loss / 2, loss_1, loss_2
+
+
+def get_confounders(dataset: str) -> Dict:
+    """Given the dataset name, it returns the confounder
+    Args:
+        dataset [str]: name of the dataset
+    Returns:
+        confounders
+    """
+    confunders = cifar_confunders
+    if dataset == "mnist":
+        confunders = mnist_confunders
+    elif dataset == "fashion":
+        confunders = fashion_confunders
+    elif dataset == "omniglot":
+        confunders = omniglot_confunders
+    return confunders
+
+
+def get_hierarchy(hierarchy_name: str):
+    """Given the hierarchy name, it returns the right hierarchy
+    Args:
+        hierarchy_name [str]: name of the hierarchy
+    Returns:
+        confounders
+    """
+    hierarchy = cifar_hierarchy
+    if hierarchy_name == "mnist":
+        hierarchy = mnist_hierarchy
+    elif hierarchy_name == "fashion":
+        hierarchy = fashion_hierarchy
+    elif hierarchy_name == "omniglot":
+        hierarchy = omniglot_hierarchy
+    return hierarchy
+
+
+def get_confounders_and_hierarchy(dataset: str):
+    """Given the hierarchy name, it returns the right confounders and hierarchy
+    Args:
+        dataset [str]: name of the dataset
+    Returns:
+        confounders and hierarchy values and hierarchy keys
+    """
+    hierarchy = get_hierarchy(dataset)
+    confounders = get_confounders(dataset)
+    return confounders, hierarchy.values(), hierarchy.keys()

@@ -7,8 +7,16 @@ import os
 import torch.nn as nn
 from torch.nn.modules.loss import BCELoss
 from chmncc.networks import ResNet18, LeNet5, LeNet7, AlexNet, MLP
-from chmncc.config import cifar_hierarchy, mnist_hierarchy, fashion_hierarchy, omniglot_hierarchy
-from chmncc.utils.utils import force_prediction_from_batch, load_last_weights, load_best_weights, grouped_boxplot, plot_confusion_matrix_statistics, plot_global_multiLabel_confusion_matrix, get_lr
+from chmncc.utils.utils import (
+    force_prediction_from_batch,
+    load_last_weights,
+    load_best_weights,
+    grouped_boxplot,
+    plot_confusion_matrix_statistics,
+    plot_global_multiLabel_confusion_matrix,
+    get_lr,
+    get_confounders_and_hierarchy
+)
 from chmncc.dataset import (
     load_dataloaders,
     get_named_label_predictions,
@@ -20,7 +28,7 @@ from chmncc.explanations import compute_integrated_gradient, output_gradients
 from chmncc.loss import RRRLoss, IGRRRLoss
 from chmncc.revise import revise_step
 from chmncc.optimizers import get_adam_optimizer, get_plateau_scheduler
-from typing import Dict, Any, Tuple, Union
+from typing import Dict, Any, Tuple, Union, List
 import tqdm
 import matplotlib.pyplot as plt
 import matplotlib
@@ -29,6 +37,7 @@ import scipy.stats
 from sklearn.linear_model import RidgeClassifier
 from torchsummary import summary
 from itertools import tee
+import itertools
 
 def save_sample(
     dataset: str,
@@ -89,17 +98,7 @@ def save_sample(
     )
 
     # extract parent and children prediction
-    parents = cifar_hierarchy.keys()
-    children_values = cifar_hierarchy.values()
-    if dataset == "mnist":
-        parents = mnist_hierarchy.keys()
-        children_values = mnist_hierarchy.values()
-    elif dataset == "fashion":
-        parents = fashion_hierarchy.keys()
-        children_values = fashion_hierarchy.values()
-    elif dataset == "omniglot":
-        parents = omniglot_hierarchy.keys()
-        children_values = omniglot_hierarchy.values()
+    _, children_values, parents = get_confounders_and_hierarchy(dataset)
 
     children = [
         element for element_list in children_values for element in element_list
@@ -786,6 +785,8 @@ def debug(
     force_prediction: bool,
     use_softmax: bool,
     dataset: str,
+    balance_subclasses: List[str],
+    balance_weights: List[float],
     **kwargs: Any
 ) -> None:
     """Method which performs the debug step by fine-tuning the network employing the right for the right reason loss.
@@ -820,7 +821,13 @@ def debug(
     # Load debug datasets: for training the data -> it has labels and confounders position information
     debug_train = LoadDebugDataset(
         dataloaders["train_dataset_with_labels_and_confunders_position"],
+        balance_subclasses,
+        balance_weights
     )
+
+    print("Debug dataset statistics:")
+    debug_train.train_set.print_stats()
+
     test_debug = LoadDebugDataset(
         dataloaders["test_dataset_with_labels_and_confunders_pos"],
     )
@@ -848,6 +855,9 @@ def debug(
     for_test_loader_test_only_confounder_wo_conf_in_train_data = torch.utils.data.DataLoader(
         dataloaders["test_dataset_with_labels_and_confunders_pos_only_without_confounders_on_training_samples"], batch_size=test_batch_size, shuffle=False, num_workers=num_workers
     )
+
+    # only label confounders dataloader
+    labels_only_test_loader = dataloaders["test_loader_only_label_confounders"]
 
     # copy the iterators for trying to analyze the same images
     print_iterator_before = iter(test_debug)
@@ -1047,6 +1057,27 @@ def debug(
             )
         )
 
+        # test set
+        test_lab_conf_score_raw = 0
+        if len(balance_subclasses) > 0:
+            test_lab_conf_loss, test_lab_conf_accuracy, test_lab_conf_score_raw, test_lab_score_const, _, _ = test_step(
+                net=net,
+                test_loader=iter(labels_only_test_loader),
+                cost_function=cost_function,
+                title="Test",
+                test=dataloaders["test"],
+                device=device,
+                prediction_treshold=prediction_treshold,
+                force_prediction=force_prediction,
+                superclasses_number=dataloaders["train_set"].n_superclasses,
+            )
+
+            print(
+                "\n\t [Test set Label confounder Only]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Area under Precision-Recall Curve const {:.3f}".format(
+                    test_lab_conf_loss, test_lab_conf_accuracy, test_lab_conf_score_raw, test_lab_score_const
+                )
+            )
+
         # save the model if the results are better
         if best_test_score > test_score_original_const:
             # save the best score
@@ -1104,6 +1135,9 @@ def debug(
         if test_loss_parent is not None and test_loss_children is not None:
             logs.update({"test/test_right_answer_loss_parent": test_loss_parent})
             logs.update({"test/test_right_answer_loss_children": test_loss_children})
+
+        if len(balance_subclasses) > 0:
+            logs.update({"test/only_label_confounders_auprc_raw": test_lab_conf_score_raw})
 
         # log on wandb if and only if the module is loaded
         if set_wandb:
@@ -1311,6 +1345,8 @@ def configure_subparsers(subparsers: Subparser) -> None:
         action="store_true",
         help="Imbalance the dataset introducing another type of confounding",
     )
+    parser.add_argument('-balsub','--balance-subclasses', nargs='+', help='Which subclasses to balance', type=str)
+    parser.add_argument('-balweight','--balance-weights', nargs='+', help='Float weights used so as to balance the subclasses', type=float)
     # set the main function to run when blob is called from the command line
     parser.set_defaults(
         func=main,
@@ -1321,8 +1357,23 @@ def configure_subparsers(subparsers: Subparser) -> None:
         fixed_confounder=False,
         use_softmax=False,
         simplified_dataset=False,
-        imbalance_dataset=False
+        imbalance_dataset=False,
+        balance_subclasses=[],
+        balance_weights=[],
     )
+
+
+def check_balance_dataset_integrity(dataset: str, subclasses_list: List[str], weights_list: List[float]) -> None:
+    # Skip if the arrays are empty
+    if len(subclasses_list) == 0 and len(weights_list) == 0:
+        return
+    assert len(subclasses_list) == len(weights_list), "Subclass and weights lists must have equal length"
+    _, children, _ = get_confounders_and_hierarchy(dataset)
+    children = list(itertools.chain.from_iterable(children))
+    for cl in subclasses_list:
+        assert cl in children, f"{cl} is not in the children classes which are recognized by the hierarchy"
+    for i, w in enumerate(weights_list):
+        assert w > 0, f"{w}, namely the weight associated to {subclasses_list[i]} cannot be negative"
 
 
 def main(args: Namespace) -> None:
@@ -1336,6 +1387,9 @@ def main(args: Namespace) -> None:
     for p, v in zip(args.__dict__.keys(), args.__dict__.values()):
         print("\t{}: {}".format(p, v))
     print("\n")
+
+    # check balance integrity
+    check_balance_dataset_integrity(args.dataset, args.balance_subclasses, args.balance_weights)
 
     # set the seeds
     seed = args.seed
@@ -1466,7 +1520,6 @@ def main(args: Namespace) -> None:
     labels_name = dataloaders["test_set"].nodes_names_without_root
     # load the training dataloader
     training_loader_with_labels_names = dataloaders["training_loader_with_labels_names"]
-
 
     # collect stats
     (

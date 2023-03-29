@@ -10,16 +10,9 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 from chmncc.config import (
-    mnist_hierarchy,
-    cifar_hierarchy,
-    omniglot_hierarchy,
-    omniglot_confunders,
-    mnist_confunders,
-    cifar_confunders,
-    fashion_hierarchy,
-    fashion_confunders,
     label_confounders,
 )
+from chmncc.utils import get_confounders, get_hierarchy
 from typing import Any, Dict, Tuple, List, Union
 import networkx as nx
 import cv2
@@ -79,8 +72,35 @@ class LoadDataset(Dataset):
     imgs_are_strings: bool
     """Class statistics count"""
     class_count_statistics: Dict[str, int] = {}
+    """csv path"""
+    csv_path: str
+    """Only label confounders"""
+    only_label_confounders: bool
 
-    def _no_confounders(
+    def _only_label_confounders(
+        self, data_list: List[Tuple[str, str, str]], dataset: str
+    ) -> List[Tuple[str, str, str]]:
+        filtered = []
+
+        lab_conf = label_confounders[dataset]
+        print("Filtering label confounders only...")
+        for image, superclass, subclass in data_list:
+            # check if the sample is confunded
+            superclass = superclass.strip()
+            subclass = subclass.strip()
+            if (
+                superclass in lab_conf
+                and subclass in lab_conf[superclass]["subclasses"]
+            ):
+                filtered.append((image, superclass, subclass))
+        return filtered
+
+    def print_stats(self):
+        import json
+
+        print(json.dumps(self.class_count_statistics, sort_keys=True, indent=2))
+
+    def _no_image_confounders(
         self, confounders_list: List[Tuple[str, str, str]], phase: str
     ) -> List[Tuple[str, str, str]]:
         """Method which is used to remove the confounded samples from the datalist
@@ -95,13 +115,7 @@ class LoadDataset(Dataset):
         filtered = []
 
         # get the right confounders
-        confunders = cifar_confunders
-        if self.dataset_type == "mnist":
-            confunders = mnist_confunders
-        elif self.dataset_type == "fashion":
-            confunders = fashion_confunders
-        elif self.dataset_type == "omniglot":
-            confunders = omniglot_confunders
+        confunders = get_confounders(self.dataset_type)
 
         for image, superclass, subclass in confounders_list:
             # check if the sample is confunded
@@ -114,7 +128,7 @@ class LoadDataset(Dataset):
             filtered.append((image, superclass, subclass))
         return filtered
 
-    def _confounders_only(
+    def _image_confounders_only(
         self, confounders_list: List[Tuple[str, str, str]], phase: str
     ) -> List[Tuple[str, str, str]]:
         """Method which is used to keep only the confounded images within the list of data
@@ -129,15 +143,9 @@ class LoadDataset(Dataset):
         filtered = []
 
         # get the confounders
-        confunders = cifar_confunders
-        if self.dataset_type == "mnist":
-            confunders = mnist_confunders
-        elif self.dataset_type == "fashion":
-            confunders = fashion_confunders
-        elif self.dataset_type == "omniglot":
-            confunders = omniglot_confunders
+        confunders = get_confounders(self.dataset_type)
 
-        print("Filtering confounders only...")
+        print("Filtering image confounders only...")
         for image, superclass, subclass in confounders_list:
             # check if the sample is confunded
             superclass = superclass.strip()
@@ -148,9 +156,9 @@ class LoadDataset(Dataset):
                         filtered.append((image, superclass, subclass))
         return filtered
 
-    def _confund(
+    def _confund_image(
         self,
-        confunder: Dict[str, str],
+        confunder: Dict[str, Any],
         seed: int,
         image: np.ndarray,
     ) -> Tuple[np.ndarray, int, int, int, int]:
@@ -229,13 +237,7 @@ class LoadDataset(Dataset):
         """
 
         # get the right hierarchy
-        hierarchy = cifar_hierarchy
-        if hierarchy_name == "mnist":
-            hierarchy = mnist_hierarchy
-        elif hierarchy_name == "fashion":
-            hierarchy = fashion_hierarchy
-        elif hierarchy_name == "omniglot":
-            hierarchy = omniglot_hierarchy
+        hierarchy = get_hierarchy(hierarchy_name)
 
         # prepare the hierarchy
         for img_class in hierarchy:
@@ -295,6 +297,7 @@ class LoadDataset(Dataset):
         """Compute statistics about the data.
         Basically, it populates class_count_statistics dictionary by counting how many samples are associated with those classes
         """
+        self.class_count_statistics = {}
         for idx in range(len(self.data_list)):
             _, superclass, subclass = self.data_list[idx]
             if superclass.strip() not in self.class_count_statistics:
@@ -326,10 +329,15 @@ class LoadDataset(Dataset):
                 label_confounders[dataset][superclass]["weight"],
                 label_confounders[dataset][superclass]["subclasses"],
             ):
-                conf_subclasses_number_to_keep[subclass] = int(
-                    self.class_count_statistics[subclass] * weight
-                )
                 conf_subclasses_current_counter[subclass] = 0
+                # it may be the case in which those labels have
+                # been removed due to the image confounding only
+                if subclass in self.class_count_statistics:
+                    conf_subclasses_number_to_keep[subclass] = int(
+                        self.class_count_statistics[subclass] * weight
+                    )
+                else:
+                    conf_subclasses_number_to_keep[subclass] = 0
 
         # cut down the samples
         new_datalist: List = list()
@@ -338,8 +346,8 @@ class LoadDataset(Dataset):
             # the number of examples has been already reached, go next
             if (
                 subclass in conf_subclasses_number_to_keep
-                and conf_subclasses_number_to_keep[subclass]
-                > conf_subclasses_current_counter[subclass]
+                and conf_subclasses_current_counter[subclass]
+                >= conf_subclasses_number_to_keep[subclass]
             ):
                 continue
             else:
@@ -351,6 +359,9 @@ class LoadDataset(Dataset):
 
         # replace the list
         self.data_list = new_datalist
+
+        # re-calculate the statistics
+        self._calculate_data_stats()
 
     def __getitem__(
         self, idx: int
@@ -386,13 +397,7 @@ class LoadDataset(Dataset):
         """
 
         # get the right confounder
-        confunders = cifar_confunders
-        if self.dataset_type == "mnist":
-            confunders = mnist_confunders
-        elif self.dataset_type == "fashion":
-            confunders = fashion_confunders
-        elif self.dataset_type == "omniglot":
-            confunders = omniglot_confunders
+        confunders = get_confounders(self.dataset_type)
 
         image_path, image, superclass, subclass = None, None, None, None
 
@@ -446,7 +451,7 @@ class LoadDataset(Dataset):
                         c_pos_1_y,
                         c_pos_2_x,
                         c_pos_2_y,
-                    ) = self._confund(c_shape, idx, image)
+                    ) = self._confund_image(c_shape, idx, image)
                     # Extract the position of the confunder
                     confunder_pos_1_x = c_pos_1_x
                     confunder_pos_1_y = c_pos_1_y

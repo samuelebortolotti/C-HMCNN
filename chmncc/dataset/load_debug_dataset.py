@@ -1,8 +1,11 @@
 """Pytorch dataset which returns data correlated to the placed confounder"""
 import torch
 from torch.utils.data import Dataset
-from typing import Tuple
+from typing import Tuple, List, Dict
 from chmncc.dataset.load_cifar import LoadDataset
+from chmncc.config import (
+    label_confounders,
+)
 import cv2
 import numpy as np
 
@@ -16,9 +19,105 @@ class LoadDebugDataset(Dataset):
     def __init__(
         self,
         train_set: LoadDataset,
+        balance_subclasses: List[str] = [],
+        balance_weights: List[float] = [],
     ):
         """Init param: it saves the training set"""
         self.train_set = train_set
+        self.balance_subclasses = balance_subclasses
+        self.balance_weights = balance_weights
+
+        if len(balance_subclasses) == 0:
+            print("Before")
+            self.train_set.print_stats()
+
+        # correct the dataset balancing
+        self._correct_dataset_balancing()
+
+        if len(balance_subclasses) == 0:
+            print("After")
+            self.train_set.print_stats()
+
+    def _class_ok(
+        self, subclass: str, current: Dict[str, int], target: Dict[str, int]
+    ) -> bool:
+        return current[subclass] >= target[subclass]
+
+    def _check_end_duplication(
+        self, current: Dict[str, int], target: Dict[str, int]
+    ) -> bool:
+        end: bool = True
+        for subclass in current.keys():
+            if not self._class_ok(subclass, current, target):
+                end = False
+                break
+        return end
+
+    def _correct_dataset_balancing(self) -> None:
+        # nothing to change if the subclasses are empty
+        if len(self.balance_subclasses) == 0:
+            return
+
+        count_statistics = self.train_set.class_count_statistics
+
+        # get the count of samples for each of the data item to confound
+        # and get the number of samples to keep according to the weight
+        conf_subclasses_number_to_reach: Dict[str, int] = {}
+        conf_subclasses_current_counter: Dict[str, int] = {}
+        for idx, subclass in enumerate(self.balance_subclasses):
+            conf_subclasses_current_counter[subclass] = count_statistics[subclass]
+            conf_subclasses_number_to_reach[subclass] = int(
+                count_statistics[subclass] * self.balance_weights[idx]
+            )
+        print(conf_subclasses_current_counter)
+        print(conf_subclasses_number_to_reach)
+
+        # fill the ones which are not present
+        for subclass in count_statistics.keys():
+            if subclass not in self.balance_subclasses:
+                conf_subclasses_current_counter[subclass] = count_statistics[subclass]
+                conf_subclasses_number_to_reach[subclass] = count_statistics[subclass]
+
+        # multiply the samples
+        new_datalist: List = self.train_set.data_list.copy()
+        basic_step: int = 10  # just a random fixed number
+
+        while not self._check_end_duplication(
+            conf_subclasses_current_counter, conf_subclasses_number_to_reach
+        ):
+            for idx in range(len(self.train_set.data_list)):
+                _, _, subclass = self.train_set.data_list[idx]
+
+                # go next if the class we are seeing is ok
+                if self._class_ok(
+                    subclass,
+                    conf_subclasses_current_counter,
+                    conf_subclasses_number_to_reach,
+                ):
+                    continue
+
+                # just clone 10 samples at a time at least
+                diff = (
+                    conf_subclasses_number_to_reach[subclass]
+                    - conf_subclasses_current_counter[subclass]
+                )
+                basic_step = basic_step if diff > basic_step else diff
+
+                for _ in range(basic_step):
+                    # append the element
+                    new_datalist.append(self.train_set.data_list[idx])
+                    conf_subclasses_current_counter[subclass] += 1
+
+        # replace the list
+        self.train_set.data_list = new_datalist
+
+        # shuffle the list
+        import random
+
+        random.shuffle(self.train_set.data_list)
+
+        # re-calculate the statistics
+        self.train_set._calculate_data_stats()
 
     def __len__(self) -> int:
         """Returns the total amount of data.

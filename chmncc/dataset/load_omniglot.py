@@ -27,6 +27,7 @@ class LoadOmniglot(LoadDataset):
         fixed_confounder: bool = False,
         img_size: int = 32,
         imbalance_dataset: bool = False,
+        only_label_confounders: bool = False,
         **kwargs,
     ):
         """Initialization of the Omniglot dataset
@@ -45,6 +46,7 @@ class LoadOmniglot(LoadDataset):
         """
 
         self.dataset_type = "omniglot"
+        self.csv_path = ""
         self.image_size = img_size
         self.image_depth = 1
         self.return_label = return_label
@@ -89,16 +91,22 @@ class LoadOmniglot(LoadDataset):
         self.only_confounders = only_confounders
         # whether we are in the training phase
         self.train = train
+        # whether to have keep the labels confounders only
+        self.only_label_confounders = only_label_confounders
 
         # filter the data according to the confounders
         if only_confounders:
-            self.data_list = self._confounders_only(
+            self.data_list = self._image_confounders_only(
                 self.data_list, "train" if self.train else "test"
             )
         elif no_confounders:
-            self.data_list = self._no_confounders(
+            self.data_list = self._no_image_confounders(
                 self.data_list, "train" if self.train else "test"
             )
+
+        # filter for only the label
+        if only_label_confounders:
+            self.data_list = self._only_label_confounders(self.data_list, "omniglot")
 
         # calculate statistics on the data
         self._calculate_data_stats()

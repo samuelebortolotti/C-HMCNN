@@ -40,6 +40,7 @@ class LoadFashionMnist(LoadDataset):
         no_confounders: bool = False,
         fixed_confounder: bool = False,
         imbalance_dataset: bool = False,
+        only_label_confounders: bool = False,
         **kwargs,
     ):
         """Init param for the load fashion MNIST
@@ -57,6 +58,7 @@ class LoadFashionMnist(LoadDataset):
         """
 
         self.dataset_type = "fashion"
+        self.csv_path = ""
         self.image_size = dataset.data.shape[1]
         self.image_depth = 1
         self.return_label = return_label
@@ -102,6 +104,8 @@ class LoadFashionMnist(LoadDataset):
         self.only_confounders = only_confounders
         # whether we are in the training phase
         self.train = train
+        # whether to have keep the labels confounders only
+        self.only_label_confounders = only_label_confounders
 
         # filter the data according to the confounders
         if only_confounders:
@@ -118,6 +122,10 @@ class LoadFashionMnist(LoadDataset):
 
         if imbalance_dataset:
             self._introduce_inbalance_confounding("fashion", train)
+
+        # filter for only the label
+        if only_label_confounders:
+            self.data_list = self._only_label_confounders(self.data_list, "fashion")
 
     def create_hierarchy(self, label: str) -> str:
         """Method which generates the hierarchy out of the data

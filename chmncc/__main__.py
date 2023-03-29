@@ -44,6 +44,7 @@ from chmncc.utils.utils import (
     grouped_boxplot,
     plot_global_multiLabel_confusion_matrix,
     plot_confusion_matrix_statistics,
+    get_confounders_and_hierarchy,
 )
 from chmncc.early_stopper import EarlyStopper
 from chmncc.networks.ConstrainedFFNN import initializeConstrainedFFNNModel
@@ -69,14 +70,6 @@ import chmncc.debug.debug as debug
 import chmncc.dataset.visualize_dataset as visualize_data
 from chmncc.config.old_config import lrs, epochss, hidden_dims
 from chmncc.config import (
-    cifar_confunders,
-    cifar_hierarchy,
-    mnist_hierarchy,
-    mnist_confunders,
-    fashion_hierarchy,
-    fashion_confunders,
-    omniglot_hierarchy,
-    omniglot_confunders,
     label_confounders,
 )
 from chmncc.explanations import compute_integrated_gradient, output_gradients
@@ -520,6 +513,10 @@ def c_hmcnn(
     print("#> Model")
 
     summary(net, (img_depth, img_size, img_size))
+
+    # print the statistics
+    print("Train dataset statistics:")
+    dataloaders["train_set"].print_stats()
 
     # dataloaders
     train_loader = dataloaders["train_loader"]
@@ -1080,21 +1077,7 @@ def c_hmcnn(
                 predicted_1_0, dataloaders["test_set"].get_nodes()
             )
             # extract parent and children
-            parents = cifar_hierarchy.keys()
-            children = cifar_hierarchy.values()
-            confunders = cifar_confunders
-            if dataset == "mnist":
-                confunders = mnist_confunders
-                children = mnist_hierarchy.values()
-                parents = mnist_hierarchy.keys()
-            elif dataset == "fashion":
-                confunders = fashion_confunders
-                children = fashion_hierarchy.values()
-                parents = fashion_hierarchy.keys()
-            elif dataset == "omniglot":
-                confunders = omniglot_confunders
-                children = omniglot_hierarchy.values()
-                parents = omniglot_hierarchy.keys()
+            confunders, children, parents = get_confounders_and_hierarchy(dataset)
 
             # label confounders
             lab_conf = label_confounders[dataset]
@@ -1110,8 +1093,8 @@ def c_hmcnn(
             print(superclass[i], subclass[i])
             if superclass[i] in confunders or superclass[i] in lab_conf:
                 if (
-                    superclass[i] in lab_conf and
-                    subclass[i] in lab_conf[superclass[i]]["subclasses"]
+                    superclass[i] in lab_conf
+                    and subclass[i] in lab_conf[superclass[i]]["subclasses"]
                 ):
                     print("Found label confunder!")
                     confunded = True

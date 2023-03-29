@@ -29,6 +29,7 @@ class LoadCifar(LoadDataset):
         no_confounders: bool = False,
         fixed_confounder: bool = False,
         imbalance_dataset: bool = False,
+        only_label_confounders: bool = False,
         **kwargs,
     ):
         """Init param
@@ -89,15 +90,22 @@ class LoadCifar(LoadDataset):
         self.only_confounders = only_confounders
         # whether we are in the training phase
         self.train = train
+        # whether to have keep the labels confounders only
+        self.only_label_confounders = only_label_confounders
+
         # filter the data according to the confounders and to the specified preferences
         if only_confounders:
-            self.data_list = self._confounders_only(
+            self.data_list = self._image_confounders_only(
                 self.data_list, "train" if self.train else "test"
             )
         elif no_confounders:
-            self.data_list = self._no_confounders(
+            self.data_list = self._no_image_confounders(
                 self.data_list, "train" if self.train else "test"
             )
+
+        # filter for only the label
+        if only_label_confounders:
+            self.data_list = self._only_label_confounders(self.data_list, "cifar")
 
         # calculate statistics on the data
         self._calculate_data_stats()

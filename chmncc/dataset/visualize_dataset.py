@@ -5,12 +5,7 @@ import matplotlib.pyplot as plt
 from argparse import _SubParsersAction as Subparser
 from argparse import Namespace
 from chmncc.dataset import load_dataloaders, get_named_label_predictions
-from chmncc.config import (
-    cifar_confunders,
-    mnist_confunders,
-    fashion_confunders,
-    omniglot_confunders,
-)
+from chmncc.utils import get_confounders
 from typing import List
 
 
@@ -95,13 +90,7 @@ def visualize_train_datasets(
     train_iter = iter(train_loader)
 
     # confounders
-    confounders = cifar_confunders
-    if dataset == "mnist":
-        confounders = mnist_confunders
-    elif dataset == "fashion":
-        confounders = fashion_confunders
-    elif dataset == "omniglot":
-        confounders = omniglot_confunders
+    confounders = get_confounders(dataset)
 
     if only_confounders:
         data_source, labels = [], []

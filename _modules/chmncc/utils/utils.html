@@ -79,6 +79,17 @@
 <span class="kn">from</span> <span class="nn">torch.utils</span> <span class="kn">import</span> <span class="n">tensorboard</span>
 <span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
 <span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+<span class="kn">from</span> <span class="nn">chmncc.config</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">mnist_hierarchy</span><span class="p">,</span>
+    <span class="n">cifar_hierarchy</span><span class="p">,</span>
+    <span class="n">omniglot_hierarchy</span><span class="p">,</span>
+    <span class="n">omniglot_confunders</span><span class="p">,</span>
+    <span class="n">mnist_confunders</span><span class="p">,</span>
+    <span class="n">cifar_confunders</span><span class="p">,</span>
+    <span class="n">fashion_hierarchy</span><span class="p">,</span>
+    <span class="n">fashion_confunders</span><span class="p">,</span>
+    <span class="n">label_confounders</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <span class="c1">################### Dotdict ##################</span>
@@ -601,6 +612,52 @@
     <span class="n">loss_2</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">nll_loss</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">outputs</span><span class="p">[:,</span> <span class="n">superclasses_number</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]),</span> <span class="n">inds_1</span><span class="p">)</span>
     <span class="n">loss</span> <span class="o">=</span> <span class="n">loss_1</span> <span class="o">+</span> <span class="n">loss_2</span>
     <span class="k">return</span> <span class="n">loss</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">loss_1</span><span class="p">,</span> <span class="n">loss_2</span></div>
+
+
+<div class="viewcode-block" id="get_confounders"><a class="viewcode-back" href="../../../chmncc.utils.html#chmncc.utils.utils.get_confounders">[docs]</a><span class="k">def</span> <span class="nf">get_confounders</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Given the dataset name, it returns the confounder</span>
+<span class="sd">    Args:</span>
+<span class="sd">        dataset [str]: name of the dataset</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        confounders</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">confunders</span> <span class="o">=</span> <span class="n">cifar_confunders</span>
+    <span class="k">if</span> <span class="n">dataset</span> <span class="o">==</span> <span class="s2">&quot;mnist&quot;</span><span class="p">:</span>
+        <span class="n">confunders</span> <span class="o">=</span> <span class="n">mnist_confunders</span>
+    <span class="k">elif</span> <span class="n">dataset</span> <span class="o">==</span> <span class="s2">&quot;fashion&quot;</span><span class="p">:</span>
+        <span class="n">confunders</span> <span class="o">=</span> <span class="n">fashion_confunders</span>
+    <span class="k">elif</span> <span class="n">dataset</span> <span class="o">==</span> <span class="s2">&quot;omniglot&quot;</span><span class="p">:</span>
+        <span class="n">confunders</span> <span class="o">=</span> <span class="n">omniglot_confunders</span>
+    <span class="k">return</span> <span class="n">confunders</span></div>
+
+
+<div class="viewcode-block" id="get_hierarchy"><a class="viewcode-back" href="../../../chmncc.utils.html#chmncc.utils.utils.get_hierarchy">[docs]</a><span class="k">def</span> <span class="nf">get_hierarchy</span><span class="p">(</span><span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Given the hierarchy name, it returns the right hierarchy</span>
+<span class="sd">    Args:</span>
+<span class="sd">        hierarchy_name [str]: name of the hierarchy</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        confounders</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hierarchy</span> <span class="o">=</span> <span class="n">cifar_hierarchy</span>
+    <span class="k">if</span> <span class="n">hierarchy_name</span> <span class="o">==</span> <span class="s2">&quot;mnist&quot;</span><span class="p">:</span>
+        <span class="n">hierarchy</span> <span class="o">=</span> <span class="n">mnist_hierarchy</span>
+    <span class="k">elif</span> <span class="n">hierarchy_name</span> <span class="o">==</span> <span class="s2">&quot;fashion&quot;</span><span class="p">:</span>
+        <span class="n">hierarchy</span> <span class="o">=</span> <span class="n">fashion_hierarchy</span>
+    <span class="k">elif</span> <span class="n">hierarchy_name</span> <span class="o">==</span> <span class="s2">&quot;omniglot&quot;</span><span class="p">:</span>
+        <span class="n">hierarchy</span> <span class="o">=</span> <span class="n">omniglot_hierarchy</span>
+    <span class="k">return</span> <span class="n">hierarchy</span></div>
+
+
+<div class="viewcode-block" id="get_confounders_and_hierarchy"><a class="viewcode-back" href="../../../chmncc.utils.html#chmncc.utils.utils.get_confounders_and_hierarchy">[docs]</a><span class="k">def</span> <span class="nf">get_confounders_and_hierarchy</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Given the hierarchy name, it returns the right confounders and hierarchy</span>
+<span class="sd">    Args:</span>
+<span class="sd">        dataset [str]: name of the dataset</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        confounders and hierarchy values and hierarchy keys</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hierarchy</span> <span class="o">=</span> <span class="n">get_hierarchy</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="n">confounders</span> <span class="o">=</span> <span class="n">get_confounders</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">confounders</span><span class="p">,</span> <span class="n">hierarchy</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">hierarchy</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span></div>
 </pre></div>
 
            </div>

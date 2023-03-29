@@ -218,6 +218,30 @@ file label names [List[str]]: subclass label</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="chmncc.utils.utils.get_confounders">
+<span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_confounders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#get_confounders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.get_confounders" title="Permalink to this definition"></a></dt>
+<dd><p>Given the dataset name, it returns the confounder
+:param dataset [str]: name of the dataset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>confounders</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.utils.utils.get_confounders_and_hierarchy">
+<span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_confounders_and_hierarchy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/utils/utils.html#get_confounders_and_hierarchy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.get_confounders_and_hierarchy" title="Permalink to this definition"></a></dt>
+<dd><p>Given the hierarchy name, it returns the right confounders and hierarchy
+:param dataset [str]: name of the dataset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>confounders and hierarchy values and hierarchy keys</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="chmncc.utils.utils.get_constr_indexes">
 <span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_constr_indexes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/chmncc/utils/utils.html#get_constr_indexes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.get_constr_indexes" title="Permalink to this definition"></a></dt>
 <dd><p>Given the output of the neural network x returns the indexes of MCM hierarchy which have influenced
@@ -255,6 +279,18 @@ expressed in the matrix R. This is employed only during the evaluation/test phas
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>final_out [torch.tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="chmncc.utils.utils.get_hierarchy">
+<span class="sig-prename descclassname"><span class="pre">chmncc.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_hierarchy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hierarchy_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/utils/utils.html#get_hierarchy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.utils.utils.get_hierarchy" title="Permalink to this definition"></a></dt>
+<dd><p>Given the hierarchy name, it returns the right hierarchy
+:param hierarchy_name [str]: name of the hierarchy</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>confounders</p>
 </dd>
 </dl>
 </dd></dl>

@@ -137,10 +137,12 @@ mnist_confunders = {
             }
         ],
     },
+
+
     "uppercase_letter": {
         "train": [
             {
-                "subclass": "N",
+                "subclass": "A",
                 "color": 85,  # grayscale color
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
@@ -156,58 +158,6 @@ mnist_confunders = {
             {
                 "subclass": "6",
                 "color": 85,  # grayscale color
-                "shape": "rectangle",  # choose from [rectangle, circle]
-                "type": "full",  # either full or empty
-                "min_dim": 4,  # minimum dimension
-                "max_dim": 4,  # maximum dimension in pixels
-            }
-        ],
-    },
-    "even_digit": {
-        "train": [
-            {
-                "subclass": "0",
-                "color": 210,
-                "shape": "rectangle",  # choose from [rectangle, circle]
-                "type": "full",  # either full or empty
-                "min_dim": 4,  # minimum dimension
-                "max_dim": 4,  # maximum dimension in pixels
-            }
-        ],
-        "test": [],
-    },
-    "uppercase_letter": {
-        "train": [],
-        "test": [
-            {
-                "subclass": "H",  # subclass on which to apply the confunders
-                "color": 210,  # grayscale
-                "shape": "rectangle",  # choose from [rectangle, circle]
-                "type": "full",  # either full or empty
-                "min_dim": 4,  # minimum dimension
-                "max_dim": 4,  # maximum dimension in pixels
-            }
-        ],
-    },
-    "lowercase_letter": {
-        "train": [
-            {
-                "subclass": "r",
-                "color": 110,  # grayscale color
-                "shape": "rectangle",  # choose from [rectangle, circle]
-                "type": "full",  # either full or empty
-                "min_dim": 4,  # minimum dimension
-                "max_dim": 4,  # maximum dimension in pixels
-            }
-        ],
-        "test": [],
-    },
-    "odd_digit": {
-        "train": [],
-        "test": [
-            {
-                "subclass": "9",
-                "color": 110,  # grayscale color
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
                 "min_dim": 4,  # minimum dimension

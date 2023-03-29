@@ -18,6 +18,7 @@ from chmncc.config import (
     cifar_confunders,
     fashion_hierarchy,
     fashion_confunders,
+    label_confounders,
 )
 from typing import Any, Dict, Tuple, List, Union
 import networkx as nx
@@ -76,6 +77,8 @@ class LoadDataset(Dataset):
     to_eval: Any
     """Whether the data is the image path or the image tensor"""
     imgs_are_strings: bool
+    """Class statistics count"""
+    class_count_statistics: Dict[str, int] = {}
 
     def _no_confounders(
         self, confounders_list: List[Tuple[str, str, str]], phase: str
@@ -287,6 +290,67 @@ class LoadDataset(Dataset):
             number of dataset entries [int]
         """
         return len(self.data_list)
+
+    def _calculate_data_stats(self) -> None:
+        """Compute statistics about the data.
+        Basically, it populates class_count_statistics dictionary by counting how many samples are associated with those classes
+        """
+        for idx in range(len(self.data_list)):
+            _, superclass, subclass = self.data_list[idx]
+            if superclass.strip() not in self.class_count_statistics:
+                self.class_count_statistics[superclass] = 0
+            if subclass.strip() not in self.class_count_statistics:
+                self.class_count_statistics[subclass] = 0
+            self.class_count_statistics[subclass.strip()] += 1
+            self.class_count_statistics[superclass.strip()] += 1
+
+    def _introduce_inbalance_confounding(self, dataset: str, train: bool) -> None:
+        """
+        Introduce inbalance confounding for the data.
+        The imbalancing is introduced only in train phase
+        Args:
+            dataset [str]: name of the dataset
+            train [bool]: whether the dataset is meant for training or testing
+        """
+
+        # nothing to add if the dataset is empty
+        if len(label_confounders[dataset]) == 0 or train is False:
+            return
+
+        # get the count of samples for each of the data item to confound
+        # and get the number of samples to keep according to the weight
+        conf_subclasses_number_to_keep: Dict[str, int] = {}
+        conf_subclasses_current_counter: Dict[str, int] = {}
+        for superclass in label_confounders[dataset].keys():
+            for weight, subclass in zip(
+                label_confounders[dataset][superclass]["weight"],
+                label_confounders[dataset][superclass]["subclasses"],
+            ):
+                conf_subclasses_number_to_keep[subclass] = int(
+                    self.class_count_statistics[subclass] * weight
+                )
+                conf_subclasses_current_counter[subclass] = 0
+
+        # cut down the samples
+        new_datalist: List = list()
+        for idx in range(len(self.data_list)):
+            _, _, subclass = self.data_list[idx]
+            # the number of examples has been already reached, go next
+            if (
+                subclass in conf_subclasses_number_to_keep
+                and conf_subclasses_number_to_keep[subclass]
+                > conf_subclasses_current_counter[subclass]
+            ):
+                continue
+            else:
+                # append the element
+                new_datalist.append(self.data_list[idx])
+            # increase the data counter
+            if subclass in conf_subclasses_current_counter:
+                conf_subclasses_current_counter[subclass] += 1
+
+        # replace the list
+        self.data_list = new_datalist
 
     def __getitem__(
         self, idx: int

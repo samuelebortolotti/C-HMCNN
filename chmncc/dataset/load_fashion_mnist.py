@@ -39,6 +39,7 @@ class LoadFashionMnist(LoadDataset):
         train: bool = True,
         no_confounders: bool = False,
         fixed_confounder: bool = False,
+        imbalance_dataset: bool = False,
         **kwargs,
     ):
         """Init param for the load fashion MNIST
@@ -111,6 +112,12 @@ class LoadFashionMnist(LoadDataset):
             self.data_list = self._no_confounders(
                 self.data_list, "train" if self.train else "test"
             )
+
+        # calculate statistics on the data
+        self._calculate_data_stats()
+
+        if imbalance_dataset:
+            self._introduce_inbalance_confounding("fashion", train)
 
     def create_hierarchy(self, label: str) -> str:
         """Method which generates the hierarchy out of the data

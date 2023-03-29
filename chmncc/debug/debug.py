@@ -1304,8 +1304,25 @@ def configure_subparsers(subparsers: Subparser) -> None:
         action="store_true",
         help="If possibile, use a simplified version of the dataset",
     )
+    parser.add_argument(
+        "--imbalance-dataset",
+        "-imdat",
+        dest="imbalance_dataset",
+        action="store_true",
+        help="Imbalance the dataset introducing another type of confounding",
+    )
     # set the main function to run when blob is called from the command line
-    parser.set_defaults(func=main, integrated_gradients=True, gradient_analysis=False, constrained_layer=True, force_prediction=False, fixed_confounder=False, use_softmax=False, simplified_dataset=False)
+    parser.set_defaults(
+        func=main,
+        integrated_gradients=True,
+        gradient_analysis=False,
+        constrained_layer=True,
+        force_prediction=False,
+        fixed_confounder=False,
+        use_softmax=False,
+        simplified_dataset=False,
+        imbalance_dataset=False
+    )
 
 
 def main(args: Namespace) -> None:
@@ -1365,6 +1382,7 @@ def main(args: Namespace) -> None:
         num_workers=args.num_workers,
         fixed_confounder=args.fixed_confounder,
         simplified_dataset=args.simplified_dataset,
+        imbalance_dataset=args.imbalance_dataset
     )
 
     # Load dataloaders

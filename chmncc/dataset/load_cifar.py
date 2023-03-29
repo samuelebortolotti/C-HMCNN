@@ -28,6 +28,7 @@ class LoadCifar(LoadDataset):
         train: bool = True,
         no_confounders: bool = False,
         fixed_confounder: bool = False,
+        imbalance_dataset: bool = False,
         **kwargs,
     ):
         """Init param
@@ -97,3 +98,9 @@ class LoadCifar(LoadDataset):
             self.data_list = self._no_confounders(
                 self.data_list, "train" if self.train else "test"
             )
+
+        # calculate statistics on the data
+        self._calculate_data_stats()
+
+        if imbalance_dataset:
+            self._introduce_inbalance_confounding("cifar", train)

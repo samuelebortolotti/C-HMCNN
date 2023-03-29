@@ -111,6 +111,7 @@ def load_dataloaders(
     num_workers: int = 4,
     fixed_confounder: bool = False,
     simplified_dataset: bool = False,
+    imbalance_dataset: bool = False,
 ) -> Dict[str, Any]:
     r"""
     Load the CIFAR-100 dataloaders
@@ -315,6 +316,7 @@ def load_dataloaders(
         fixed_confounder=fixed_confounder,
         dataset=dataset_train,
         simplified_dataset=simplified_dataset,
+        imbalance_dataset=imbalance_dataset,
     )
 
     train_dataset_no_confounder = factory.instantiateDataset(
@@ -329,6 +331,7 @@ def load_dataloaders(
         fixed_confounder=fixed_confounder,
         dataset=dataset_train,
         simplified_dataset=simplified_dataset,
+        imbalance_dataset=imbalance_dataset,
     )
 
     train_dataset_with_labels_and_confunders_position = factory.instantiateDataset(
@@ -345,6 +348,7 @@ def load_dataloaders(
         fixed_confounder=fixed_confounder,
         dataset=dataset_train,
         simplified_dataset=simplified_dataset,
+        imbalance_dataset=imbalance_dataset,
     )
 
     val_dataset_with_labels_and_confunders_position = factory.instantiateDataset(
@@ -361,6 +365,7 @@ def load_dataloaders(
         fixed_confounder=fixed_confounder,
         dataset=dataset_validation,
         simplified_dataset=simplified_dataset,
+        imbalance_dataset=imbalance_dataset,
     )
 
     train_dataset_with_labels_and_confunders_position_only_conf = (
@@ -379,6 +384,7 @@ def load_dataloaders(
             fixed_confounder=fixed_confounder,
             dataset=dataset_train,
             simplified_dataset=simplified_dataset,
+            imbalance_dataset=imbalance_dataset,
         )
     )
 
@@ -399,6 +405,7 @@ def load_dataloaders(
             fixed_confounder=fixed_confounder,
             dataset=dataset_train,
             simplified_dataset=simplified_dataset,
+            imbalance_dataset=imbalance_dataset,
         )
     )
 
@@ -415,6 +422,7 @@ def load_dataloaders(
         fixed_confounder=fixed_confounder,
         dataset=dataset_train,
         simplified_dataset=simplified_dataset,
+        imbalance_dataset=imbalance_dataset,
     )
 
     test_dataset = factory.instantiateDataset(
@@ -429,6 +437,7 @@ def load_dataloaders(
         fixed_confounder=fixed_confounder,
         dataset=dataset_test,
         simplified_dataset=simplified_dataset,
+        imbalance_dataset=imbalance_dataset,
     )
 
     test_dataset_no_confounder = factory.instantiateDataset(
@@ -443,6 +452,7 @@ def load_dataloaders(
         fixed_confounder=fixed_confounder,
         dataset=dataset_test,
         simplified_dataset=simplified_dataset,
+        imbalance_dataset=imbalance_dataset,
     )
 
     test_dataset_with_labels_and_confunders_pos = factory.instantiateDataset(
@@ -459,6 +469,7 @@ def load_dataloaders(
         fixed_confounder=fixed_confounder,
         dataset=dataset_test,
         simplified_dataset=simplified_dataset,
+        imbalance_dataset=imbalance_dataset,
     )
 
     test_dataset_with_labels_and_confunders_pos_only = factory.instantiateDataset(
@@ -476,6 +487,7 @@ def load_dataloaders(
         fixed_confounder=fixed_confounder,
         dataset=dataset_test,
         simplified_dataset=simplified_dataset,
+        imbalance_dataset=imbalance_dataset,
     )
 
     test_dataset_with_labels_and_confunders_pos_only_without_confounders = (
@@ -494,6 +506,7 @@ def load_dataloaders(
             fixed_confounder=fixed_confounder,
             dataset=dataset_test,
             simplified_dataset=simplified_dataset,
+            imbalance_dataset=imbalance_dataset,
         )
     )
 
@@ -512,6 +525,7 @@ def load_dataloaders(
         fixed_confounder=fixed_confounder,
         dataset=dataset_test,
         simplified_dataset=simplified_dataset,
+        imbalance_dataset=imbalance_dataset,
     )
 
     test_dataset_with_labels = factory.instantiateDataset(
@@ -527,6 +541,7 @@ def load_dataloaders(
         fixed_confounder=fixed_confounder,
         dataset=dataset_test,
         simplified_dataset=simplified_dataset,
+        imbalance_dataset=imbalance_dataset,
     )
 
     val_dataset = factory.instantiateDataset(
@@ -541,6 +556,7 @@ def load_dataloaders(
         fixed_confounder=fixed_confounder,
         dataset=dataset_validation,
         simplified_dataset=simplified_dataset,
+        imbalance_dataset=imbalance_dataset,
     )
 
     val_dataset_no_confounder = factory.instantiateDataset(
@@ -555,6 +571,7 @@ def load_dataloaders(
         fixed_confounder=fixed_confounder,
         dataset=dataset_validation,
         simplified_dataset=simplified_dataset,
+        imbalance_dataset=imbalance_dataset,
     )
 
     val_dataset_debug = factory.instantiateDataset(
@@ -569,6 +586,7 @@ def load_dataloaders(
         fixed_confounder=fixed_confounder,
         dataset=dataset_validation,
         simplified_dataset=simplified_dataset,
+        imbalance_dataset=imbalance_dataset,
     )
 
     # Dataloaders

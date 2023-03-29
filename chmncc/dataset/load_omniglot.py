@@ -26,6 +26,7 @@ class LoadOmniglot(LoadDataset):
         no_confounders: bool = False,
         fixed_confounder: bool = False,
         img_size: int = 32,
+        imbalance_dataset: bool = False,
         **kwargs,
     ):
         """Initialization of the Omniglot dataset
@@ -98,6 +99,12 @@ class LoadOmniglot(LoadDataset):
             self.data_list = self._no_confounders(
                 self.data_list, "train" if self.train else "test"
             )
+
+        # calculate statistics on the data
+        self._calculate_data_stats()
+
+        if imbalance_dataset:
+            self._introduce_inbalance_confounding("omniglot", train)
 
     def create_hierarchy(self, label: str) -> str:
         """Method which generates the hierarchy out of the data

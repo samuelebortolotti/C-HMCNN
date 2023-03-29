@@ -77,6 +77,7 @@ from chmncc.config import (
     fashion_confunders,
     omniglot_hierarchy,
     omniglot_confunders,
+    label_confounders,
 )
 from chmncc.explanations import compute_integrated_gradient, output_gradients
 from chmncc.revise import revise_step
@@ -285,6 +286,13 @@ def configure_subparsers(subparsers: Subparser) -> None:
         action="store_true",
         help="If possibile, use a simplified version of the dataset",
     )
+    parser.add_argument(
+        "--imbalance-dataset",
+        "-imdat",
+        dest="imbalance_dataset",
+        action="store_true",
+        help="Imbalance the dataset introducing another type of confounding",
+    )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(
         func=experiment,
@@ -294,6 +302,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         fixed_confounder=False,
         use_softmax=False,
         simplified_dataset=False,
+        imbalance_dataset=False,
     )
 
 
@@ -321,6 +330,7 @@ def c_hmcnn(
     fixed_confounder: bool = False,
     use_softmax: bool = False,
     simplified_dataset: bool = False,
+    imbalance_dataset: bool = False,
     **kwargs: Any,
 ) -> None:
     r"""
@@ -441,6 +451,7 @@ def c_hmcnn(
             num_workers=num_workers,  # num workers
             fixed_confounder=fixed_confounder,
             simplified_dataset=simplified_dataset,  # simplified dataset
+            imbalance_dataset=imbalance_dataset,
         )
 
     # network initialization
@@ -1085,6 +1096,9 @@ def c_hmcnn(
                 children = omniglot_hierarchy.values()
                 parents = omniglot_hierarchy.keys()
 
+            # label confounders
+            lab_conf = label_confounders[dataset]
+
             children = [
                 element for element_list in children for element in element_list
             ]
@@ -1094,13 +1108,20 @@ def c_hmcnn(
             )
             # select whether it is confunded
             print(superclass[i], subclass[i])
-            if superclass[i] in confunders:
+            if superclass[i] in confunders or superclass[i] in lab_conf:
+                if (
+                    superclass[i] in lab_conf and
+                    subclass[i] in lab_conf[superclass[i]]["subclasses"]
+                ):
+                    print("Found label confunder!")
+                    confunded = True
+
                 for tmp_index in range(len(confunders[superclass[i]]["test"])):
                     if (
                         confunders[superclass[i]]["test"][tmp_index]["subclass"]
                         == subclass[i]
                     ):
-                        print("Found confunder!")
+                        print("Found image confunder!")
                         confunded = True
                         break
 

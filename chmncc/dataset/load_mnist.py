@@ -129,6 +129,9 @@ class LoadMnist(LoadDataset):
         # calculate statistics on the data
         self._calculate_data_stats()
 
+        if only_label_confounders:
+            self.print_stats()
+
         # whether to imbalance the dataset
         if imbalance_dataset:
             self._introduce_inbalance_confounding("mnist", train)

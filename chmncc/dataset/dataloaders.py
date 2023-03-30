@@ -560,6 +560,23 @@ def load_dataloaders(
         only_label_confounders=True,
     )
 
+    test_dataset_only_label_confounders_with_labels = factory.instantiateDataset(
+        dataset_type,
+        image_size=img_size,
+        image_depth=img_depth,
+        csv_path=test_csv_path,
+        cifar_metafile=cifar_metadata,
+        transform=transform_test,
+        name_labels=True,
+        confund=confunder,
+        train=False,
+        fixed_confounder=fixed_confounder,
+        dataset=dataset_test,
+        simplified_dataset=simplified_dataset,
+        imbalance_dataset=imbalance_dataset,
+        only_label_confounders=True,
+    )
+
     val_dataset = factory.instantiateDataset(
         dataset_type,
         image_size=img_size,
@@ -666,6 +683,13 @@ def load_dataloaders(
         num_workers=num_workers,
     )
 
+    test_loader_only_label_confounders_with_labels_names = torch.utils.data.DataLoader(
+        test_dataset_only_label_confounders_with_labels,
+        batch_size=test_batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+    )
+
     val_loader = torch.utils.data.DataLoader(
         val_dataset, batch_size=test_batch_size, shuffle=False, num_workers=num_workers
     )
@@ -740,6 +764,7 @@ def load_dataloaders(
         "test_dataset_with_labels_and_confunders_pos_only_without_confounders": test_dataset_with_labels_and_confunders_pos_only_without_confounders,
         "test_dataset_with_labels_and_confunders_pos_only_without_confounders_on_training_samples": test_dataset_with_labels_and_confunders_pos_only_without_confounders_on_training_samples,
         "test_loader_only_label_confounders": test_loader_only_label_confounders,
+        "test_loader_only_label_confounders_with_labels_names": test_loader_only_label_confounders_with_labels_names,
         "test_set": test_dataset,
         "test": test,
         "val_set": val_dataset,

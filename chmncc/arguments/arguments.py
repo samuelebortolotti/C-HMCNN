@@ -6,6 +6,7 @@ import os
 import torch.nn as nn
 import scipy
 import itertools
+from collections import Counter
 import pandas as pd
 from chmncc.networks import ResNet18, LeNet5, LeNet7, AlexNet, MLP
 from chmncc.utils.utils import (
@@ -307,13 +308,13 @@ def score_barplot_list(
         color.append("green")
         color.append("red")
 
-    fig = plt.figure(figsize=(8, 4))
+    fig = plt.figure(figsize=(10, 9))
     titles = np.array(labels)
     values = np.array(x_full)
     plot = pd.Series(values).plot(kind="bar", color=color)
     plot.bar_label(plot.containers[0], label_type="edge")
     plot.set_xticklabels(titles)
-    plt.xticks(rotation=0)
+    plt.xticks(rotation='vertical')
     plt.title("{}".format(title))
     plt.tight_layout()
     fig.savefig("{}/{}.png".format(folder, title))
@@ -868,24 +869,35 @@ def plot_arguments(
     )
 
     max_arg_dictionary = correct_confound.max_arguments_dict
-    max_arg_dictionary.update(wrong_confound.max_arguments_dict)
-    max_arg_dictionary.update(correct_not_confound.max_arguments_dict)
-    max_arg_dictionary.update(wrong_not_confound.max_arguments_dict)
-    max_arg_dictionary.update(correct_lab.max_arguments_dict)
-    max_arg_dictionary.update(wrong_lab.max_arguments_dict)
+    max_arg_dictionary = sum_merge_dictionary(max_arg_dictionary, wrong_confound.max_arguments_dict)
+    max_arg_dictionary = sum_merge_dictionary(max_arg_dictionary, correct_not_confound.max_arguments_dict)
+    max_arg_dictionary = sum_merge_dictionary(max_arg_dictionary, wrong_not_confound.max_arguments_dict)
+    max_arg_dictionary = sum_merge_dictionary(max_arg_dictionary, correct_lab.max_arguments_dict)
+    max_arg_dictionary = sum_merge_dictionary(max_arg_dictionary, wrong_lab.max_arguments_dict)
 
-    label_arg_dictionary = correct_confound.label_args_dict
-    label_arg_dictionary.update(wrong_confound.label_args_dict)
-    label_arg_dictionary.update(correct_not_confound.label_args_dict)
-    label_arg_dictionary.update(wrong_not_confound.label_args_dict)
-    label_arg_dictionary.update(correct_lab.label_args_dict)
-    label_arg_dictionary.update(wrong_lab.label_args_dict)
     plot_most_frequent_explainations(
         max_arg_dictionary, "Max chosen per class", arguments_folder
     )
-    score_subclass_influence(
-        label_arg_dictionary, "Label suitable per class", arguments_folder
-    )
+
+def sum_merge_dictionary(first: Dict[str, Dict[str, int]], second: Dict[str, Dict[str, int]]) -> Dict[str, Dict[str, int]]:
+    new_dict: Dict[str, Dict[str, int]] = first.copy()
+    # add overlapped elements if it is necessary
+    for key in first:
+        if key not in second:
+            continue
+        for subkey in first[key]:
+            if subkey not in second[key]:
+                continue
+            new_dict[key][subkey] += second[key][subkey]
+
+    # loop over the second dictionary in order to add those lements which have been skipped
+    for key in second:
+        if key in first:
+            continue
+        new_dict[key] = second[key]
+
+    # returned the newly created dictionary
+    return new_dict
 
 
 def arguments_step(
@@ -1030,7 +1042,7 @@ def arguments_step(
                 max_arguments_dict[str_groundtruth_label][labels_name[int_label]] = 0
             max_arguments_dict[str_groundtruth_label][labels_name[int_label]] += 1
 
-        # coodo variables
+        # comodo variables
         i_c_l: int = bucket.groundtruth_children
         i_p_l: int = bucket.groundtruth_parent
         s_c_l: str = labels_name[i_c_l]
@@ -1116,7 +1128,7 @@ def plot_most_frequent_explainations(
         plot = pd.Series(values).plot(kind="bar", color=["blue"])
         plot.bar_label(plot.containers[0], label_type="edge")
         plot.set_xticklabels(titles)
-        plt.xticks(rotation=0)
+        plt.xticks(rotation='vertical')
         plt.title(
             "{} class {} total #{}".format(
                 title, key, sum(max_arg_dictionary[key].values())

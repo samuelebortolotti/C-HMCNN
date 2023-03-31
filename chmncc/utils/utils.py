@@ -589,3 +589,76 @@ def get_confounders_and_hierarchy(dataset: str):
     hierarchy = get_hierarchy(dataset)
     confounders = get_confounders(dataset)
     return confounders, hierarchy.values(), hierarchy.keys()
+
+
+def prepare_dict_label_predictions_from_raw_predictions(
+    predictions: np.ndarray,
+    groundtruth: np.ndarray,
+    label_names: List[str],
+    dataset_name: str,
+    skip_parents: bool,
+) -> Tuple[Dict[str, Dict[str, int]], Dict[str, int]]:
+    dictionary: Dict[str, Dict[str, int]] = {}
+    counter: Dict[str, int] = {}
+    _, _, parents = get_confounders_and_hierarchy(dataset_name)
+    for item_ground, item_pred in zip(groundtruth, predictions):
+        groundtruth_indexes = np.where(item_ground == 1)[0].tolist()
+        parent, children = (
+            label_names[groundtruth_indexes[0]],
+            label_names[groundtruth_indexes[1]],
+        )
+        if not children in dictionary:
+            dictionary[children] = {}
+            counter[children] = 0
+        counter[children] += 1
+
+        prediction_indexes = np.where(item_pred == 1)[0].tolist()
+        for idx in prediction_indexes:
+            label_idx = label_names[idx]
+            if skip_parents and label_idx in parents:
+                continue
+            if not label_idx in dictionary[children]:
+                dictionary[children][label_idx] = 0
+            dictionary[children][label_idx] += 1
+    return (dictionary, counter)
+
+
+def plot_confounded_labels_predictions(
+    predictions: Dict[str, Dict[str, int]],
+    counter: Dict[str, int],
+    folder: str,
+    prefix: str,
+    dataset_name: str,
+):
+    """Plots a boxplot which depicts the predictions peformed over the data
+    Args:
+        predictions [Dict[str, Dict[str, int]]]: for each class to be predicted, which is the prediction
+        and how many saples have been predicted
+        folder [str]: folder
+        prefix: str
+
+    Returns:
+        confounders and hierarchy values and hierarchy keys
+    """
+    # produce many plots
+    for groundtruth_class in predictions:
+        fig = plt.figure(figsize=(12, 8))
+        data = [
+            predictions[groundtruth_class][predicted_class]
+            for predicted_class in predictions[groundtruth_class]
+        ]
+        titles = [predicted_class for predicted_class in predictions[groundtruth_class]]
+        plt.bar(titles, data, color="blue", width=0.4)
+        plt.title(
+            "Barplot predictions for {} class #{}".format(
+                groundtruth_class, counter[groundtruth_class]
+            )
+        )
+        for index, d in enumerate(data):
+            plt.text(x=index, y=d + 1, s=f"{d}")
+        plt.xticks(rotation=0)
+        plt.subplots_adjust(bottom=0.15)
+        plt.tight_layout()
+        fig.savefig("{}/barplot_for_{}.png".format(folder, groundtruth_class))
+        print("{}/barplot_for_{}.png".format(folder, groundtruth_class))
+        plt.close(fig)

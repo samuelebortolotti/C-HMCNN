@@ -15,7 +15,9 @@ from chmncc.utils.utils import (
     plot_confusion_matrix_statistics,
     plot_global_multiLabel_confusion_matrix,
     get_lr,
-    get_confounders_and_hierarchy
+    get_confounders_and_hierarchy,
+    prepare_dict_label_predictions_from_raw_predictions,
+    plot_confounded_labels_predictions,
 )
 from chmncc.dataset import (
     load_dataloaders,
@@ -814,6 +816,8 @@ def debug(
         force_prediction [bool]: force prediction
         use_softmax [bool]: use softmax
         dataset [str]: which dataset is used
+        balance_subclasses List[str]: which subclasses to rebalance
+        balance_weights: List[float]: which weights are associated to which subclasses
         **kwargs [Any]: kwargs
     """
     print("Have to run for {} debug iterations...".format(iterations))
@@ -1364,7 +1368,20 @@ def configure_subparsers(subparsers: Subparser) -> None:
     )
 
 
-def check_balance_dataset_integrity(dataset: str, subclasses_list: List[str], weights_list: List[float]) -> None:
+def check_balance_dataset_integrity(
+    dataset: str,
+    subclasses_list: List[str],
+    weights_list: List[float]
+) -> None:
+    """Checks whether the balance arguments of the dataset are compliant with the integrity constraint or not
+    Args:
+        dataset [str]: datset name
+        subclasses_list [str]: list of subclasses to rebalance
+        weights_list [str]: list of weigths used to rebalance
+    Asserts:
+        error if the dataset hierarchy is not respected
+        error if weights for certain classes are not specified
+    """
     # Skip if the arrays are empty
     if len(subclasses_list) == 0 and len(weights_list) == 0:
         return
@@ -1774,6 +1791,41 @@ def main(args: Namespace) -> None:
         "Correct prediction",
         "Wrong prediction",
         "test_accuracy",
+    )
+
+    (
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        y_test,  # ground-truth for multiclass classification matrix
+        y_pred,  # predited values for multiclass classification matrix
+        _,
+        _,
+    ) = test_step_with_prediction_statistics(
+        net=net,
+        test_loader=iter(dataloaders["test_loader_only_label_confounders_with_labels_names"]),
+        cost_function=cost_function,
+        title="Computing statistics in label confoundings",
+        test=dataloaders["train"],
+        device=args.device,
+        labels_name=labels_name,
+        prediction_treshold=args.prediction_treshold,
+        force_prediction=args.force_prediction,
+        use_softmax=args.use_softmax,
+        superclasses_number=dataloaders["train_set"].n_superclasses,
+    )
+
+    labels_predictions_dict, counter_dict = prepare_dict_label_predictions_from_raw_predictions(y_pred, y_test, labels_name, args.dataset, True)
+    plot_confounded_labels_predictions(
+        labels_predictions_dict,
+        counter_dict,
+        os.environ["IMAGE_FOLDER"],
+        "imbalancing_predictions",
+        args.dataset
     )
 
     # save the model state of the debugged network

@@ -80,6 +80,13 @@ class LoadDataset(Dataset):
     def _only_label_confounders(
         self, data_list: List[Tuple[str, str, str]], dataset: str
     ) -> List[Tuple[str, str, str]]:
+        """The dataset is filtered so as to use data which is within the confounded labels classes
+        Args:
+            data_list [List[Tuple[str, str, str]]]: list of data items
+            dataset [str]: dataset name
+        Returns:
+            filtered data_list: List[Tuple[str, str, str]]
+        """
         filtered = []
 
         lab_conf = label_confounders[dataset]
@@ -95,7 +102,8 @@ class LoadDataset(Dataset):
                 filtered.append((image, superclass, subclass))
         return filtered
 
-    def print_stats(self):
+    def print_stats(self) -> None:
+        """Method which prints the statists in a dictionary fashion"""
         import json
 
         print(json.dumps(self.class_count_statistics, sort_keys=True, indent=2))

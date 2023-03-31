@@ -43,6 +43,8 @@ class LoadOmniglot(LoadDataset):
             no_confounders [bool] = False: whether the dataset should contain no confounder
             fixed_confounder [bool] = False: whether the confounders are fixed
             img_size: int = 32: image size
+            imbalance_dataset [bool] = False: whether to introduce a dataset imbalancing if it is available
+            only_label_confounders [bool] = False: whether to return only images from the imbalanced classses
         """
 
         self.dataset_type = "omniglot"

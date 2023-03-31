@@ -45,6 +45,8 @@ from chmncc.utils.utils import (
     plot_global_multiLabel_confusion_matrix,
     plot_confusion_matrix_statistics,
     get_confounders_and_hierarchy,
+    prepare_dict_label_predictions_from_raw_predictions,
+    plot_confounded_labels_predictions,
 )
 from chmncc.early_stopper import EarlyStopper
 from chmncc.networks.ConstrainedFFNN import initializeConstrainedFFNNModel
@@ -352,6 +354,7 @@ def c_hmcnn(
         fixed_confounder [bool] = False
         use_softmax [bool] = False
         simplified_dataset [bool] = False
+        imbalance_dataset [bool] = False
 
     Args:
         exp_name [str]: name of the experiment, basically where to save the logs of the SummaryWriter
@@ -377,6 +380,7 @@ def c_hmcnn(
         fixed_confounder [bool] = False: use fixed confounder position
         use_softmax [bool] = False: whether to use softmax
         simplified_dataset [bool] = False: if possible, use the simplified version of the dataset
+        imbalance_dataset [bool] = False: if possible, imbalance the dataset introducing a new way of confunding
         \*\*kwargs [Any]: additional key-value arguments
     """
 
@@ -1023,6 +1027,42 @@ def c_hmcnn(
             "Wrong prediction",
             "test_accuracy",
         )
+
+        (
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            y_test,  # ground-truth for multiclass classification matrix
+            y_pred,  # predited values for multiclass classification matrix
+            _,
+            _,
+        ) = test_step_with_prediction_statistics(
+            net=net,
+            test_loader=iter(dataloaders["test_loader_only_label_confounders_with_labels_names"]),
+            cost_function=cost_function,
+            title="Computing statistics in label confoundings",
+            test=dataloaders["train"],
+            device=device,
+            labels_name=labels_name,
+            prediction_treshold=prediction_treshold,
+            force_prediction=force_prediction,
+            use_softmax=use_softmax,
+            superclasses_number=dataloaders["train_set"].n_superclasses,
+        )
+
+        labels_predictions_dict, counter_dict = prepare_dict_label_predictions_from_raw_predictions(y_pred, y_test, labels_name, dataset, True)
+        plot_confounded_labels_predictions(
+            labels_predictions_dict,
+            counter_dict,
+            os.environ["IMAGE_FOLDER"],
+            "imbalancing_predictions",
+            dataset
+        )
+
         # extract also the names of the classes
         test_el, superclass, subclass, _ = next(iter(test_loader_with_label_names))
 

@@ -55,6 +55,8 @@ class LoadFashionMnist(LoadDataset):
             train [bool] = True: whether the dataset is for training or not
             no_confounders [bool] = False: whether the dataset should contain no confounder
             fixed_confounder [bool] = False: whether the confounders are fixed
+            imbalance_dataset [bool] = False: whether to introduce a dataset imbalancing if it is available
+            only_label_confounders [bool] = False: whether to return only images from the imbalanced classses
         """
 
         self.dataset_type = "fashion"

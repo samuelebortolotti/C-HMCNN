@@ -48,6 +48,8 @@ class LoadCifar(LoadDataset):
             train [bool] = whether the set is training or not (used to apply the confunders)
             no_confounders [bool] = whether to do not put the confounders
             fixed_confounder [bool] = False: confounder position is fixed
+            imbalance_dataset [bool] = False: whether to introduce a dataset imbalancing if it is available
+            only_label_confounders [bool] = False: whether to return only images from the imbalanced classses
         """
 
         assert os.path.exists(csv_path), "The given csv path must be valid!"

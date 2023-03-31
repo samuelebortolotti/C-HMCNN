@@ -8,5 +8,7 @@ from .utils import (
     get_confounders,
     get_hierarchy,
     get_confounders_and_hierarchy,
+    prepare_dict_label_predictions_from_raw_predictions,
+    plot_confounded_labels_predictions,
 )
 from .cifar_helper import read_meta, unpickle

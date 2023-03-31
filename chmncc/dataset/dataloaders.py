@@ -129,6 +129,7 @@ def load_dataloaders(
         num_workers [int] = 4
         fixed_confounder [bool] = False
         simplified_dataset [bool] = False
+        imbalance_dataset [bool] = False
 
     Args:
         dataset_type [str]: which type of dataset to deploy
@@ -149,6 +150,7 @@ def load_dataloaders(
         num_workers [int]: number of workers of the dataloader
         fixed_confounder [bool] = False: use fixed confounders
         simplified_dataset [bool] = False: whether to use the simplified version of the dataset if possible
+        imbalance_dataset [bool] = False: whether to imbalance the datastet according to the configuration setting
 
     Returns:
         dataloaders [Dict[str, Any]]: a dictionary containing the dataloaders, for training, validation and test

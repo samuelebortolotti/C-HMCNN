@@ -22,6 +22,7 @@ from chmncc.dataset import (
     get_named_label_predictions,
     LoadDebugDataset
 )
+from chmncc.config import label_confounders
 import wandb
 from chmncc.test import test_step, test_step_with_prediction_statistics
 from chmncc.explanations import compute_integrated_gradient, output_gradients
@@ -1059,7 +1060,7 @@ def debug(
 
         # test set
         test_lab_conf_score_raw = 0
-        if len(balance_subclasses) > 0:
+        if len(label_confounders[dataset]) > 0:
             test_lab_conf_loss, test_lab_conf_accuracy, test_lab_conf_score_raw, test_lab_score_const, _, _ = test_step(
                 net=net,
                 test_loader=iter(labels_only_test_loader),
@@ -1136,7 +1137,7 @@ def debug(
             logs.update({"test/test_right_answer_loss_parent": test_loss_parent})
             logs.update({"test/test_right_answer_loss_children": test_loss_children})
 
-        if len(balance_subclasses) > 0:
+        if len(label_confounders[dataset]) > 0:
             logs.update({"test/only_label_confounders_auprc_raw": test_lab_conf_score_raw})
 
         # log on wandb if and only if the module is loaded

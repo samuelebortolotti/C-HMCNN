@@ -270,7 +270,7 @@ def single_element_barplot(
         plt.subplots_adjust(bottom=0.15)
         plt.tight_layout()
         fig.savefig("{}/gradients_{}_{}.png".format(arguments_folder, str(idx), i))
-        plt.close()
+        plt.close(fig)
 
 
 def score_barplot(
@@ -300,7 +300,7 @@ def score_barplot(
     plt.title("{}".format(title))
     plt.tight_layout()
     fig.savefig("{}/{}.png".format(folder, title))
-    plt.close()
+    plt.close(fig)
 
 
 def score_barplot_list(
@@ -341,7 +341,7 @@ def score_barplot_list(
     plt.title("{}".format(title))
     plt.tight_layout()
     fig.savefig("{}/{}.png".format(folder, title))
-    plt.close()
+    plt.close(fig)
 
 
 def input_gradient_scatter(
@@ -437,7 +437,7 @@ def input_gradient_scatter(
             prefix,
         )
     )
-    plt.close()
+    plt.close(fig)
 
 
 def display_single_class(
@@ -504,7 +504,7 @@ def display_single_class(
             "_correct" if correct else "input",
         )
     )
-    plt.close()
+    plt.close(fig)
 
 
 def arguments(
@@ -1252,7 +1252,7 @@ def score_subclass_influence(
         )
         plt.tight_layout()
         fig.savefig("{}/{}_{}.png".format(folder, key, title))
-        plt.close()
+        plt.close(fig)
 
 
 def plot_most_frequent_explainations(
@@ -1280,7 +1280,7 @@ def plot_most_frequent_explainations(
         )
         plt.tight_layout()
         fig.savefig("{}/{}_{}.png".format(folder, key, title))
-        plt.close()
+        plt.close(fig)
 
 
 def scatter_plot_score(
@@ -1410,7 +1410,7 @@ def scatter_plot_score(
     ]
 
     plt.legend(custom, ["Correct (1)", "Not correct (2)"], fontsize=10)
-    plt.close()
+    plt.close(fig)
     fig.savefig(
         "{}/{}_full_gradients_correlations.png".format(
             folder,
@@ -1492,7 +1492,7 @@ def box_plot_input_gradients(
         )
     )
 
-    plt.close()
+    plt.close(fig)
 
     fig = plt.figure(figsize=(10, 8))
     bp_dict = plt.boxplot(
@@ -1536,7 +1536,7 @@ def box_plot_input_gradients(
         )
     )
 
-    plt.close()
+    plt.close(fig)
 
 
 def plot_correlation_table(

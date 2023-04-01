@@ -302,7 +302,7 @@ def grouped_boxplot(
     plt.title("Total: {} vs {}".format(correct_txt, wrong_txt))
     plt.tight_layout()
     fig.savefig("{}/statistics_{}_total.png".format(image_folder, statistics_name))
-    plt.close()
+    plt.close(fig)
 
     # print data
     #  for i, (el_p, el_u, el_i) in enumerate(
@@ -424,7 +424,7 @@ def plot_global_multiLabel_confusion_matrix(
     )
     plt.title("Global multi-label confusion matrix")
     fig.savefig("{}.png".format(fig_name))
-    plt.close()
+    plt.close(fig)
 
     #  confusion_matrices = multilabel_confusion_matrix(y_test, y_est)
     #  for i, confusion_matrix_original in enumerate(confusion_matrices):
@@ -660,5 +660,4 @@ def plot_confounded_labels_predictions(
         plt.subplots_adjust(bottom=0.15)
         plt.tight_layout()
         fig.savefig("{}/barplot_for_{}.png".format(folder, groundtruth_class))
-        print("{}/barplot_for_{}.png".format(folder, groundtruth_class))
         plt.close(fig)

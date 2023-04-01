@@ -149,7 +149,7 @@ def save_sample(
         dpi=fig.dpi,
     )
     # close the figure
-    plt.close()
+    plt.close(fig)
 
     # whether the prediction was right
     return correct_guess, single_el_show
@@ -307,7 +307,7 @@ def show_masked_gradient(
         ),
         dpi=fig.dpi,
     )
-    plt.close()
+    plt.close(fig)
 
     return gradient_to_show, np.max(gradient_to_show_absolute_values)
 
@@ -361,7 +361,7 @@ def overlay_input_gradient(
         dpi=fig.dpi,
     )
 
-    plt.close()
+    plt.close(fig)
 
 def show_gradient(
     gradient: torch.Tensor,
@@ -414,7 +414,7 @@ def show_gradient(
         ),
         dpi=fig.dpi,
     )
-    plt.close()
+    plt.close(fig)
 
     return gradient_to_show, np.max(gradient_to_show_absolute_values)
 
@@ -588,7 +588,7 @@ def plot_decision_surface(X, Y, clf, x_label, y_label, title, jitter, h=0.1, pad
         plt.legend(custom, ["Confounded (1)", "Not confounded (2)"], fontsize=10)
     else:
         plt.legend(custom, ["Correct [not conf] (1)", "Wrong [conf] (2)"], fontsize=10)
-    plt.close()
+    plt.close(fig)
     return fig
 
 
@@ -762,7 +762,7 @@ def compute_gradient_confound_correlation(
             figure_prefix_name,
         )
     )
-    plt.close()
+    plt.close(fig)
 
 
 def debug(
@@ -1823,7 +1823,7 @@ def main(args: Namespace) -> None:
     plot_confounded_labels_predictions(
         labels_predictions_dict,
         counter_dict,
-        os.environ["IMAGE_FOLDER"],
+        args.debug_folder,
         "imbalancing_predictions",
         args.dataset
     )

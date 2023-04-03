@@ -968,20 +968,49 @@ def plot_arguments(
     )
 
     max_arg_dictionary = correct_confound.max_arguments_dict
+
+    plot_most_frequent_explainations(
+        correct_confound.max_arguments_dict, "Max chosen per class: [Correct+Conf]", arguments_folder
+    )
+
     max_arg_dictionary = sum_merge_dictionary(
         max_arg_dictionary, wrong_confound.max_arguments_dict
     )
+
+    plot_most_frequent_explainations(
+        wrong_confound.max_arguments_dict, "Max chosen per class: [NotCorrect+Conf]", arguments_folder
+    )
+
     max_arg_dictionary = sum_merge_dictionary(
         max_arg_dictionary, correct_not_confound.max_arguments_dict
     )
+
+    plot_most_frequent_explainations(
+        correct_not_confound.max_arguments_dict, "Max chosen per class: [Correct+NotConf]", arguments_folder
+    )
+
     max_arg_dictionary = sum_merge_dictionary(
         max_arg_dictionary, wrong_not_confound.max_arguments_dict
     )
+
+    plot_most_frequent_explainations(
+        wrong_not_confound.max_arguments_dict, "Max chosen per class: [NotCorrect+NotConf]", arguments_folder
+    )
+
     max_arg_dictionary = sum_merge_dictionary(
         max_arg_dictionary, correct_lab.max_arguments_dict
     )
+
+    plot_most_frequent_explainations(
+        correct_lab.max_arguments_dict, "Max chosen per class: [Correct+Imbalance]", arguments_folder
+    )
+
     max_arg_dictionary = sum_merge_dictionary(
         max_arg_dictionary, wrong_lab.max_arguments_dict
+    )
+
+    plot_most_frequent_explainations(
+        wrong_lab.max_arguments_dict, "Max chosen per class: [NotCorrect+Imbalance]", arguments_folder
     )
 
     plot_most_frequent_explainations(
@@ -1160,7 +1189,7 @@ def arguments_step(
             #  single_element_barplot(
             #      labels_name[ground_truth_lab], idx, ig_list, ig_titles, arguments_folder
             #  )
-            number_element_to_show += 1
+            show_element_counter += 1
 
         # if the score is equal to the maximal then we have that the 'suitable' is the maximum
         if ig_grad_score[1] == max_score_ig:
@@ -1176,13 +1205,12 @@ def arguments_step(
             if max_score_ig == ig_score_item[1]:
                 max_arguments_list.append(ig_score_item[1])
 
-            # populate the max arguments dictionary
-            if not str_groundtruth_label in max_arguments_dict:
-                max_arguments_dict[str_groundtruth_label] = {}
-            tmp_dict = max_arguments_dict[str_groundtruth_label]
-            if not labels_name[int_label] in tmp_dict:
-                max_arguments_dict[str_groundtruth_label][labels_name[int_label]] = 0
-            max_arguments_dict[str_groundtruth_label][labels_name[int_label]] += 1
+                # populate the max arguments dictionary
+                if not str_groundtruth_label in max_arguments_dict:
+                    max_arguments_dict[str_groundtruth_label] = {}
+                if not labels_name[int_label] in max_arguments_dict[str_groundtruth_label]:
+                    max_arguments_dict[str_groundtruth_label][labels_name[int_label]] = 0
+                max_arguments_dict[str_groundtruth_label][labels_name[int_label]] += 1
 
         # comodo variables
         i_c_l: int = bucket.groundtruth_children

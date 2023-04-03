@@ -140,7 +140,7 @@ mnist_confunders = {
     "uppercase_letter": {
         "train": [
             {
-                "subclass": "A",
+                "subclass": "S",
                 "color": 85,  # grayscale color
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty

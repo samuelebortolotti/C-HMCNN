@@ -2,17 +2,8 @@
 label_confounders = {
     "mnist": {
         "uppercase_letter": {
-            "subclasses": ["O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"],
+            "subclasses": ["O", "S", "T"],
             "weight": [
-                0.05,
-                0.05,
-                0.05,
-                0.05,
-                0.05,
-                0.05,
-                0.05,
-                0.05,
-                0.05,
                 0.05,
                 0.05,
                 0.05,

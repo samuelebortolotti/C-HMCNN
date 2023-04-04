@@ -113,6 +113,9 @@ class ArgumentBucket:
             for child in range(sR.shape[1]):
                 if sR[parent][child] != 1:  # not influenced
                     continue
+                # same element, trivial answer
+                if child == parent:
+                    continue
                 # the child has influenced the parent prediction
                 z = torch.Tensor([0])
                 if pred == child:
@@ -197,6 +200,13 @@ class ArgumentBucket:
             maximum score value: float
         """
         return max([float(score[1]) for score in self.input_gradient_dict.values()])
+
+    def get_maximum_label_score(self) -> float:
+        """Returns the maximum score from the list of label gradients
+        Returns:
+            maximum score value: float
+        """
+        return max([float(score[1]) for score in self.label_gradient.values()])
 
     def get_ig_groundtruth(self) -> Tuple[int, Tuple[torch.Tensor, float]]:
         """Returns the Integrated Gradient of the Groundtruth label

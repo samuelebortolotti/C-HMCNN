@@ -140,7 +140,7 @@ mnist_confunders = {
     "uppercase_letter": {
         "train": [
             {
-                "subclass": "S",
+                "subclass": "N",
                 "color": 85,  # grayscale color
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
@@ -148,10 +148,28 @@ mnist_confunders = {
                 "max_dim": 4,  # maximum dimension in pixels
             }
         ],
-        "test": [],
+        "test": [
+            {
+                "subclass": "S",
+                "color": 210,  # grayscale color
+                "shape": "rectangle",  # choose from [rectangle, circle]
+                "type": "full",  # either full or empty
+                "min_dim": 4,  # minimum dimension
+                "max_dim": 4,  # maximum dimension in pixels
+            }
+        ],
     },
     "even_digit": {
-        "train": [],
+        "train": [
+            {
+                "subclass": "2",
+                "color": 210,  # grayscale color
+                "shape": "rectangle",  # choose from [rectangle, circle]
+                "type": "full",  # either full or empty
+                "min_dim": 4,  # minimum dimension
+                "max_dim": 4,  # maximum dimension in pixels
+            }
+        ],
         "test": [
             {
                 "subclass": "6",

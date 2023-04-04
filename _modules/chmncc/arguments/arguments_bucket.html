@@ -182,6 +182,9 @@
             <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sR</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
                 <span class="k">if</span> <span class="n">sR</span><span class="p">[</span><span class="n">parent</span><span class="p">][</span><span class="n">child</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># not influenced</span>
                     <span class="k">continue</span>
+                <span class="c1"># same element, trivial answer</span>
+                <span class="k">if</span> <span class="n">child</span> <span class="o">==</span> <span class="n">parent</span><span class="p">:</span>
+                    <span class="k">continue</span>
                 <span class="c1"># the child has influenced the parent prediction</span>
                 <span class="n">z</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span>
                 <span class="k">if</span> <span class="n">pred</span> <span class="o">==</span> <span class="n">child</span><span class="p">:</span>
@@ -266,6 +269,13 @@
 <span class="sd">            maximum score value: float</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">max</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">score</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">score</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_gradient_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span></div>
+
+<div class="viewcode-block" id="ArgumentBucket.get_maximum_label_score"><a class="viewcode-back" href="../../../chmncc.arguments.html#chmncc.arguments.arguments_bucket.ArgumentBucket.get_maximum_label_score">[docs]</a>    <span class="k">def</span> <span class="nf">get_maximum_label_score</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the maximum score from the list of label gradients</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            maximum score value: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">score</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">score</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_gradient</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span></div>
 
 <div class="viewcode-block" id="ArgumentBucket.get_ig_groundtruth"><a class="viewcode-back" href="../../../chmncc.arguments.html#chmncc.arguments.arguments_bucket.ArgumentBucket.get_ig_groundtruth">[docs]</a>    <span class="k">def</span> <span class="nf">get_ig_groundtruth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the Integrated Gradient of the Groundtruth label</span>

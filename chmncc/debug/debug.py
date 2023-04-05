@@ -1537,6 +1537,9 @@ def main(args: Namespace) -> None:
             weights[weights_idx[i]] = el
         print("Weights: ", weights)
 
+    # to device
+    weights = weights.to(args.device)
+
     # define the cost function (binary cross entropy for the current models)
     cost_function = torch.nn.BCELoss()
 

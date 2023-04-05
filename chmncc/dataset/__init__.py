@@ -14,5 +14,6 @@ from .load_dataset import (
     LoadDataset,
     get_named_label_predictions,
     get_named_label_predictions_with_indexes,
+    get_hierarchical_index_from_named_label,
 )
 from .load_dataset_factory import LoadDatasetFactory

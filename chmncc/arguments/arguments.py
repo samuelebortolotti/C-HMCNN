@@ -234,6 +234,14 @@ def configure_subparsers(subparsers: Subparser) -> None:
         help="Norm exponent",
         default=2
     )
+    parser.add_argument(
+        "--tau",
+        "-t",
+        dest="tau",
+        type=float,
+        help="Tau for gradient analysis table",
+        default=0.5
+    )
 
     # set the main function to run when blob is called from the command line
     parser.set_defaults(
@@ -520,6 +528,7 @@ def arguments(
     dataset: str,
     num_element_to_analyze: int,
     norm_exponent: int,
+    tau: float,
     **kwargs: Any,
 ) -> None:
     """Arguments method: it displays some functions useful in order to understand whether the score is suitable for the identification of the
@@ -714,6 +723,7 @@ def arguments(
             wrong_lab_img,
             corr_lab_img,
             arguments_folder=arguments_folder,
+            tau=tau,
         )
 
 
@@ -754,6 +764,7 @@ def plot_arguments(
     wrong_lab_img_confound: ArgumentsStepArgs,
     correct_lab_img_confound: ArgumentsStepArgs,
     arguments_folder: str,
+    tau: float,
 ) -> None:
     """Produce all the plots for the arguments
     Args:
@@ -1140,17 +1151,26 @@ def plot_arguments(
         max_arg_dictionary, "Max chosen per class", arguments_folder
     )
 
-    plot_gradient_analysis_table(
+    plot_gradient_analysis_table_max(
         wrong_lab=wrong_lab.bucket_list,
         wrong_confound=wrong_confound.bucket_list,
         wrong_lab_img_confound=wrong_lab_img_confound.bucket_list,
         wrong_ok=wrong_not_confound.bucket_list,
         arguments_folder=arguments_folder,
-        tau=0.5
+        tau=tau
+    )
+
+    plot_gradient_analysis_table_full(
+        wrong_lab=wrong_lab.bucket_list,
+        wrong_confound=wrong_confound.bucket_list,
+        wrong_lab_img_confound=wrong_lab_img_confound.bucket_list,
+        wrong_ok=wrong_not_confound.bucket_list,
+        arguments_folder=arguments_folder,
+        tau=tau
     )
 
 
-def plot_gradient_analysis_table(
+def plot_gradient_analysis_table_max(
     wrong_lab: List[ArgumentBucket],
     wrong_confound: List[ArgumentBucket],
     wrong_lab_img_confound: List[ArgumentBucket],
@@ -1160,7 +1180,8 @@ def plot_gradient_analysis_table(
 ):
 
     # TODO considerando valore massimo e considerando tutti
-    columns_header = ['# X > t', '# Y > t', '# X > Delta Y', '#']
+
+    columns_header = ['# X > t', '# Y > t', '# X > # Y', '#']
     rows_header = ['Not correct: confound on X', 'Not correct: confound on Y', 'Not correct: confound on both XY', 'Not correct: no confound']
 
     # data
@@ -1244,10 +1265,128 @@ def plot_gradient_analysis_table(
     table.scale(1, 2)
     table.set_fontsize(16)
     ax1.axis('off')
-    title = "Gradient Analysis Table"
+    title = f"Gradient Analysis (per samples) Table: tau = {tau}"
     ax1.set_title(f'{title}', weight='bold', size=14, color='k')
     fig.savefig("{}/{}.png".format(arguments_folder, title), bbox_inches='tight')
     plt.close(fig)
+
+
+def plot_gradient_analysis_table_full(
+    wrong_lab: List[ArgumentBucket],
+    wrong_confound: List[ArgumentBucket],
+    wrong_lab_img_confound: List[ArgumentBucket],
+    wrong_ok: List[ArgumentBucket],
+    arguments_folder: str,
+    tau: float
+):
+
+    # TODO considerando valore massimo e considerando tutti
+
+    columns_header = ['# X > t', '# Y > t', '# X > # Y', '#ig', '#labg']
+    rows_header = ['Not correct: confound on X', 'Not correct: confound on Y', 'Not correct: confound on both XY', 'Not correct: no confound']
+
+    # data
+    data = [
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+    ]
+
+    # colors
+    # lightgreen, lightcoral
+    colors = [
+        ["lightgreen","w","lightgreen","w", "w"],
+        ["w", "lightgreen","lightcoral","w", "w"],
+        ["w", "w", "lightcoral","w", "w"],
+        ["w", "w","w","w", "w"],
+    ]
+
+    for item in wrong_confound:
+        ig_list, label_g_list = item.get_gradents_list_separated()
+        for el_g in ig_list:
+            if el_g > tau:
+                data[0][0] += 1
+        for el_l_g in label_g_list:
+            if el_l_g > tau:
+                data[0][1] += 1
+        for el_l_g in label_g_list:
+            for el_g in ig_list:
+                if el_g > el_l_g:
+                    data[0][2] += 1
+        data[0][3] += len(ig_list)
+        data[0][4] += len(label_g_list)
+
+    for item in wrong_lab:
+        ig_list, label_g_list = item.get_gradents_list_separated()
+        for el_g in ig_list:
+            if el_g > tau:
+                data[1][0] += 1
+        for el_l_g in label_g_list:
+            if el_l_g > tau:
+                data[1][1] += 1
+        for el_l_g in label_g_list:
+            for el_g in ig_list:
+                if el_g > el_l_g:
+                    data[1][2] += 1
+        data[1][3] += len(ig_list)
+        data[1][4] += len(label_g_list)
+
+    for item in wrong_lab_img_confound:
+        ig_list, label_g_list = item.get_gradents_list_separated()
+        for el_g in ig_list:
+            if el_g > tau:
+                data[2][0] += 1
+        for el_l_g in label_g_list:
+            if el_l_g > tau:
+                data[2][1] += 1
+        for el_l_g in label_g_list:
+            for el_g in ig_list:
+                if el_g > el_l_g:
+                    data[2][2] += 1
+        data[2][3] += len(ig_list)
+        data[2][4] += len(label_g_list)
+
+    for item in wrong_ok:
+        ig_list, label_g_list = item.get_gradents_list_separated()
+        for el_g in ig_list:
+            if el_g > tau:
+                data[3][0] += 1
+        for el_l_g in label_g_list:
+            if el_l_g > tau:
+                data[3][1] += 1
+        for el_l_g in label_g_list:
+            for el_g in ig_list:
+                if el_g > el_l_g:
+                    data[3][2] += 1
+        data[3][3] += len(ig_list)
+        data[3][4] += len(label_g_list)
+
+    fig, ax1 = plt.subplots(figsize=(10, 2 + len(data) / 2.5))
+
+    rcolors = np.full(len(rows_header), 'linen')
+    ccolors = np.full(len(columns_header), 'lavender')
+
+    table = ax1.table(
+        cellText=data,
+        cellLoc='center',
+        rowLabels=rows_header,
+        rowColours=rcolors,
+        rowLoc='center',
+        colColours=ccolors,
+        cellColours=colors,
+        colLabels=columns_header,
+        loc='center'
+    )
+
+    table.scale(1, 2)
+    table.set_fontsize(16)
+    ax1.axis('off')
+    title = f"Gradient Analysis (all gradients) Table: tau = {tau}"
+    ax1.set_title(f'{title}', weight='bold', size=14, color='k')
+    fig.savefig("{}/{}.png".format(arguments_folder, title), bbox_inches='tight')
+    plt.close(fig)
+
 
 def sum_merge_dictionary(
     first: Dict[str, Dict[str, int]], second: Dict[str, Dict[str, int]]

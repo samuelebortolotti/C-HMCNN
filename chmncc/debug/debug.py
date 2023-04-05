@@ -22,6 +22,7 @@ from chmncc.utils.utils import (
 from chmncc.dataset import (
     load_dataloaders,
     get_named_label_predictions,
+    get_hierarchical_index_from_named_label,
     LoadDebugDataset
 )
 from chmncc.config import label_confounders
@@ -790,6 +791,7 @@ def debug(
     dataset: str,
     balance_subclasses: List[str],
     balance_weights: List[float],
+    correct_by_duplicating_samples: bool,
     **kwargs: Any
 ) -> None:
     """Method which performs the debug step by fine-tuning the network employing the right for the right reason loss.
@@ -826,8 +828,8 @@ def debug(
     # Load debug datasets: for training the data -> it has labels and confounders position information
     debug_train = LoadDebugDataset(
         dataloaders["train_dataset_with_labels_and_confunders_position"],
-        balance_subclasses,
-        balance_weights
+        balance_subclasses if correct_by_duplicating_samples else [],
+        balance_weights if correct_by_duplicating_samples else []
     )
 
     print("Debug dataset statistics:")
@@ -1352,6 +1354,13 @@ def configure_subparsers(subparsers: Subparser) -> None:
     )
     parser.add_argument('-balsub','--balance-subclasses', nargs='+', help='Which subclasses to balance', type=str)
     parser.add_argument('-balweight','--balance-weights', nargs='+', help='Float weights used so as to balance the subclasses', type=float)
+    parser.add_argument(
+        "--correct-by-duplicating-samples",
+        "-cbds",
+        dest="correct_by_duplicating_samples",
+        action="store_true",
+        help="Correct the model by duplicating samples instead of upweighting"
+    )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(
         func=main,
@@ -1365,6 +1374,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         imbalance_dataset=False,
         balance_subclasses=[],
         balance_weights=[],
+        correct_by_duplicating_samples=False,
     )
 
 
@@ -1517,6 +1527,16 @@ def main(args: Namespace) -> None:
     test_loader = dataloaders["test_loader"]
     val_loader = dataloaders["val_loader_debug_mode"]
 
+    # weights for the cross entropy
+    weights = torch.ones(output_classes - 1)
+
+    # if I have to use upweighting then compute the weights
+    if not args.correct_by_duplicating_samples:
+        weights_idx = get_hierarchical_index_from_named_label(output_classes - 1, args.balance_subclasses, dataloaders["train_set"].nodes_names_without_root)
+        for i, el in enumerate(args.balance_weights):
+            weights[weights_idx[i]] = el
+        print("Weights: ", weights)
+
     # define the cost function (binary cross entropy for the current models)
     cost_function = torch.nn.BCELoss()
 
@@ -1611,14 +1631,14 @@ def main(args: Namespace) -> None:
         reviseLoss = RRRLoss(
             net=net,
             regularizer_rate=args.rrr_regularization_rate,
-            base_criterion=BCELoss(),
+            base_criterion=BCELoss(weight=weights),
         )
     else:
         # integrated gradients RRRLoss
         reviseLoss = IGRRRLoss(
             net=net,
             regularizer_rate=args.rrr_regularization_rate,
-            base_criterion=BCELoss(),
+            base_criterion=BCELoss(weight=weights),
         )
 
     # launch the debug a given number of iterations

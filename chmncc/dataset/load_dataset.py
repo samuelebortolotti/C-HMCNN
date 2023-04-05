@@ -538,6 +538,19 @@ def get_named_label_predictions(
     return names
 
 
+def get_hierarchical_index_from_named_label(
+    max_classes: int, named_labels: List[str], nodes: List[str]
+) -> List[int]:
+    """Retrive the named predictions from the hierarchical ones
+    Args:
+    """
+    indexes = []
+    for idx in range(max_classes):
+        if nodes[idx] in named_labels:
+            indexes.append(idx)
+    return indexes
+
+
 def get_named_label_predictions_with_indexes(
     hierarchical_label: torch.Tensor, nodes: List[str]
 ) -> Dict[int, str]:

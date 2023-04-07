@@ -14,6 +14,7 @@ Subpackages
    chmncc.early_stopper
    chmncc.explanations
    chmncc.loss
+   chmncc.multi_step_argumentation
    chmncc.networks
    chmncc.optimizers
    chmncc.revise

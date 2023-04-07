@@ -1,0 +1,23 @@
+chmncc.multi\_step\_argumentation package
+=========================================
+
+Submodules
+----------
+
+chmncc.multi\_step\_argumentation.multi\_step\_argumentation module
+-------------------------------------------------------------------
+
+.. automodule:: chmncc.multi_step_argumentation.multi_step_argumentation
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+Module contents
+---------------
+
+.. automodule:: chmncc.multi_step_argumentation
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:

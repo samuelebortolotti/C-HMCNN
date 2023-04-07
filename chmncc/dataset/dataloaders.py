@@ -579,6 +579,23 @@ def load_dataloaders(
         only_label_confounders=True,
     )
 
+    test_dataset_with_labels_and_confunders_position = factory.instantiateDataset(
+        dataset_type,
+        image_size=img_size,
+        image_depth=img_depth,
+        csv_path=test_csv_path,
+        cifar_metafile=cifar_metadata,
+        transform=transform_test,
+        confunders_position=True,
+        name_labels=True,
+        confund=True,  # confund=confunder, # always confounded
+        train=False,
+        fixed_confounder=fixed_confounder,
+        dataset=dataset_test,
+        simplified_dataset=simplified_dataset,
+        imbalance_dataset=imbalance_dataset,
+    )
+
     val_dataset = factory.instantiateDataset(
         dataset_type,
         image_size=img_size,
@@ -767,6 +784,7 @@ def load_dataloaders(
         "test_dataset_with_labels_and_confunders_pos_only_without_confounders_on_training_samples": test_dataset_with_labels_and_confunders_pos_only_without_confounders_on_training_samples,
         "test_loader_only_label_confounders": test_loader_only_label_confounders,
         "test_loader_only_label_confounders_with_labels_names": test_loader_only_label_confounders_with_labels_names,
+        "test_dataset_with_labels_and_confunders_position": test_dataset_with_labels_and_confunders_position,
         "test_set": test_dataset,
         "test": test,
         "val_set": val_dataset,

@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch
 from typing import Dict, List, Tuple
 from chmncc.explanations import output_gradients
-from chmncc.utils import get_constr_indexes
+from chmncc.utils import get_constr_indexes, force_prediction_from_batch
 
 
 class ArgumentBucket:
@@ -30,6 +30,9 @@ class ArgumentBucket:
         groundtruth_parent: int,
         groundtruth_children: int,
         norm_exponent: int = 2,
+        prediction_treshold: float = 0.5,
+        force_prediction: bool = False,
+        use_softmax: bool = False,
     ) -> None:
         """Initialization method
         Args:
@@ -55,6 +58,17 @@ class ArgumentBucket:
         self._compute_input_gradients(net, to_eval, norm_exponent)
         # compute class gradients
         self._compute_class_gradients(net, to_eval, R, norm_exponent)
+        # compute predictions
+        prediction = net(self.sample.float())[:, to_eval]
+        if force_prediction:
+            self.prediction = force_prediction_from_batch(
+                prediction.cpu().data, prediction_treshold, use_softmax
+            )
+        else:
+            self.prediction = prediction.cpu().data > prediction_treshold
+
+        self.prediction = self.prediction.squeeze()
+        print("Prediction", self.prediction)
 
     def _compute_input_gradients(
         self, net: nn.Module, to_eval: torch.Tensor, norm_exponent: int
@@ -176,8 +190,8 @@ class ArgumentBucket:
                 input_gradient_list.append(float(el[1]))
         label_gradient_list = list()
         for key, el in self.label_gradient.items():
-            if key[1] == class_lab:
-                input_gradient_list.append(float(el[1]))
+            if key[0] == class_lab:
+                label_gradient_list.append(float(el[1]))
         return (input_gradient_list, label_gradient_list)
 
     def get_gradients_by_names(self) -> Dict[str, List[float]]:
@@ -218,3 +232,28 @@ class ArgumentBucket:
             if self.label_list[key] == self.label_list[self.groundtruth_children]:
                 return (key, value)
         return (-1, (torch.tensor(float("nan")), 0.0))
+
+    def get_arguments_lists_separated_by_prediction(
+        self, parents: List[str]
+    ) -> Tuple[
+        Dict[int, Tuple[float, torch.Tensor]],
+        Dict[Tuple[int, int], Tuple[float, torch.Tensor]],
+    ]:
+        ig_dict: Dict[int, Tuple[float, torch.Tensor]] = dict()
+        label_dict: Dict[Tuple[int, int], Tuple[float, torch.Tensor]] = dict()
+        performed_predictions = (self.prediction == True).nonzero().flatten().tolist()
+        print("Performed Prediction", performed_predictions)
+        for pred_el in performed_predictions:
+            for key, el in self.input_gradient_dict.items():
+                if key == pred_el:
+                    ig_dict[key] = float(el[1]), el[0]
+            for key, el in self.label_gradient.items():
+                if key[0] == pred_el:
+                    label_dict[key] = float(el[1]), el[0]
+        print("ig dict")
+        for el in ig_dict.keys():
+            print(self.label_list[el], ig_dict[el][0])
+        print("label dict")
+        for el in label_dict.keys():
+            print(self.label_list[el[0]], self.label_list[el[1]], label_dict[el][0])
+        return (ig_dict, label_dict)

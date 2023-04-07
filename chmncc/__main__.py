@@ -77,6 +77,7 @@ from chmncc.config import (
 from chmncc.explanations import compute_integrated_gradient, output_gradients
 from chmncc.revise import revise_step
 import chmncc.arguments.arguments as argum
+import chmncc.multi_step_argumentation.multi_step_argumentation as msarg
 
 
 class TerminationError(Exception):
@@ -122,6 +123,7 @@ def get_args() -> Namespace:
     visualize_data.configure_subparsers(subparsers)
     debug.configure_subparsers(subparsers)
     argum.configure_subparsers(subparsers)
+    msarg.configure_subparsers(subparsers)
 
     # parse the command line arguments
     parsed_args = parser.parse_args()

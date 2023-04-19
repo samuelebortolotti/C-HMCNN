@@ -50,9 +50,9 @@ class ArgumentsStepArgs:
     """Lists of gradients for each sample, where the first list is the list of input gradients while the second list concerns the label gradient"""
     ig_lists: List[Tuple[List[float], List[float]]]
     """Max arguments dictionary """
-    max_arguments_dict: Dict[str, Dict[str, int]]
+    max_arguments_dict: Dict[str, Dict[str, float]]
     """Dictionary of arguments of the highest scoring subclass per each superclass [concerning the label gradient]"""
-    label_args_dict: Dict[str, Dict[str, List[int]]]
+    label_args_dict: Dict[str, Dict[str, List[float]]]
     """Counter for showing the single element example"""
     show_element_counter: int
     """Counter which defines how many times a subclass has influenced a superclass"""
@@ -72,18 +72,23 @@ class ArgumentsStepArgs:
         suitable_gradient_full_list: List[Tuple[List[float], List[float]]],
         ig_lists: List[Tuple[List[float], List[float]]],
         max_arguments_list: List[float],
-        max_arguments_dict: Dict[str, Dict[str, int]],
-        label_args_dict: Dict[str, Dict[str, List[int]]],
+        max_ig_label_list_for_score_plot: List[Tuple[List[float], List[float]]],
+        max_arguments_dict: Dict[str, Dict[str, float]],
+        label_args_dict: Dict[str, Dict[str, List[float]]],
         show_element_counter: int,
         influence_parent_counter: int,
         not_influence_parent_counter: int,
         suitable_is_max: int,
         suitable_is_not_max: int,
+        prediction_influence_parent_counter: int,
+        prediction_does_not_influence_parent_counter: int,
+        ig_lists_wrt_prediction: List[Tuple[List[float], List[float]]]
     ):
         self.bucket_list = bucket_list
         self.table_correlation = table_correlation
         self.suitable_ig_explaination_list = suitable_ig_explaination_list
         self.suitable_gradient_full_list = suitable_gradient_full_list
+        self.max_ig_label_list_for_score_plot = max_ig_label_list_for_score_plot
         self.ig_lists = ig_lists
         self.max_arguments_list = max_arguments_list
         self.max_arguments_dict = max_arguments_dict
@@ -93,6 +98,9 @@ class ArgumentsStepArgs:
         self.not_influence_parent_counter = not_influence_parent_counter
         self.suitable_is_max = suitable_is_max
         self.suitable_is_not_max = suitable_is_not_max
+        self.prediction_influence_parent_counter = prediction_influence_parent_counter
+        self.prediction_does_not_influence_parent_counter = prediction_does_not_influence_parent_counter
+        self.ig_lists_wrt_prediction = ig_lists_wrt_prediction
 
 
 def configure_subparsers(subparsers: Subparser) -> None:
@@ -242,6 +250,19 @@ def configure_subparsers(subparsers: Subparser) -> None:
         help="Tau for gradient analysis table",
         default=0.5
     )
+    parser.add_argument(
+        "--multiply-by-probability-for-label-gradient",
+        "-mbpflg",
+        action="store_true",
+        help="Use the probability of the node so as to compute the label gradient score"
+    )
+    parser.add_argument(
+        "--cincer-approach",
+        "-cincer",
+        action="store_true",
+        dest="cincer",
+        help="Use the cincer approach in order to compute the label gradient"
+    )
 
     # set the main function to run when blob is called from the command line
     parser.set_defaults(
@@ -253,6 +274,8 @@ def configure_subparsers(subparsers: Subparser) -> None:
         fixed_confounder=False,
         use_softmax=False,
         simplified_dataset=False,
+        multiply_by_probability_for_label_gradient=False,
+        cincer=False
     )
 
 
@@ -529,6 +552,8 @@ def arguments(
     num_element_to_analyze: int,
     norm_exponent: int,
     tau: float,
+    multiply_by_probability_for_label_gradient: bool,
+    cincer: bool,
     **kwargs: Any,
 ) -> None:
     """Arguments method: it displays some functions useful in order to understand whether the score is suitable for the identification of the
@@ -576,6 +601,8 @@ def arguments(
             arguments_folder=arguments_folder,
             label_loader=False,
             norm_exponent=norm_exponent,
+            multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
+            cincer=cincer,
         )
         print("Corr+Conf #", len(correct_confound.bucket_list))
 
@@ -595,6 +622,8 @@ def arguments(
             arguments_folder=arguments_folder,
             label_loader=False,
             norm_exponent=norm_exponent,
+            multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
+            cincer=cincer,
         )
         print("Wrong+Conf #", len(wrong_confound.bucket_list))
 
@@ -614,6 +643,8 @@ def arguments(
             arguments_folder=arguments_folder,
             label_loader=False,
             norm_exponent=norm_exponent,
+            multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
+            cincer=cincer,
         )
         print("Corr+NotConf #", len(correct_not_confound.bucket_list))
 
@@ -633,6 +664,8 @@ def arguments(
             arguments_folder=arguments_folder,
             label_loader=False,
             norm_exponent=norm_exponent,
+            multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
+            cincer=cincer,
         )
         print("NotCorr+NotConf #", len(wrong_not_confound.bucket_list))
 
@@ -652,6 +685,8 @@ def arguments(
             arguments_folder=arguments_folder,
             label_loader=True,
             norm_exponent=norm_exponent,
+            multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
+            cincer=cincer,
         )
         print("Corr+Imbalance #", len(correct_lab.bucket_list))
 
@@ -671,6 +706,8 @@ def arguments(
             arguments_folder=arguments_folder,
             label_loader=True,
             norm_exponent=norm_exponent,
+            multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
+            cincer=cincer,
         )
         print("NotCorr+Imbalance #", len(wrong_lab.bucket_list))
 
@@ -691,6 +728,8 @@ def arguments(
             arguments_folder=arguments_folder,
             label_loader=True,
             norm_exponent=norm_exponent,
+            multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
+            cincer=cincer,
         )
         print("NotCorr+Conf+Imbalance #", len(wrong_lab_img.bucket_list))
 
@@ -710,6 +749,8 @@ def arguments(
             arguments_folder=arguments_folder,
             label_loader=True,
             norm_exponent=norm_exponent,
+            multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
+            cincer=cincer,
         )
         print("Corr+Conf+Imbalance #", len(corr_lab_img.bucket_list))
 
@@ -778,6 +819,69 @@ def plot_arguments(
         arguments_folder [str]: arguments folder
     """
 
+    # MAX start
+
+    conf_list_image = list(
+        itertools.chain(
+            [True for _ in range(len(correct_confound.max_ig_label_list_for_score_plot))],
+            [True for _ in range(len(wrong_confound.max_ig_label_list_for_score_plot))],
+            [False for _ in range(len(correct_not_confound.max_ig_label_list_for_score_plot))],
+            [False for _ in range(len(wrong_not_confound.max_ig_label_list_for_score_plot))],
+        )
+    )
+    correct_list_image = list(
+        itertools.chain(
+            [True for _ in range(len(correct_confound.max_ig_label_list_for_score_plot))],
+            [False for _ in range(len(wrong_confound.max_ig_label_list_for_score_plot))],
+            [True for _ in range(len(correct_not_confound.max_ig_label_list_for_score_plot))],
+            [False for _ in range(len(wrong_not_confound.max_ig_label_list_for_score_plot))],
+        )
+    )
+    ig_list_image = list(
+        itertools.chain(
+            correct_confound.max_ig_label_list_for_score_plot,
+            wrong_confound.max_ig_label_list_for_score_plot,
+            correct_not_confound.max_ig_label_list_for_score_plot,
+            wrong_not_confound.max_ig_label_list_for_score_plot,
+        )
+    )
+    ig_list_label = list(
+        itertools.chain(
+            correct_lab.max_ig_label_list_for_score_plot,
+            wrong_lab.max_ig_label_list_for_score_plot,
+        )
+    )
+    correct_list_label = list(
+        itertools.chain(
+            [True for _ in range(len(correct_lab.max_ig_label_list_for_score_plot))],
+            [False for _ in range(len(wrong_lab.max_ig_label_list_for_score_plot))],
+        )
+    )
+    ig_list_label_and_image = list(
+        itertools.chain(
+            correct_lab_img_confound.max_ig_label_list_for_score_plot,
+            wrong_lab_img_confound.max_ig_label_list_for_score_plot,
+        )
+    )
+    correct_list_label_and_image = list(
+        itertools.chain(
+            [True for _ in range(len(correct_lab_img_confound.max_ig_label_list_for_score_plot))],
+            [False for _ in range(len(wrong_lab_img_confound.max_ig_label_list_for_score_plot))],
+        )
+    )
+    scatter_plot_score(
+        ig_list_image,
+        conf_list_image,
+        correct_list_image,
+        ig_list_label,
+        correct_list_label,
+        ig_list_label_and_image,
+        correct_list_label_and_image,
+        arguments_folder,
+        "Max arguments",
+    )
+
+    # MAX end
     box_plot_input_gradients(
         ig_list_image_corr_conf=[el for l in correct_confound.ig_lists for el in l[0]],
         ig_list_image_corr_not_conf=[
@@ -936,6 +1040,297 @@ def plot_arguments(
         prefix="max_score",
     )
 
+    # ig_lists_wrt_prediction TODO passiamo qua
+
+    box_plot_input_gradients(
+        ig_list_image_corr_conf=[el for l in correct_confound.ig_lists_wrt_prediction for el in l[0]],
+        ig_list_image_corr_not_conf=[
+            el for l in correct_not_confound.ig_lists_wrt_prediction for el in l[0]
+        ],
+        ig_list_image_not_corr_conf=[
+            el for l in wrong_confound.ig_lists_wrt_prediction for el in l[0]
+        ],
+        ig_list_image_not_corr_not_conf=[
+            el for l in wrong_not_confound.ig_lists_wrt_prediction for el in l[0]
+        ],
+        ig_list_label_not_corr=[el for l in wrong_lab.ig_lists_wrt_prediction for el in l[0]],
+        ig_list_label_corr=[el for l in correct_lab.ig_lists_wrt_prediction for el in l[0]],
+        ig_list_lab_image_not_corr_conf=[el for l in wrong_lab_img_confound.ig_lists_wrt_prediction for el in l[0]],
+        ig_list_lab_image_corr_conf=[el for l in correct_lab_img_confound.ig_lists_wrt_prediction for el in l[0]],
+        ig_list_image_corr_conf_counter=len(correct_confound.ig_lists_wrt_prediction),
+        ig_list_image_corr_not_conf_counter=len(correct_not_confound.ig_lists_wrt_prediction),
+        ig_list_image_not_corr_conf_counter=len(wrong_confound.ig_lists_wrt_prediction),
+        ig_list_image_not_corr_not_conf_counter=len(wrong_not_confound.ig_lists_wrt_prediction),
+        ig_list_label_not_corr_counter=len(wrong_lab.ig_lists_wrt_prediction),
+        ig_list_label_corr_counter=len(correct_lab.ig_lists_wrt_prediction),
+        ig_list_lab_image_corr_conf_counter=len(wrong_lab_img_confound.ig_lists_wrt_prediction),
+        ig_list_lab_image_not_corr_conf_counter=len(correct_lab_img_confound.ig_lists_wrt_prediction),
+        folder=arguments_folder,
+        prefix="wrt_prediction_only_input",
+    )
+
+    box_plot_input_gradients(
+        ig_list_image_corr_conf=[el for l in correct_confound.ig_lists_wrt_prediction for el in l[1]],
+        ig_list_image_corr_not_conf=[
+            el for l in correct_not_confound.ig_lists_wrt_prediction for el in l[1]
+        ],
+        ig_list_image_not_corr_conf=[
+            el for l in wrong_confound.ig_lists_wrt_prediction for el in l[1]
+        ],
+        ig_list_image_not_corr_not_conf=[
+            el for l in wrong_not_confound.ig_lists_wrt_prediction for el in l[1]
+        ],
+        ig_list_label_not_corr=[el for l in wrong_lab.ig_lists_wrt_prediction for el in l[1]],
+        ig_list_label_corr=[el for l in correct_lab.ig_lists_wrt_prediction for el in l[1]],
+        ig_list_lab_image_not_corr_conf=[el for l in wrong_lab_img_confound.ig_lists_wrt_prediction for el in l[1]],
+        ig_list_lab_image_corr_conf=[el for l in correct_lab_img_confound.ig_lists_wrt_prediction for el in l[1]],
+        ig_list_image_corr_conf_counter=len(correct_confound.ig_lists_wrt_prediction),
+        ig_list_image_corr_not_conf_counter=len(correct_not_confound.ig_lists_wrt_prediction),
+        ig_list_image_not_corr_conf_counter=len(wrong_confound.ig_lists_wrt_prediction),
+        ig_list_image_not_corr_not_conf_counter=len(wrong_not_confound.ig_lists_wrt_prediction),
+        ig_list_label_not_corr_counter=len(wrong_lab.ig_lists_wrt_prediction),
+        ig_list_label_corr_counter=len(correct_lab.ig_lists_wrt_prediction),
+        ig_list_lab_image_corr_conf_counter=len(wrong_lab_img_confound.ig_lists_wrt_prediction),
+        ig_list_lab_image_not_corr_conf_counter=len(correct_lab_img_confound.ig_lists_wrt_prediction),
+        folder=arguments_folder,
+        prefix="wrt_prediction_only_label",
+    )
+
+    box_plot_input_gradients(
+        ig_list_image_corr_conf=[
+            el for l in correct_confound.ig_lists_wrt_prediction for e in l for el in e
+        ],
+        ig_list_image_corr_not_conf=[
+            el for l in correct_not_confound.ig_lists_wrt_prediction for e in l for el in e
+        ],
+        ig_list_image_not_corr_conf=[
+            el for l in wrong_confound.ig_lists_wrt_prediction for e in l for el in e
+        ],
+        ig_list_image_not_corr_not_conf=[
+            el for l in wrong_not_confound.ig_lists_wrt_prediction for e in l for el in e
+        ],
+        ig_list_label_not_corr=[el for l in wrong_lab.ig_lists_wrt_prediction for e in l for el in e],
+        ig_list_label_corr=[el for l in correct_lab.ig_lists_wrt_prediction for e in l for el in e],
+        ig_list_lab_image_not_corr_conf=[el for l in wrong_lab_img_confound.ig_lists_wrt_prediction for e in l for el in e],
+        ig_list_lab_image_corr_conf=[el for l in correct_lab_img_confound.ig_lists_wrt_prediction for e in l for el in e],
+        ig_list_image_corr_conf_counter=len(correct_confound.ig_lists_wrt_prediction),
+        ig_list_image_corr_not_conf_counter=len(correct_not_confound.ig_lists_wrt_prediction),
+        ig_list_image_not_corr_conf_counter=len(wrong_confound.ig_lists_wrt_prediction),
+        ig_list_image_not_corr_not_conf_counter=len(wrong_not_confound.ig_lists_wrt_prediction),
+        ig_list_label_not_corr_counter=len(wrong_lab.ig_lists_wrt_prediction),
+        ig_list_label_corr_counter=len(correct_lab.ig_lists_wrt_prediction),
+        ig_list_lab_image_corr_conf_counter=len(wrong_lab_img_confound.ig_lists_wrt_prediction),
+        ig_list_lab_image_not_corr_conf_counter=len(correct_lab_img_confound.ig_lists_wrt_prediction),
+        folder=arguments_folder,
+        prefix="wrt_prediction_all",
+    )
+
+    conf_list_image = list(
+        itertools.chain(
+            [True for _ in range(len(correct_confound.ig_lists_wrt_prediction))],
+            [True for _ in range(len(wrong_confound.ig_lists_wrt_prediction))],
+            [False for _ in range(len(correct_not_confound.ig_lists_wrt_prediction))],
+            [False for _ in range(len(wrong_not_confound.ig_lists_wrt_prediction))],
+        )
+    )
+    correct_list_image = list(
+        itertools.chain(
+            [True for _ in range(len(correct_confound.ig_lists_wrt_prediction))],
+            [False for _ in range(len(wrong_confound.ig_lists_wrt_prediction))],
+            [True for _ in range(len(correct_not_confound.ig_lists_wrt_prediction))],
+            [False for _ in range(len(wrong_not_confound.ig_lists_wrt_prediction))],
+        )
+    )
+    ig_list_image = list(
+        itertools.chain(
+            correct_confound.ig_lists_wrt_prediction,
+            wrong_confound.ig_lists_wrt_prediction,
+            correct_not_confound.ig_lists_wrt_prediction,
+            wrong_not_confound.ig_lists_wrt_prediction,
+        )
+    )
+    ig_list_label = list(
+        itertools.chain(
+            correct_lab.ig_lists_wrt_prediction,
+            wrong_lab.ig_lists_wrt_prediction,
+        )
+    )
+    correct_list_label = list(
+        itertools.chain(
+            [True for _ in range(len(correct_lab.ig_lists_wrt_prediction))],
+            [False for _ in range(len(wrong_lab.ig_lists_wrt_prediction))],
+        )
+    )
+    ig_list_label_and_image = list(
+        itertools.chain(
+            correct_lab_img_confound.ig_lists_wrt_prediction,
+            wrong_lab_img_confound.ig_lists_wrt_prediction,
+        )
+    )
+    correct_list_label_and_image = list(
+        itertools.chain(
+            [True for _ in range(len(correct_lab_img_confound.ig_lists_wrt_prediction))],
+            [False for _ in range(len(wrong_lab_img_confound.ig_lists_wrt_prediction))],
+        )
+    )
+    scatter_plot_score(
+        ig_list_image,
+        conf_list_image,
+        correct_list_image,
+        ig_list_label,
+        correct_list_label,
+        ig_list_label_and_image,
+        correct_list_label_and_image,
+        arguments_folder,
+        "Wrt Prediction",
+    )
+
+    # ig_lists_wrt_prediction TODO passiamo qua
+
+    box_plot_input_gradients(
+        ig_list_image_corr_conf=[el for l in correct_confound.suitable_gradient_full_list for el in l[0]],
+        ig_list_image_corr_not_conf=[
+            el for l in correct_not_confound.suitable_gradient_full_list for el in l[0]
+        ],
+        ig_list_image_not_corr_conf=[
+            el for l in wrong_confound.suitable_gradient_full_list for el in l[0]
+        ],
+        ig_list_image_not_corr_not_conf=[
+            el for l in wrong_not_confound.suitable_gradient_full_list for el in l[0]
+        ],
+        ig_list_label_not_corr=[el for l in wrong_lab.suitable_gradient_full_list for el in l[0]],
+        ig_list_label_corr=[el for l in correct_lab.suitable_gradient_full_list for el in l[0]],
+        ig_list_lab_image_not_corr_conf=[el for l in wrong_lab_img_confound.suitable_gradient_full_list for el in l[0]],
+        ig_list_lab_image_corr_conf=[el for l in correct_lab_img_confound.suitable_gradient_full_list for el in l[0]],
+        ig_list_image_corr_conf_counter=len(correct_confound.suitable_gradient_full_list),
+        ig_list_image_corr_not_conf_counter=len(correct_not_confound.suitable_gradient_full_list),
+        ig_list_image_not_corr_conf_counter=len(wrong_confound.suitable_gradient_full_list),
+        ig_list_image_not_corr_not_conf_counter=len(wrong_not_confound.suitable_gradient_full_list),
+        ig_list_label_not_corr_counter=len(wrong_lab.suitable_gradient_full_list),
+        ig_list_label_corr_counter=len(correct_lab.suitable_gradient_full_list),
+        ig_list_lab_image_corr_conf_counter=len(wrong_lab_img_confound.suitable_gradient_full_list),
+        ig_list_lab_image_not_corr_conf_counter=len(correct_lab_img_confound.suitable_gradient_full_list),
+        folder=arguments_folder,
+        prefix="wrt_groundtruth_only_input",
+    )
+
+    box_plot_input_gradients(
+        ig_list_image_corr_conf=[el for l in correct_confound.suitable_gradient_full_list for el in l[1]],
+        ig_list_image_corr_not_conf=[
+            el for l in correct_not_confound.suitable_gradient_full_list for el in l[1]
+        ],
+        ig_list_image_not_corr_conf=[
+            el for l in wrong_confound.suitable_gradient_full_list for el in l[1]
+        ],
+        ig_list_image_not_corr_not_conf=[
+            el for l in wrong_not_confound.suitable_gradient_full_list for el in l[1]
+        ],
+        ig_list_label_not_corr=[el for l in wrong_lab.suitable_gradient_full_list for el in l[1]],
+        ig_list_label_corr=[el for l in correct_lab.suitable_gradient_full_list for el in l[1]],
+        ig_list_lab_image_not_corr_conf=[el for l in wrong_lab_img_confound.suitable_gradient_full_list for el in l[1]],
+        ig_list_lab_image_corr_conf=[el for l in correct_lab_img_confound.suitable_gradient_full_list for el in l[1]],
+        ig_list_image_corr_conf_counter=len(correct_confound.suitable_gradient_full_list),
+        ig_list_image_corr_not_conf_counter=len(correct_not_confound.suitable_gradient_full_list),
+        ig_list_image_not_corr_conf_counter=len(wrong_confound.suitable_gradient_full_list),
+        ig_list_image_not_corr_not_conf_counter=len(wrong_not_confound.suitable_gradient_full_list),
+        ig_list_label_not_corr_counter=len(wrong_lab.suitable_gradient_full_list),
+        ig_list_label_corr_counter=len(correct_lab.suitable_gradient_full_list),
+        ig_list_lab_image_corr_conf_counter=len(wrong_lab_img_confound.suitable_gradient_full_list),
+        ig_list_lab_image_not_corr_conf_counter=len(correct_lab_img_confound.suitable_gradient_full_list),
+        folder=arguments_folder,
+        prefix="wrt_groundtruth_only_label",
+    )
+
+    box_plot_input_gradients(
+        ig_list_image_corr_conf=[
+            el for l in correct_confound.suitable_gradient_full_list for e in l for el in e
+        ],
+        ig_list_image_corr_not_conf=[
+            el for l in correct_not_confound.suitable_gradient_full_list for e in l for el in e
+        ],
+        ig_list_image_not_corr_conf=[
+            el for l in wrong_confound.suitable_gradient_full_list for e in l for el in e
+        ],
+        ig_list_image_not_corr_not_conf=[
+            el for l in wrong_not_confound.suitable_gradient_full_list for e in l for el in e
+        ],
+        ig_list_label_not_corr=[el for l in wrong_lab.suitable_gradient_full_list for e in l for el in e],
+        ig_list_label_corr=[el for l in correct_lab.suitable_gradient_full_list for e in l for el in e],
+        ig_list_lab_image_not_corr_conf=[el for l in wrong_lab_img_confound.suitable_gradient_full_list for e in l for el in e],
+        ig_list_lab_image_corr_conf=[el for l in correct_lab_img_confound.suitable_gradient_full_list for e in l for el in e],
+        ig_list_image_corr_conf_counter=len(correct_confound.suitable_gradient_full_list),
+        ig_list_image_corr_not_conf_counter=len(correct_not_confound.suitable_gradient_full_list),
+        ig_list_image_not_corr_conf_counter=len(wrong_confound.suitable_gradient_full_list),
+        ig_list_image_not_corr_not_conf_counter=len(wrong_not_confound.suitable_gradient_full_list),
+        ig_list_label_not_corr_counter=len(wrong_lab.suitable_gradient_full_list),
+        ig_list_label_corr_counter=len(correct_lab.suitable_gradient_full_list),
+        ig_list_lab_image_corr_conf_counter=len(wrong_lab_img_confound.suitable_gradient_full_list),
+        ig_list_lab_image_not_corr_conf_counter=len(correct_lab_img_confound.suitable_gradient_full_list),
+        folder=arguments_folder,
+        prefix="wrt_groundtruth_all",
+    )
+
+    conf_list_image = list(
+        itertools.chain(
+            [True for _ in range(len(correct_confound.suitable_gradient_full_list))],
+            [True for _ in range(len(wrong_confound.suitable_gradient_full_list))],
+            [False for _ in range(len(correct_not_confound.suitable_gradient_full_list))],
+            [False for _ in range(len(wrong_not_confound.suitable_gradient_full_list))],
+        )
+    )
+    correct_list_image = list(
+        itertools.chain(
+            [True for _ in range(len(correct_confound.suitable_gradient_full_list))],
+            [False for _ in range(len(wrong_confound.suitable_gradient_full_list))],
+            [True for _ in range(len(correct_not_confound.suitable_gradient_full_list))],
+            [False for _ in range(len(wrong_not_confound.suitable_gradient_full_list))],
+        )
+    )
+    ig_list_image = list(
+        itertools.chain(
+            correct_confound.suitable_gradient_full_list,
+            wrong_confound.suitable_gradient_full_list,
+            correct_not_confound.suitable_gradient_full_list,
+            wrong_not_confound.suitable_gradient_full_list,
+        )
+    )
+    ig_list_label = list(
+        itertools.chain(
+            correct_lab.suitable_gradient_full_list,
+            wrong_lab.suitable_gradient_full_list,
+        )
+    )
+    correct_list_label = list(
+        itertools.chain(
+            [True for _ in range(len(correct_lab.suitable_gradient_full_list))],
+            [False for _ in range(len(wrong_lab.suitable_gradient_full_list))],
+        )
+    )
+    ig_list_label_and_image = list(
+        itertools.chain(
+            correct_lab_img_confound.suitable_gradient_full_list,
+            wrong_lab_img_confound.suitable_gradient_full_list,
+        )
+    )
+    correct_list_label_and_image = list(
+        itertools.chain(
+            [True for _ in range(len(correct_lab_img_confound.suitable_gradient_full_list))],
+            [False for _ in range(len(wrong_lab_img_confound.suitable_gradient_full_list))],
+        )
+    )
+    scatter_plot_score(
+        ig_list_image,
+        conf_list_image,
+        correct_list_image,
+        ig_list_label,
+        correct_list_label,
+        ig_list_label_and_image,
+        correct_list_label_and_image,
+        arguments_folder,
+        "Wrt Groundtruth All",
+    )
+
+    # TODO
     score_barplot(
         correct_confound.influence_parent_counter,
         correct_confound.not_influence_parent_counter,
@@ -1085,71 +1480,221 @@ def plot_arguments(
         "Influence parent prediction vs not influence",
     )
 
-    max_arg_dictionary = correct_confound.max_arguments_dict
+    # TODO
 
-    plot_most_frequent_explainations(
-        correct_confound.max_arguments_dict, "Max chosen per class: [Correct+Conf]", arguments_folder
+    score_barplot(
+        correct_confound.prediction_influence_parent_counter,
+        correct_confound.prediction_does_not_influence_parent_counter,
+        "Influence",
+        "Not Influence",
+        arguments_folder,
+        "[On prediction] Does influence parent prediction vs does not influence [Correct+Conf]",
     )
 
-    max_arg_dictionary = sum_merge_dictionary(
-        max_arg_dictionary, wrong_confound.max_arguments_dict
+    score_barplot(
+        correct_not_confound.prediction_influence_parent_counter,
+        correct_not_confound.prediction_does_not_influence_parent_counter,
+        "Influence",
+        "Not Influence",
+        arguments_folder,
+        "[Prediction] Does influence parent prediction vs does not influence [Correct+NotConf]",
     )
 
+    score_barplot(
+        wrong_not_confound.prediction_influence_parent_counter,
+        wrong_not_confound.prediction_does_not_influence_parent_counter,
+        "Influence",
+        "Not Influence",
+        arguments_folder,
+        "[Prediction] Does influence parent prediction vs does not influence [NotCorrect+NotConf]",
+    )
+
+    score_barplot(
+        wrong_confound.prediction_influence_parent_counter,
+        wrong_confound.prediction_does_not_influence_parent_counter,
+        "Influence",
+        "Not Influence",
+        arguments_folder,
+        "[Prediction] Does influence parent prediction vs does not influence [NotCorrect+Conf]",
+    )
+
+    score_barplot(
+        wrong_not_confound.prediction_influence_parent_counter,
+        wrong_not_confound.prediction_does_not_influence_parent_counter,
+        "Influence",
+        "Not Influence",
+        arguments_folder,
+        "[Prediction] Does influence parent prediction vs does not influence [NotCorrect+NotConf]",
+    )
+
+    score_barplot(
+        correct_lab.prediction_influence_parent_counter,
+        correct_lab.prediction_does_not_influence_parent_counter,
+        "Influence",
+        "Not Influence",
+        arguments_folder,
+        "[Prediction] Does influence parent prediction vs does not influence [Correct+Imbalance]",
+    )
+
+    score_barplot(
+        wrong_lab.prediction_influence_parent_counter,
+        wrong_lab.prediction_does_not_influence_parent_counter,
+        "Influence",
+        "Not Influence",
+        arguments_folder,
+        "[Prediction] Does influence parent prediction vs does not influence [NotCorrect+Imbalance]",
+    )
+
+    score_barplot(
+        wrong_lab_img_confound.prediction_influence_parent_counter,
+        wrong_lab_img_confound.prediction_does_not_influence_parent_counter,
+        "Influence",
+        "Not Influence",
+        arguments_folder,
+        "[Prediction] Does influence parent prediction vs does not influence [NotCorrect+Conf+Imbalance]",
+    )
+
+    score_barplot(
+        correct_lab_img_confound.prediction_influence_parent_counter,
+        correct_lab_img_confound.prediction_does_not_influence_parent_counter,
+        "Influence",
+        "Not Influence",
+        arguments_folder,
+        "[Prediction] Does influence parent prediction vs does not influence [Correct+Conf+Imbalance]",
+    )
+
+    score_barplot(
+        correct_confound.prediction_influence_parent_counter
+        + wrong_confound.prediction_influence_parent_counter
+        + correct_not_confound.prediction_influence_parent_counter
+        + wrong_not_confound.prediction_influence_parent_counter
+        + correct_lab.prediction_influence_parent_counter
+        + wrong_lab.prediction_influence_parent_counter
+        + wrong_lab_img_confound.prediction_influence_parent_counter
+        + correct_lab_img_confound.prediction_influence_parent_counter,
+        correct_confound.prediction_does_not_influence_parent_counter
+        + wrong_confound.prediction_does_not_influence_parent_counter
+        + correct_not_confound.prediction_does_not_influence_parent_counter
+        + wrong_not_confound.prediction_does_not_influence_parent_counter
+        + correct_lab.prediction_does_not_influence_parent_counter
+        + wrong_lab.prediction_does_not_influence_parent_counter
+        + wrong_lab_img_confound.prediction_does_not_influence_parent_counter
+        + correct_lab_img_confound.prediction_does_not_influence_parent_counter,
+        "Influence",
+        "Not Influence",
+        arguments_folder,
+        "[Prediction] Does influence parent prediction vs does not influence",
+    )
+
+    score_barplot_list(
+        [
+            correct_confound.prediction_influence_parent_counter,
+            wrong_confound.prediction_influence_parent_counter,
+            correct_not_confound.prediction_influence_parent_counter,
+            wrong_not_confound.prediction_influence_parent_counter,
+            correct_lab.prediction_influence_parent_counter,
+            wrong_lab.prediction_influence_parent_counter,
+            wrong_lab_img_confound.prediction_influence_parent_counter,
+            correct_lab_img_confound.prediction_influence_parent_counter,
+        ],
+        [
+            correct_confound.prediction_does_not_influence_parent_counter,
+            wrong_confound.prediction_does_not_influence_parent_counter,
+            correct_not_confound.prediction_does_not_influence_parent_counter,
+            wrong_not_confound.prediction_does_not_influence_parent_counter,
+            correct_lab.prediction_does_not_influence_parent_counter,
+            wrong_lab.prediction_does_not_influence_parent_counter,
+            wrong_lab_img_confound.prediction_does_not_influence_parent_counter,
+            correct_lab_img_confound.prediction_does_not_influence_parent_counter,
+        ],
+        [
+            "Influence [Correct+Confound]",
+            "Influence [NotCorrect+Confound]",
+            "Influence [Correct+NotConfound]",
+            "Influence [NotCorrect+NotConfound]",
+            "Influence [Correct+Imbalance]",
+            "Influence [NotCorrect+Imbalance]",
+            "Influence [NotCorrect+Conf+Imbalance]",
+            "Influence [Correct+Conf+Imbalance]",
+        ],
+        [
+            "Not Influence [Correct+Confound]",
+            "Not Influence [NotCorrect+Confound]",
+            "Not Influence [Correct+NotConfound]",
+            "Not Influence [NotCorrect+NotConfound]",
+            "Not Influence [Correct+Imbalance]",
+            "Not Influence [NotCorrect+Imbalance]",
+            "Not Influence [NotCorrect+Conf+Imbalance]",
+            "Not Influence [Correct+Conf+Imbalance]",
+        ],
+        arguments_folder,
+        "[Prediction] Influence parent prediction vs not influence",
+    )
+
+    #  max_arg_dictionary = correct_confound.max_arguments_dict
+
+    #  plot_most_frequent_explainations(
+    #      correct_confound.max_arguments_dict, "Max chosen per class: [Correct+Conf]", arguments_folder
+    #  )
+
+    #  max_arg_dictionary = sum_merge_dictionary(
+    #      max_arg_dictionary, wrong_confound.max_arguments_dict
+    #  )
+    #
     plot_most_frequent_explainations(
         wrong_confound.max_arguments_dict, "Max chosen per class: [NotCorrect+Conf]", arguments_folder
     )
-
-    max_arg_dictionary = sum_merge_dictionary(
-        max_arg_dictionary, correct_not_confound.max_arguments_dict
-    )
-
-    plot_most_frequent_explainations(
-        correct_not_confound.max_arguments_dict, "Max chosen per class: [Correct+NotConf]", arguments_folder
-    )
-
-    max_arg_dictionary = sum_merge_dictionary(
-        max_arg_dictionary, wrong_not_confound.max_arguments_dict
-    )
-
-    plot_most_frequent_explainations(
-        wrong_not_confound.max_arguments_dict, "Max chosen per class: [NotCorrect+NotConf]", arguments_folder
-    )
-
-    max_arg_dictionary = sum_merge_dictionary(
-        max_arg_dictionary, correct_lab.max_arguments_dict
-    )
-
-    plot_most_frequent_explainations(
-        correct_lab.max_arguments_dict, "Max chosen per class: [Correct+Imbalance]", arguments_folder
-    )
-
-    max_arg_dictionary = sum_merge_dictionary(
-        max_arg_dictionary, wrong_lab.max_arguments_dict
-    )
-
+    #
+    #  max_arg_dictionary = sum_merge_dictionary(
+    #      max_arg_dictionary, correct_not_confound.max_arguments_dict
+    #  )
+    #
+    #  plot_most_frequent_explainations(
+    #      correct_not_confound.max_arguments_dict, "Max chosen per class: [Correct+NotConf]", arguments_folder
+    #  )
+    #
+    #  max_arg_dictionary = sum_merge_dictionary(
+    #      max_arg_dictionary, wrong_not_confound.max_arguments_dict
+    #  )
+    #
+    #  plot_most_frequent_explainations(
+    #      wrong_not_confound.max_arguments_dict, "Max chosen per class: [NotCorrect+NotConf]", arguments_folder
+    #  )
+    #
+    #  max_arg_dictionary = sum_merge_dictionary(
+    #      max_arg_dictionary, correct_lab.max_arguments_dict
+    #  )
+    #
+    #  plot_most_frequent_explainations(
+    #      correct_lab.max_arguments_dict, "Max chosen per class: [Correct+Imbalance]", arguments_folder
+    #  )
+    #
+    #  max_arg_dictionary = sum_merge_dictionary(
+    #      max_arg_dictionary, wrong_lab.max_arguments_dict
+    #  )
     plot_most_frequent_explainations(
         wrong_lab.max_arguments_dict, "Max chosen per class: [NotCorrect+Imbalance]", arguments_folder
     )
-
-    max_arg_dictionary = sum_merge_dictionary(
-        max_arg_dictionary, wrong_lab_img_confound.max_arguments_dict
-    )
-
+    #
+    #  max_arg_dictionary = sum_merge_dictionary(
+    #      max_arg_dictionary, wrong_lab_img_confound.max_arguments_dict
+    #  )
+    #
     plot_most_frequent_explainations(
         wrong_lab_img_confound.max_arguments_dict, "Max chosen per class: [NotCorrect+Conf+Imbalance]", arguments_folder
     )
-
-    max_arg_dictionary = sum_merge_dictionary(
-        max_arg_dictionary, correct_lab_img_confound.max_arguments_dict
-    )
-
-    plot_most_frequent_explainations(
-        correct_lab_img_confound.max_arguments_dict, "Max chosen per class: [Correct+Conf+Imbalance]", arguments_folder
-    )
-
-    plot_most_frequent_explainations(
-        max_arg_dictionary, "Max chosen per class", arguments_folder
-    )
+    #
+    #  max_arg_dictionary = sum_merge_dictionary(
+    #      max_arg_dictionary, correct_lab_img_confound.max_arguments_dict
+    #  )
+    #
+    #  plot_most_frequent_explainations(
+    #      correct_lab_img_confound.max_arguments_dict, "Max chosen per class: [Correct+Conf+Imbalance]", arguments_folder
+    #  )
+    #
+    #  plot_most_frequent_explainations(
+    #      max_arg_dictionary, "Max chosen per class", arguments_folder
+    #  )
 
     plot_gradient_analysis_table_max(
         wrong_lab=wrong_lab.bucket_list,
@@ -1159,8 +1704,17 @@ def plot_arguments(
         arguments_folder=arguments_folder,
         tau=tau
     )
-
-    plot_gradient_analysis_table_full(
+    #
+    #  plot_gradient_analysis_table_full(
+    #      wrong_lab=wrong_lab.bucket_list,
+    #      wrong_confound=wrong_confound.bucket_list,
+    #      wrong_lab_img_confound=wrong_lab_img_confound.bucket_list,
+    #      wrong_ok=wrong_not_confound.bucket_list,
+    #      arguments_folder=arguments_folder,
+    #      tau=tau
+    #  )
+    #
+    plot_gradient_analysis_table_wrt_groundtruth(
         wrong_lab=wrong_lab.bucket_list,
         wrong_confound=wrong_confound.bucket_list,
         wrong_lab_img_confound=wrong_lab_img_confound.bucket_list,
@@ -1169,6 +1723,278 @@ def plot_arguments(
         tau=tau
     )
 
+    plot_gradient_analysis_table_wrt_prediction(
+        wrong_lab=wrong_lab.bucket_list,
+        wrong_confound=wrong_confound.bucket_list,
+        wrong_lab_img_confound=wrong_lab_img_confound.bucket_list,
+        wrong_ok=wrong_not_confound.bucket_list,
+        arguments_folder=arguments_folder,
+        tau=tau
+    )
+
+def plot_gradient_analysis_table_wrt_groundtruth(
+    wrong_lab: List[ArgumentBucket],
+    wrong_confound: List[ArgumentBucket],
+    wrong_lab_img_confound: List[ArgumentBucket],
+    wrong_ok: List[ArgumentBucket],
+    arguments_folder: str,
+    tau: float
+):
+
+    # TODO considerando valore massimo e considerando tutti
+
+    columns_header = ['# X > t', '# Y > t', '# X > # Y', '#']
+    rows_header = ['Not correct: confound on X', 'Not correct: confound on Y', 'Not correct: confound on both XY', 'Not correct: no confound']
+
+    # data
+    data = [
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+    ]
+
+    # colors
+    # lightgreen, lightcoral
+    colors = [
+        ["lightgreen","w","lightgreen","w"],
+        ["w", "lightgreen","lightcoral","w"],
+        ["w", "w", "lightcoral","w"],
+        ["w", "w","w","w"],
+    ]
+
+    for item in wrong_confound:
+        ig, ig_label = item.get_gradents_list_separated_by_class(item.groundtruth_children)
+        max_ig = max(ig)
+        max_label = max(ig_label)
+        if max_ig > tau:
+            data[0][0] += 1
+        if max_label > tau:
+            data[0][1] += 1
+        if max_ig > max_label:
+            data[0][2] += 1
+        data[0][3] += 1
+
+    for item in wrong_lab:
+        ig, ig_label = item.get_gradents_list_separated_by_class(item.groundtruth_children)
+        max_ig = max(ig)
+        max_label = max(ig_label)
+        if max_ig > tau:
+            data[1][0] += 1
+        if max_label > tau:
+            data[1][1] += 1
+        if max_ig > max_label:
+            data[1][2] += 1
+        data[1][3] += 1
+
+    for item in wrong_lab_img_confound:
+        ig, ig_label = item.get_gradents_list_separated_by_class(item.groundtruth_children)
+        max_ig = max(ig)
+        max_label = max(ig_label)
+        if max_ig > tau:
+            data[2][0] += 1
+        if max_label > tau:
+            data[2][1] += 1
+        if max_ig > max_label:
+            data[2][2] += 1
+        data[2][3] += 1
+
+    for item in wrong_ok:
+        ig, ig_label = item.get_gradents_list_separated_by_class(item.groundtruth_children)
+        max_ig = max(ig)
+        max_label = max(ig_label)
+        if max_ig > tau:
+            data[3][0] += 1
+        if max_label > tau:
+            data[3][1] += 1
+        if max_ig > max_label:
+            data[3][2] += 1
+        data[3][3] += 1
+
+    fig, ax1 = plt.subplots(figsize=(10, 2 + len(data) / 2.5))
+
+    rcolors = np.full(len(rows_header), 'linen')
+    ccolors = np.full(len(columns_header), 'lavender')
+
+    table = ax1.table(
+        cellText=data,
+        cellLoc='center',
+        rowLabels=rows_header,
+        rowColours=rcolors,
+        rowLoc='center',
+        colColours=ccolors,
+        cellColours=colors,
+        colLabels=columns_header,
+        loc='center'
+    )
+
+    table.scale(1, 2)
+    table.set_fontsize(16)
+    ax1.axis('off')
+    title = f"Gradient Analysis (per samples: wrt groundtruth) Table: tau = {tau}"
+    ax1.set_title(f'{title}', weight='bold', size=14, color='k')
+    fig.savefig("{}/{}.png".format(arguments_folder, title), bbox_inches='tight')
+    plt.close(fig)
+
+def plot_gradient_analysis_table_wrt_prediction(
+    wrong_lab: List[ArgumentBucket],
+    wrong_confound: List[ArgumentBucket],
+    wrong_lab_img_confound: List[ArgumentBucket],
+    wrong_ok: List[ArgumentBucket],
+    arguments_folder: str,
+    tau: float
+):
+
+    # TODO considerando valore massimo e considerando tutti
+
+    columns_header = ['# X > t', '# Y > t', '# X > # Y', '#']
+    rows_header = ['Not correct: confound on X', 'Not correct: confound on Y', 'Not correct: confound on both XY', 'Not correct: no confound']
+
+    # data
+    data = [
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+    ]
+
+    # colors
+    # lightgreen, lightcoral
+    colors = [
+        ["lightgreen","w","lightgreen","w"],
+        ["w", "lightgreen","lightcoral","w"],
+        ["w", "w", "lightcoral","w"],
+        ["w", "w","w","w"],
+    ]
+
+    for item in wrong_confound:
+        ig, ig_label = list(), list()
+        performed_predictions = (item.prediction == True).nonzero().flatten().tolist()
+        for pred_el in performed_predictions:
+            if pred_el > 4:
+                list_ig, list_label_ig = item.get_gradents_list_separated_by_class(pred_el)
+                for l_i in list_ig:
+                    ig.append(l_i)
+                for l_i in list_label_ig:
+                    ig_label.append(l_i)
+
+        if not ig or not ig_label:
+            print("continue...")
+            continue
+
+        max_ig = max(ig)
+        max_label = max(ig_label)
+
+        if max_ig > tau:
+            data[0][0] += 1
+        if max_label > tau:
+            data[0][1] += 1
+        if max_ig > max_label:
+            data[0][2] += 1
+        data[0][3] += 1
+
+    for item in wrong_lab:
+        ig, ig_label = list(), list()
+        performed_predictions = (item.prediction == True).nonzero().flatten().tolist()
+        for pred_el in performed_predictions:
+            if pred_el > 4:
+                list_ig, list_label_ig = item.get_gradents_list_separated_by_class(pred_el)
+                for l_i in list_ig:
+                    ig.append(l_i)
+                for l_i in list_label_ig:
+                    ig_label.append(l_i)
+
+        if not ig or not ig_label:
+            print("continue...")
+            continue
+
+        max_ig = max(ig)
+        max_label = max(ig_label)
+
+        if max_ig > tau:
+            data[1][0] += 1
+        if max_label > tau:
+            data[1][1] += 1
+        if max_ig > max_label:
+            data[1][2] += 1
+        data[1][3] += 1
+
+    for item in wrong_lab_img_confound:
+        ig, ig_label = list(), list()
+        performed_predictions = (item.prediction == True).nonzero().flatten().tolist()
+        for pred_el in performed_predictions:
+            if pred_el > 4:
+                list_ig, list_label_ig = item.get_gradents_list_separated_by_class(pred_el)
+                for l_i in list_ig:
+                    ig.append(l_i)
+                for l_i in list_label_ig:
+                    ig_label.append(l_i)
+
+        if not ig or not ig_label:
+            print("continue...")
+            continue
+
+        max_ig = max(ig)
+        max_label = max(ig_label)
+
+        if max_ig > tau:
+            data[2][0] += 1
+        if max_label > tau:
+            data[2][1] += 1
+        if max_ig > max_label:
+            data[2][2] += 1
+        data[2][3] += 1
+
+    for item in wrong_ok:
+        ig, ig_label = list(), list()
+        performed_predictions = (item.prediction == True).nonzero().flatten().tolist()
+        for pred_el in performed_predictions:
+            if pred_el > 4:
+                list_ig, list_label_ig = item.get_gradents_list_separated_by_class(pred_el)
+                for l_i in list_ig:
+                    ig.append(l_i)
+                for l_i in list_label_ig:
+                    ig_label.append(l_i)
+
+        if not ig or not ig_label:
+            print("continue...")
+            continue
+
+        max_ig = max(ig)
+        max_label = max(ig_label)
+
+        if max_ig > tau:
+            data[3][0] += 1
+        if max_label > tau:
+            data[3][1] += 1
+        if max_ig > max_label:
+            data[3][2] += 1
+        data[3][3] += 1
+
+    fig, ax1 = plt.subplots(figsize=(10, 2 + len(data) / 2.5))
+
+    rcolors = np.full(len(rows_header), 'linen')
+    ccolors = np.full(len(columns_header), 'lavender')
+
+    table = ax1.table(
+        cellText=data,
+        cellLoc='center',
+        rowLabels=rows_header,
+        rowColours=rcolors,
+        rowLoc='center',
+        colColours=ccolors,
+        cellColours=colors,
+        colLabels=columns_header,
+        loc='center'
+    )
+
+    table.scale(1, 2)
+    table.set_fontsize(16)
+    ax1.axis('off')
+    title = f"Gradient Analysis (per samples: wrt prediction) Table: tau = {tau}"
+    ax1.set_title(f'{title}', weight='bold', size=14, color='k')
+    fig.savefig("{}/{}.png".format(arguments_folder, title), bbox_inches='tight')
+    plt.close(fig)
 
 def plot_gradient_analysis_table_max(
     wrong_lab: List[ArgumentBucket],
@@ -1265,7 +2091,7 @@ def plot_gradient_analysis_table_max(
     table.scale(1, 2)
     table.set_fontsize(16)
     ax1.axis('off')
-    title = f"Gradient Analysis (per samples) Table: tau = {tau}"
+    title = f"[Max] Gradient Analysis (per samples) Table: tau = {tau}"
     ax1.set_title(f'{title}', weight='bold', size=14, color='k')
     fig.savefig("{}/{}.png".format(arguments_folder, title), bbox_inches='tight')
     plt.close(fig)
@@ -1432,6 +2258,8 @@ def arguments_step(
     arguments_folder: str,
     label_loader: bool,
     norm_exponent: int,
+    multiply_by_probability_for_label_gradient: bool,
+    cincer: bool,
 ) -> ArgumentsStepArgs:
     """Arguments step
     Args:
@@ -1469,10 +2297,12 @@ def arguments_step(
     suitable_gradient_full_list: List[Tuple[List[float], List[float]]] = list()
     """List of arguments which are the ones with highest score"""
     max_arguments_list: List[float] = list()
+    """Maximum ig label list"""
+    max_ig_label_list_for_score_plot: List[Tuple[List[float], List[float]]] = list()
     """Dictionary of arguments of the highest scoring subclass per each superclass [concerning the input gradient]"""
-    max_arguments_dict: Dict[str, Dict[str, int]] = dict()
+    max_arguments_dict: Dict[str, Dict[str, float]] = dict()
     """Dictionary of arguments of the highest scoring subclass per each superclass [concerning the label gradient]"""
-    label_args_dict: Dict[str, Dict[str, List[int]]] = dict()
+    label_args_dict: Dict[str, Dict[str, List[float]]] = dict()
     """Counter for showing the single element example"""
     show_element_counter: int = 0
     """Counter which defines how many times a subclass has influenced a superclass"""
@@ -1483,6 +2313,11 @@ def arguments_step(
     suitable_is_max: int = 0
     """Counter which defined how many times the 'right' argument is not the maximuum one"""
     suitable_is_not_max: int = 0
+    """Counter for the prediction"""
+    prediction_influence_parent_counter: int = 0
+    prediction_does_not_influence_parent_counter: int = 0
+    #get_gradents_list_separated_by_class
+    ig_lists_wrt_prediction: List[Tuple[List[float], List[float]]] = list()
 
     # if label_loader is active then shiwtch to the right dataloader
     loader = dataloaders["test_loader_with_labels_name"]
@@ -1519,10 +2354,22 @@ def arguments_step(
             groundtruth[0],  # parent label
             groundtruth[1],  # children label
             norm_exponent,
+            prediction_treshold,
+            force_prediction,
+            use_softmax,
+            multiply_by_probability_for_label_gradient,
+            cincer
         )
 
         # ig lists
         ig_lists.append(bucket.get_gradents_list_separated())
+
+        # TODO provare questo
+        performed_predictions = (bucket.prediction == True).nonzero().flatten().tolist()
+        for pred_el in performed_predictions:
+            if pred_el > 4:
+                ig_lists_wrt_prediction.append(bucket.get_gradents_list_separated_by_class(pred_el))
+
         # table correlation
         table_correlation = get_table_correlation_dictionary_from(
             bucket, correct_samples_only, table_correlation
@@ -1567,12 +2414,14 @@ def arguments_step(
         else:
             suitable_is_not_max += 1
 
+        tmp_max_score_image_list = 0
         # loop over the input gradient dictionary
         for int_label, ig_score_item in bucket.input_gradient_dict.items():
             str_groundtruth_label: str = labels_name[bucket.groundtruth_children]
 
             # add the max arguments
             if max_score_ig == ig_score_item[1]:
+                tmp_max_score_image_list = ig_score_item[1]
                 max_arguments_list.append(ig_score_item[1])
 
                 # populate the max arguments dictionary
@@ -1582,21 +2431,27 @@ def arguments_step(
                     max_arguments_dict[str_groundtruth_label][labels_name[int_label]] = 0
                 max_arguments_dict[str_groundtruth_label][labels_name[int_label]] += 1
 
+        # max label gradient
+        max_val = -float('inf')
+        for val in bucket.label_gradient.values():
+            max_val = val[1] if val[1] > max_val else max_val
+        max_ig_label_list_for_score_plot.append(([tmp_max_score_image_list], [max_val]))
+
         # comodo variables
         i_c_l: int = bucket.groundtruth_children
         i_p_l: int = bucket.groundtruth_parent
         s_c_l: str = labels_name[i_c_l]
         s_p_l: str = labels_name[i_p_l]
-        label_args_dict: Dict[str, Dict[str, List[int]]] = dict()
+        label_args_dict: Dict[str, Dict[str, List[float]]] = dict()
         if not s_p_l in label_args_dict:
             label_args_dict[s_p_l] = {}
         # add the label gradient
         if not s_c_l in label_args_dict[s_p_l]:
             label_args_dict[s_p_l][s_c_l] = [
-                int(bucket.label_gradient[i_c_l, i_p_l][1]),
+                bucket.label_gradient[i_c_l, i_p_l][1],
                 1,
             ]
-        label_args_dict[s_p_l][s_c_l][0] += int(bucket.label_gradient[i_c_l, i_p_l][1])
+        label_args_dict[s_p_l][s_c_l][0] += bucket.label_gradient[i_c_l, i_p_l][1]
         label_args_dict[s_p_l][s_c_l][1] += 1
 
         # increase the influence depending on the result
@@ -1604,6 +2459,29 @@ def arguments_step(
             influence_parent_counter += 1
         else:
             not_influence_parent_counter += 1
+
+        # increase the influence depending on the result
+        if bucket.label_gradient[i_c_l, i_p_l][1]:
+            influence_parent_counter += 1
+        else:
+            not_influence_parent_counter += 1
+
+        # Analysis of the prediction TODO
+        performed_predictions = (bucket.prediction == True).nonzero().flatten().tolist()
+        has_influenced: bool = False
+        for parent_pred in performed_predictions:
+            for pred_el in performed_predictions:
+                if (pred_el, parent_pred) in bucket.label_gradient and bucket.label_gradient[pred_el, parent_pred][1]:
+                    has_influenced = True
+                    break
+            if has_influenced:
+                break
+
+        if has_influenced:
+            prediction_influence_parent_counter += 1
+        else:
+            prediction_does_not_influence_parent_counter += 1
+
 
     # return arguments
     return ArgumentsStepArgs(
@@ -1615,11 +2493,15 @@ def arguments_step(
         max_arguments_dict=max_arguments_dict,
         label_args_dict=label_args_dict,
         show_element_counter=show_element_counter,
+        max_ig_label_list_for_score_plot=max_ig_label_list_for_score_plot,
         influence_parent_counter=influence_parent_counter,
         not_influence_parent_counter=not_influence_parent_counter,
         suitable_is_max=suitable_is_max,
         suitable_is_not_max=suitable_is_not_max,
         ig_lists=ig_lists,
+        prediction_influence_parent_counter=prediction_influence_parent_counter,
+        prediction_does_not_influence_parent_counter=prediction_does_not_influence_parent_counter,
+        ig_lists_wrt_prediction=ig_lists_wrt_prediction,
     )
 
 
@@ -1725,6 +2607,7 @@ def scatter_plot_score(
 
     score_list = list()
     label_list = list()
+
     for el_img, conf_img, corr_img in zip(
         ig_list_image,
         conf_list_image,
@@ -1737,18 +2620,20 @@ def scatter_plot_score(
             score_list.append([is_correct + is_conf + 0, data])
             label_list.append(int(corr_img))
         for data in lab_grad_img:
-            score_list.append([is_correct + is_conf + 1, int(data)])
+            score_list.append([is_correct + is_conf + 1, data])
             label_list.append(int(corr_img))
+
+            corr_idx = 1 if data > 0 else 0
 
             # increasing the 0, 1 counters
             if corr_img and conf_img:
-                corr_conf_0_1_c[int(data)] += 1
+                corr_conf_0_1_c[corr_idx] += 1
             elif corr_img and not conf_img:
-                corr_not_conf_0_1_c[int(data)] += 1
+                corr_not_conf_0_1_c[corr_idx] += 1
             elif not corr_img and conf_img:
-                not_corr_conf_0_1_c[int(data)] += 1
+                not_corr_conf_0_1_c[corr_idx] += 1
             elif not corr_img and not conf_img:
-                not_corr_not_conf_0_1_c[int(data)] += 1
+                not_corr_not_conf_0_1_c[corr_idx] += 1
 
 
         # increasing the counters
@@ -1771,13 +2656,14 @@ def scatter_plot_score(
             score_list.append([is_correct + 0, data])
             label_list.append(int(corr_lab))
         for data in lab_grad_lab:
-            score_list.append([is_correct + 1, int(data)])
+            score_list.append([is_correct + 1, data])
             label_list.append(int(corr_lab))
 
+            corr_idx = 1 if data > 0 else 0
             if corr_lab:
-                corr_lab_0_1_c[int(data)] += 1
+                corr_lab_0_1_c[corr_idx] += 1
             elif not corr_lab:
-                not_corr_lab_0_1_c[int(data)] += 1
+                not_corr_lab_0_1_c[corr_idx] += 1
 
         if corr_lab:
             corr_lab_counter += 1
@@ -1795,13 +2681,14 @@ def scatter_plot_score(
             score_list.append([is_correct + 0, data])
             label_list.append(int(corr_image_lab))
         for data in lab_grad_image_lab:
-            score_list.append([is_correct + 1, int(data)])
+            score_list.append([is_correct + 1, data])
             label_list.append(int(corr_image_lab))
 
+            corr_idx = 1 if data > 0 else 0
             if corr_image_lab:
-                corr_lab_image_0_1_c[int(data)] += 1
+                corr_lab_image_0_1_c[corr_idx] += 1
             elif not corr_image_lab:
-                not_corr_lab_image_0_1_c[int(data)] += 1
+                not_corr_lab_image_0_1_c[corr_idx] += 1
 
         if corr_image_lab:
             corr_lab_image_counter += 1
@@ -1821,13 +2708,13 @@ def scatter_plot_score(
 
     fig = plt.figure(figsize=(15, 12))
 
-    # jittering the X points
-    for i in range(X.shape[0]):
-        X[i] += np.random.uniform(low=-0.3, high=0.3)
-
-    for i in range(Y.shape[0]):
-        if Y[i] == 0 or Y[i] == 1:
-            Y[i] += np.random.uniform(low=-0.1, high=0.1)
+    #  # jittering the X points
+    #  for i in range(X.shape[0]):
+    #      X[i] += np.random.uniform(low=-0.3, high=0.3)
+    #
+    #  for i in range(Y.shape[0]):
+    #      if Y[i] == 0 or Y[i] == 1:
+    #          Y[i] += np.random.uniform(low=-0.1, high=0.1)
 
     plt.scatter(X, Y, c=colors)
     plt.ylabel("gradient magnitude")
@@ -1868,29 +2755,29 @@ def scatter_plot_score(
     ]
 
     # add text
-    plt.text(1, 0 + 0.01, str(corr_conf_0_1_c[0]), fontsize=9)
-    plt.text(1, 1 + 0.01, str(corr_conf_0_1_c[1]), fontsize=9)
+    plt.text(1 + 0.1, 0 + 0.01, str(corr_conf_0_1_c[0]), fontsize=9)
+    plt.text(1 + 0.1, 0.8 + 0.01, str(corr_conf_0_1_c[1]), fontsize=9)
 
-    plt.text(3, 0 + 0.01, str(corr_not_conf_0_1_c[0]), fontsize=9)
-    plt.text(3, 1 + 0.01, str(corr_not_conf_0_1_c[1]), fontsize=9)
+    plt.text(3 + 0.1, 0 + 0.01, str(corr_not_conf_0_1_c[0]), fontsize=9)
+    plt.text(3 + 0.1, 0.8 + 0.01, str(corr_not_conf_0_1_c[1]), fontsize=9)
 
-    plt.text(5, 0 + 0.01, str(corr_lab_0_1_c[0]), fontsize=9)
-    plt.text(5, 1 + 0.01, str(corr_lab_0_1_c[1]), fontsize=9)
+    plt.text(5 + 0.1, 0 + 0.01, str(corr_lab_0_1_c[0]), fontsize=9)
+    plt.text(5 + 0.1, 0.8 + 0.01, str(corr_lab_0_1_c[1]), fontsize=9)
 
-    plt.text(7, 0 + 0.01, str(corr_lab_image_0_1_c[0]), fontsize=9)
-    plt.text(7, 1 + 0.01, str(corr_lab_image_0_1_c[1]), fontsize=9)
+    plt.text(7 + 0.1, 0 + 0.01, str(corr_lab_image_0_1_c[0]), fontsize=9)
+    plt.text(7 + 0.1, 0.8 + 0.01, str(corr_lab_image_0_1_c[1]), fontsize=9)
 
-    plt.text(9, 0 + 0.01, str(not_corr_conf_0_1_c[0]), fontsize=9)
-    plt.text(9, 1 + 0.01, str(not_corr_conf_0_1_c[1]), fontsize=9)
+    plt.text(9 + 0.1, 0 + 0.01, str(not_corr_conf_0_1_c[0]), fontsize=9)
+    plt.text(9 + 0.1, 0.8 + 0.01, str(not_corr_conf_0_1_c[1]), fontsize=9)
 
-    plt.text(11, 0 + 0.01, str(not_corr_not_conf_0_1_c[0]), fontsize=9)
-    plt.text(11, 1 + 0.01, str(not_corr_not_conf_0_1_c[1]), fontsize=9)
+    plt.text(11 + 0.1, 0 + 0.01, str(not_corr_not_conf_0_1_c[0]), fontsize=9)
+    plt.text(11 + 0.1, 0.8 + 0.01, str(not_corr_not_conf_0_1_c[1]), fontsize=9)
 
-    plt.text(13, 0 + 0.01, str(not_corr_lab_0_1_c[0]), fontsize=9)
-    plt.text(13, 1 + 0.01, str(not_corr_lab_0_1_c[1]), fontsize=9)
+    plt.text(13 + 0.1, 0 + 0.01, str(not_corr_lab_0_1_c[0]), fontsize=9)
+    plt.text(13 + 0.1, 0.8 + 0.01, str(not_corr_lab_0_1_c[1]), fontsize=9)
 
-    plt.text(15, 0 + 0.01, str(not_corr_lab_image_0_1_c[0]), fontsize=9)
-    plt.text(15, 1 + 0.01, str(not_corr_lab_image_0_1_c[1]), fontsize=9)
+    plt.text(15 + 0.1, 0 + 0.01, str(not_corr_lab_image_0_1_c[0]), fontsize=9)
+    plt.text(15 + 0.1, 0.8 + 0.01, str(not_corr_lab_image_0_1_c[1]), fontsize=9)
 
     plt.legend(custom, ["Correct (1)", "Not correct (2)"], fontsize=10)
     plt.close(fig)

@@ -21,6 +21,10 @@ from chmncc.config import (
     fashion_confunders,
     label_confounders,
 )
+from chmncc.probabilistic_circuits.GatingFunction import DenseGatingFunction
+from chmncc.probabilistic_circuits.compute_mpe import CircuitMPE
+from pysdd.sdd import SddManager, Vtree
+import networkx as nx
 
 
 ################### Dotdict ##################
@@ -150,6 +154,7 @@ def resume_training(
     experiment_name: str,
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
+    gate: DenseGatingFunction = None
 ) -> Tuple[Dict, Dict, int]:
     r"""
     Resumes the training if the corresponding flag is specified.
@@ -175,6 +180,7 @@ def resume_training(
             print("#> Resuming previous training")
             model.load_state_dict(checkpoint["state_dict"])
             optimizer.load_state_dict(checkpoint["optimizer"])
+            gate.load_state_dict(checkpoint["gate"])
             training_params = checkpoint["training_params"]
             start_epoch = training_params["start_epoch"] + 1
             val_params = checkpoint["val_params"]
@@ -217,12 +223,10 @@ def get_constr_out(x: torch.Tensor, R: torch.Tensor) -> torch.Tensor:
         final_out [torch.tensor]: output constrained
     """
     c_out = x.double()
-    torch.set_printoptions(profile="full")
     c_out = c_out.unsqueeze(1)
     c_out = c_out.expand(len(x), R.shape[1], R.shape[1])
     R_batch = R.expand(len(x), R.shape[1], R.shape[1])
     final_out, _ = torch.max(R_batch * c_out.double(), dim=2)
-    torch.set_printoptions(profile="full")
     return final_out
 
 
@@ -661,3 +665,121 @@ def plot_confounded_labels_predictions(
         plt.tight_layout()
         fig.savefig("{}/barplot_for_{}.png".format(folder, groundtruth_class))
         plt.close(fig)
+
+
+###### Prepare probabilistic circuit #############
+def prepare_probabilistic_circuit(
+    A: torch.Tensor,
+    constraint_folder: str,
+    dataset_name: str,
+    device: str,
+    gates: int,
+    num_reps: int,
+    output_classes: int,
+    S: int = 0,
+) -> Tuple[CircuitMPE, DenseGatingFunction]:
+
+    # Compute matrix of ancestors R
+    # Given n classes, R is an (n x n) matrix where R_ij = 1 if class i is ancestor of class j
+    print("Sono qui")
+    if not os.path.isfile(
+        constraint_folder + "/" + dataset_name + ".sdd"
+    ) or not os.path.isfile(constraint_folder + "/" + dataset_name + ".vtree"):
+        print("Non sono qui")
+        # Compute matrix of ancestors R
+        # Given n classes, R is an (n x n) matrix where R_ij = 1 if class i is ancestor of class j
+        R = np.zeros(A.shape)
+        np.fill_diagonal(R, 1)
+        g = nx.DiGraph(A)
+        for i in range(len(A)):
+            descendants = list(nx.descendants(g, i))
+            if descendants:
+                R[i, descendants] = 1
+        R = torch.tensor(R)
+
+        # Transpose to get the ancestors for each node
+        R = R.unsqueeze(0).to(device)
+
+        # Uncomment below to compile the constraint
+        R.squeeze_()
+
+        # sdd manager
+        mgr = SddManager(var_count=R.size(0), auto_gc_and_minimize=True)
+
+        # Alpha represent our probabilistic circuit
+        alpha = mgr.true()
+        alpha.ref()
+
+        # Creating the constraints
+        for i in range(R.size(0)):
+            beta = mgr.true()
+            beta.ref()
+            for j in range(R.size(0)):
+                # if i is children of j and i is not j -> create the implication
+                if R[i][j] and i != j:
+                    old_beta = beta
+                    # predict me and the other
+                    beta = beta & mgr.vars[j + 1]
+                    beta.ref()
+                    old_beta.deref()
+
+            # create the implication a -> b = not a or b
+            old_beta = beta
+            beta = -mgr.vars[i + 1] | beta
+            beta.ref()
+            old_beta.deref()
+
+            old_alpha = alpha
+            alpha = alpha & beta
+            alpha.ref()
+            old_alpha.deref()
+
+        # Saving circuit & vtree to disk
+        alpha.save(str.encode(constraint_folder + "/" + dataset_name + ".sdd"))
+        alpha.vtree().save(
+            str.encode(constraint_folder + "/" + dataset_name + ".vtree")
+        )
+
+    # Create circuit object
+    cmpe = CircuitMPE(
+        constraint_folder + "/" + dataset_name + ".vtree",
+        constraint_folder + "/" + dataset_name + ".sdd",
+    )
+
+    # overparameterization
+    if S > 0:
+        cmpe.overparameterize(S=S)
+        print("Done overparameterizing")
+
+    # Create gating function
+    gate = DenseGatingFunction(
+        cmpe.beta,
+        gate_layers=[output_classes] + [output_classes] * gates,
+        num_reps=num_reps,
+        device=device,
+    ).to(device)
+
+    return (cmpe, gate)
+
+
+def prepare_empty_probabilistic_circuit(
+    A: torch.Tensor,
+    device: str,
+    output_classes: int,
+) -> Tuple[CircuitMPE, DenseGatingFunction]:
+
+    print("Preparing empty circuit...")
+    # Use fully-factorized sdd
+    mgr = SddManager(var_count=A.shape[0], auto_gc_and_minimize=True)
+    alpha = mgr.true()
+    vtree = Vtree(var_count=A.shape[0], var_order=list(range(1, A.shape[0] + 1)))
+    alpha.save(str.encode("ancestry.sdd"))
+    vtree.save(str.encode("ancestry.vtree"))
+    cmpe = CircuitMPE("ancestry.vtree", "ancestry.sdd")
+    cmpe.overparameterize()
+
+    # Gating function
+    gate = DenseGatingFunction(
+        cmpe.beta, gate_layers=[output_classes], device=device
+    ).to(device)
+    return (cmpe, gate)

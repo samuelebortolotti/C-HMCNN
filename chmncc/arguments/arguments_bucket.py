@@ -33,6 +33,8 @@ class ArgumentBucket:
         prediction_treshold: float = 0.5,
         force_prediction: bool = False,
         use_softmax: bool = False,
+        multiply_by_probability_for_label_gradient: bool = False,
+        cincer_approach: bool = False,
     ) -> None:
         """Initialization method
         Args:
@@ -57,7 +59,14 @@ class ArgumentBucket:
         # compute input gradients
         self._compute_input_gradients(net, to_eval, norm_exponent)
         # compute class gradients
-        self._compute_class_gradients(net, to_eval, R, norm_exponent)
+        self._compute_class_gradients(
+            net,
+            to_eval,
+            R,
+            norm_exponent,
+            multiply_by_probability_for_label_gradient,
+            cincer_approach,
+        )
         # compute predictions
         prediction = net(self.sample.float())[:, to_eval]
         if force_prediction:
@@ -68,7 +77,7 @@ class ArgumentBucket:
             self.prediction = prediction.cpu().data > prediction_treshold
 
         self.prediction = self.prediction.squeeze()
-        print("Prediction", self.prediction)
+        #  print("Prediction", self.prediction)
 
     def _compute_input_gradients(
         self, net: nn.Module, to_eval: torch.Tensor, norm_exponent: int
@@ -94,7 +103,13 @@ class ArgumentBucket:
             )
 
     def _compute_class_gradients(
-        self, net: nn.Module, to_eval: torch.Tensor, R: torch.Tensor, norm_exponent: int
+        self,
+        net: nn.Module,
+        to_eval: torch.Tensor,
+        R: torch.Tensor,
+        norm_exponent: int,
+        multiply_by_probability_for_label_gradient: bool,
+        cincer_approach: bool,
     ) -> None:
         """Compute class gradients
         Args:
@@ -110,6 +125,10 @@ class ArgumentBucket:
                                 = z
             foreach i,j in {1...#classes}
         """
+        if cincer_approach:
+            print("Uso cincer")
+        # out
+        out = net(self.sample.float())
         # disable constrained layer
         net.constrained_layer = False
         # get unconstrained_ouput
@@ -119,6 +138,10 @@ class ArgumentBucket:
         # active constrained layer
         net.constrained_layer = True
 
+        # squeezed output
+        sout = out.squeeze()
+        # squeezed unconstrained_ouput
+        s_unconstrained_ouput = unconstrained_ouput.squeeze()
         # squeezed R
         sR = R.squeeze(0)[1:, 1:]
         for parent in range(sR.shape[0]):
@@ -134,7 +157,16 @@ class ArgumentBucket:
                 z = torch.Tensor([0])
                 if pred == child:
                     # if the predicted child is the one who has influeced the prediction -> gradient = 1
-                    z = torch.Tensor([1])
+                    value = 1
+                    if multiply_by_probability_for_label_gradient:
+                        # multiply by probability for label gradient
+                        value = 1 * sout[child].item()
+                    elif cincer_approach:
+                        # difference of probability
+                        value = (
+                            s_unconstrained_ouput[parent] - s_unconstrained_ouput[child]
+                        )
+                    z = torch.Tensor([value])
                 # register the gradient
                 self.label_gradient[(child, parent)] = (
                     z,
@@ -242,7 +274,7 @@ class ArgumentBucket:
         ig_dict: Dict[int, Tuple[float, torch.Tensor]] = dict()
         label_dict: Dict[Tuple[int, int], Tuple[float, torch.Tensor]] = dict()
         performed_predictions = (self.prediction == True).nonzero().flatten().tolist()
-        print("Performed Prediction", performed_predictions)
+        #  print("Performed Prediction", performed_predictions)
         for pred_el in performed_predictions:
             for key, el in self.input_gradient_dict.items():
                 if key == pred_el:
@@ -250,10 +282,4 @@ class ArgumentBucket:
             for key, el in self.label_gradient.items():
                 if key[0] == pred_el:
                     label_dict[key] = float(el[1]), el[0]
-        print("ig dict")
-        for el in ig_dict.keys():
-            print(self.label_list[el], ig_dict[el][0])
-        print("label dict")
-        for el in label_dict.keys():
-            print(self.label_list[el[0]], self.label_list[el[1]], label_dict[el][0])
         return (ig_dict, label_dict)

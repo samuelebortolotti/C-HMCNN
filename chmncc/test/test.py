@@ -8,9 +8,18 @@ from chmncc.utils import (
     force_prediction_from_batch,
     cross_entropy_from_softmax,
 )
-from sklearn.metrics import average_precision_score, classification_report
+from sklearn.metrics import (
+    average_precision_score,
+    classification_report,
+    average_precision_score,
+    hamming_loss,
+    jaccard_score,
+)
 import numpy as np
 import itertools
+
+from chmncc.probabilistic_circuits.GatingFunction import DenseGatingFunction
+from chmncc.probabilistic_circuits.compute_mpe import CircuitMPE
 
 
 def tr_image(img: torch.Tensor) -> torch.Tensor:
@@ -397,4 +406,293 @@ def test_step_with_prediction_statistics(
         None
         if cumulative_loss_children is None
         else cumulative_loss_children / len(test_loader),
+    )
+
+
+def test_circuit(
+    net: nn.Module,
+    test_loader: torch.utils.data.DataLoader,
+    title: str,
+    test: dotdict,
+    gate: DenseGatingFunction,
+    cmpe: CircuitMPE,
+    device: str = "gpu",
+    debug_mode: bool = False,
+) -> Tuple[float, float, float, float, float]:
+    r"""Test function for the network.
+    It computes the accuracy together with the area under the precision-recall-curve as a metric
+
+    Args:
+        net [nn.Module] network
+        test_loader [torch.utils.data.DataLoader] test data loader
+        cost_function [torch.nn.modules.loss.BCELoss] binary cross entropy function
+        title [str]: title of the experiment
+        test [dotdict] test set dictionary
+        device [str] = "gpu": device on which to run the experiment
+        debug_mode [bool] = False: whether the test is done on the debug dataloader
+        print_me [bool] = False: whether to print the data or not
+        prediction_treshold [float]: threshold used to consider a class as predicted
+        force_prediction [bool]: force prediction or not
+        use_softmax [bool]: use the softmax
+        superclasses_number [int]: number of superclasses
+
+    Returns:
+        cumulative_loss [float] loss on the test set [not used to train!]
+        cumulative_accuracy [float] accuracy on the test set in percentage
+        score [float] area under the precision-recall curve raw
+        score [float] area under the precision-recall curve const
+        rigth_answer_parent [Optional[float]] right answer for the parent
+        rigth_answer_children [Optional[float]] right answer for the children
+    """
+    cumulative_accuracy = 0.0
+    cumulative_loss = 0.0
+
+    # set the network to evaluation mode
+    net.eval()
+    gate.eval()
+
+    # disable gradient computation (we are only testing, we do not want our model to be modified in this step!)
+    with torch.no_grad():
+        # iterate over the test set
+        for batch_idx, items in tqdm.tqdm(
+            enumerate(itertools.islice(test_loader, 1, 5000)), desc=title
+        ):
+            if debug_mode:
+                # debug dataloader
+                (
+                    inputs,  # image
+                    superclass,  # string label
+                    subclass,  # string label
+                    targets,  # hierarchical label [that matrix of 1 hot encodings]
+                    confunder_pos_1_x,  # int position
+                    confunder_pos_1_y,  # int position
+                    confunder_pos_2_x,  # int position
+                    confunder_pos_2_y,  # int position
+                    confunder_shape,  # dictionary containing informations
+                ) = items
+            else:
+                # test dataloader
+                (inputs, targets) = items
+
+            # load data into device
+            inputs = inputs.to(device)
+            targets = targets.to(device)
+            # forward pass
+            outputs = net(inputs.float())
+            # thetas
+            thetas = gate(outputs.float())
+
+            # negative log likelihood and map
+            cmpe.set_params(thetas)
+            predicted = (cmpe.get_mpe_inst(inputs.shape[0]) > 0).long()
+
+            # compute the loss
+            cmpe.set_params(thetas)
+            loss = cmpe.cross_entropy(
+                targets, log_space=True
+            ).mean()  # set them to None
+
+            targets = targets.to(device)
+            predicted = predicted.to("cpu")
+
+            num_correct = (predicted == targets.byte()).all(dim=-1).sum()
+
+            # total correct predictions
+            cumulative_accuracy += num_correct
+            # total loss
+            cumulative_loss += loss.item()
+
+            if batch_idx == 0:
+                predicted_test = predicted
+                y_test = targets
+                output_train = outputs
+            else:
+                predicted_test = torch.cat((predicted_test, predicted), dim=0)
+                output_train = torch.cat((output_train, outputs), dim=0)
+                y_test = torch.cat((y_test, targets), dim=0)
+
+            if batch_idx == 200:
+                break
+
+    y_test = y_test[:, test.to_eval]
+    predicted_test = predicted_test[:, test.to_eval]
+    output_train = output_train[:, test.to_eval]
+
+    # average precision score and other statistics
+    accuracy = cumulative_accuracy / len(y_test)
+    jaccard = jaccard_score(y_test, predicted_test, average="micro")
+    hamming = hamming_loss(y_test, predicted_test)
+    auprc_score = 0  # average_precision_score(y_test, output_train, average="micro")
+
+    return (cumulative_loss / len(test_loader), accuracy, jaccard, hamming, auprc_score)
+
+
+def test_step_with_prediction_statistics_with_gates(
+    net: nn.Module,
+    test_loader: torch.utils.data.DataLoader,
+    gate: DenseGatingFunction,
+    cmpe: CircuitMPE,
+    title: str,
+    test: dotdict,
+    labels_name: List[str],
+    device: str = "gpu",
+) -> Tuple[
+    float,
+    float,
+    float,
+    float,
+    Dict[str, List[int]],
+    Dict[str, List[int]],
+    Dict[str, float],
+    np.ndarray,
+    np.ndarray,
+    float,
+]:
+    r"""Test function for the network.
+    It computes the accuracy together with the area under the precision-recall-curve as a metric
+    and returns the statistics of predicted and non-predicted data.
+    Predicted means that the network has put at least one value positive, whereas unpredicted means that all the predictions are zeros
+
+    Args:
+        net [nn.Module] network
+        test_loader [torch.utils.data.DataLoader] test data loader with labels
+        cost_function [torch.nn.modules.loss.BCELoss] binary cross entropy function
+        title [str]: title of the experiment
+        test [dotdict] test set dictionary
+        labels_name [List[str]] name of the labels
+        device [str] = "gpu": device on which to run the experiment
+        prediction_treshold [float]: threshold used to consider a class as predicted
+        force_prediction [bool]: force prediction
+        use_softmax [bool]: use the softmax
+        superclasses_number [int]: number of superclasses
+
+    Returns:
+        cumulative_loss [float] loss on the test set [not used to train!]
+        cumulative_accuracy [float] accuracy on the test set in percentage
+        score [float] area under the precision-recall curve raw
+        score [float] area under the precision-recall curve const
+        statistics [Dict[str, List[int]]]: name of the class : [not-predicted, predicted]
+        statistics correct [Dict[str, List[int]]]: name of the class : [not-correct, correct]
+        clf_report Dict[str, float]: confusion matrix statistics
+        ground_truth ndarray: ground_truth predictions
+        prediction ndarray: predictions
+        rigth_answer_parent [Optional[float]] right answer for the parent
+        rigth_answer_children [Optional[float]] right answer for the children
+    """
+    cumulative_accuracy = 0.0
+    cumulative_loss = 0.0
+
+    # statistics
+    stats_predicted = {"total": [0, 0]}
+    stats_correct = {"total": [0, 0]}
+
+    # set the network to evaluation mode
+    net.eval()
+    gate.eval()
+
+    # disable gradient computation (we are only testing, we do not want our model to be modified in this step!)
+    with torch.no_grad():
+        # iterate over the test set
+        for batch_idx, items in tqdm.tqdm(
+            enumerate(itertools.islice(test_loader, 1, 5000)), desc=title
+        ):
+            (inputs, superclass, subclass, targets) = items
+
+            # load data into device
+            inputs = inputs.to(device)
+            targets = targets.to(device)
+            # forward pass
+            outputs = net(inputs.float())
+            # thetas
+            thetas = gate(outputs.float())
+
+            # negative log likelihood and map
+            cmpe.set_params(thetas)
+            predicted = (cmpe.get_mpe_inst(inputs.shape[0]) > 0).long()
+
+            # compute the loss
+            cmpe.set_params(thetas)
+            loss = cmpe.cross_entropy(
+                targets, log_space=True
+            ).mean()  # set them to None
+
+            targets = targets.to(device)
+            predicted = predicted.to("cpu")
+
+            num_correct = (predicted == targets.byte()).all(dim=-1).sum()
+
+            # total correct predictions
+            cumulative_accuracy += num_correct
+            # total loss
+            cumulative_loss += loss.item()
+
+            if batch_idx == 0:
+                predicted_test = predicted
+                y_test = targets
+                output_train = outputs
+            else:
+                predicted_test = torch.cat((predicted_test, predicted), dim=0)
+                output_train = torch.cat((output_train, outputs), dim=0)
+                y_test = torch.cat((y_test, targets), dim=0)
+
+            # create the statistics - predicted
+            for i in range(inputs.shape[0]):
+                predicted_idx = 0 if not any(predicted[i]) else 1
+                if not subclass[i] in stats_predicted:
+                    stats_predicted[subclass[i]] = [0, 0]
+                if not superclass[i] in stats_predicted:
+                    stats_predicted[superclass[i]] = [0, 0]
+                stats_predicted["total"][predicted_idx] += 1
+                stats_predicted[superclass[i]][predicted_idx] += 1
+                stats_predicted[subclass[i]][predicted_idx] += 1
+
+            # create the statistics - correct
+            for i in range(inputs.shape[0]):
+                correct_idx = (
+                    0
+                    if not (predicted[i] == targets[i].byte()).sum()
+                    == len(predicted[i])
+                    else 1
+                )
+                if not subclass[i] in stats_correct:
+                    stats_correct[subclass[i]] = [0, 0]
+                if not superclass[i] in stats_correct:
+                    stats_correct[superclass[i]] = [0, 0]
+                stats_correct["total"][correct_idx] += 1
+                stats_correct[superclass[i]][correct_idx] += 1
+                stats_correct[subclass[i]][correct_idx] += 1
+
+            if batch_idx == 200:
+                break
+
+    y_test = y_test[:, test.to_eval]
+    predicted_test = predicted_test[:, test.to_eval]
+    output_train = output_train[:, test.to_eval]
+
+    # average precision score and other statistics
+    accuracy = cumulative_accuracy / len(y_test)
+    jaccard = jaccard_score(y_test, predicted_test, average="micro")
+    hamming = hamming_loss(y_test, predicted_test)
+    auprc_score = 0  # average_precision_score(y_test, output_train, average="micro")
+
+    # classification report on the confusion matrix
+    clf_report = classification_report(
+        y_test,
+        predicted_test,
+        output_dict=True,
+        target_names=labels_name,
+        zero_division=0,
+    )
+
+    return (
+        cumulative_loss / len(test_loader),
+        accuracy,
+        jaccard,
+        hamming,
+        stats_predicted,
+        stats_correct,
+        clf_report,  # classification matrix
+        y_test,  # ground-truth for multiclass classification matrix
+        predicted_test,  # predited values for multiclass classification matrix
+        auprc_score,
     )

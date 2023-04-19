@@ -1,23 +1,18 @@
 """Model which provides the debugging facility to the model"""
 from argparse import _SubParsersAction as Subparser
 from argparse import Namespace
-from numpy.lib.function_base import iterable
 import torch
 import os
 import torch.nn as nn
-from torch.nn.modules.loss import BCELoss
-from torch.utils.data.dataset import Dataset
 from chmncc.arguments.arguments_bucket import ArgumentBucket
 from chmncc.dataset.load_dataset import LoadDataset
 from chmncc.networks import ResNet18, LeNet5, LeNet7, AlexNet, MLP
 from chmncc.utils.utils import (
     force_prediction_from_batch,
-    load_last_weights,
     load_best_weights,
     grouped_boxplot,
     plot_confusion_matrix_statistics,
     plot_global_multiLabel_confusion_matrix,
-    get_lr,
     get_confounders_and_hierarchy,
     prepare_dict_label_predictions_from_raw_predictions,
     plot_confounded_labels_predictions,
@@ -25,26 +20,18 @@ from chmncc.utils.utils import (
 from chmncc.dataset import (
     load_dataloaders,
     get_named_label_predictions,
-    get_hierarchical_index_from_named_label,
     LoadDebugDataset,
 )
-from chmncc.config import label_confounders
 import wandb
 from chmncc.test import test_step, test_step_with_prediction_statistics
-from chmncc.explanations import compute_integrated_gradient, output_gradients
-from chmncc.loss import RRRLoss, IGRRRLoss
-from chmncc.revise import revise_step
 from chmncc.optimizers import get_adam_optimizer, get_plateau_scheduler
 from typing import Dict, Any, Tuple, Union, List
-import tqdm
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
-import scipy.stats
-from sklearn.linear_model import RidgeClassifier
 from torchsummary import summary
 from itertools import tee
-from chmncc.debug.debug import check_balance_dataset_integrity, overlay_input_gradient
+from chmncc.debug.debug import debug
 import itertools
 from enum import Enum
 
@@ -59,7 +46,27 @@ class ArgumentType(Enum):
 class AlgorithmOutcome(Enum):
     USER_DEFEAT = 1
     MACHINE_DEFEAT = 2
-    GOING_ON = 4
+    GOING_ON = 3
+
+
+class ArgumentsCounter:
+    def __init__(self) -> None:
+        self.label_counter: Dict[str, int] = {}
+
+    def add(self, lab: str) -> None:
+        if lab not in self.label_counter:
+            self.label_counter[lab] = 0
+        self.label_counter[lab] += 1
+
+    def _increase(self, lab: str, val: int) -> None:
+        if lab not in self.label_counter:
+            self.label_counter[lab] = 0
+        self.label_counter[lab] += val
+
+    def update(self, argument_counter) -> None:
+        tmp_counter: Dict[str, int] = argument_counter.label_counter
+        for lab in tmp_counter:
+            self._increase(lab, tmp_counter[lab])
 
 
 def configure_subparsers(subparsers: Subparser) -> None:
@@ -283,6 +290,11 @@ def multi_step_argumentation(
     # network in evaluation mode
     net.eval()
 
+    # new data list
+    new_data_list: List[Tuple[np.ndarray, str, str]] = list()
+    argument_counter: ArgumentsCounter = ArgumentsCounter()
+
+    # steps
     for step, data in enumerate(iter(test_loader)):
         (
             inputs,
@@ -313,7 +325,7 @@ def multi_step_argumentation(
         else:
             predicted_1_0 = logits.data.cpu() > prediction_treshold  # 0.5
 
-        process_samples(
+        processed_samples_list, process_samples_counter = process_samples(
             inputs=inputs,
             hierarchical_labels=hierarchical_labels.squeeze(),
             confounder_masks=confounder_masks.squeeze(),
@@ -333,6 +345,16 @@ def multi_step_argumentation(
             force_prediction=force_prediction,
             use_softmax=use_softmax,
         )
+
+        # extend list
+        new_data_list.extend(processed_samples_list)
+        argument_counter.update(process_samples_counter)
+
+    # TODO vedere come bilanciare. Magari fare la conta?
+    debug_to_use = LoadDebugDataset(
+        dataloaders["test_dataset_with_labels_and_confunders_position"],
+    )
+    debug_to_use.train_set.data_list = new_data_list
 
 
 def process_samples(
@@ -354,7 +376,10 @@ def process_samples(
     prediction_treshold: float = 0.5,
     force_prediction: bool = False,
     use_softmax: bool = False,
-):
+) -> Tuple[List[Tuple[np.ndarray, str, str]], ArgumentsCounter]:
+
+    new_data_list: List[Tuple[np.ndarray, str, str]] = list()
+    argument_counter: ArgumentsCounter = ArgumentsCounter()
 
     for i, (
         single_el,
@@ -437,7 +462,7 @@ def process_samples(
                 use_softmax,  # use softmax
             )
 
-            arguments_loop(
+            outcome, tmp_argument_counter = arguments_loop(
                 max_rounds_per_iterations,
                 named_prediction,
                 bucket,
@@ -445,6 +470,17 @@ def process_samples(
                 tau,
                 labels_names,
             )
+
+            # model needs to be updated
+            if outcome == AlgorithmOutcome.USER_DEFEAT:
+                print("The model does not need to be updated")
+            elif outcome == AlgorithmOutcome.MACHINE_DEFEAT:
+                print("The model needs to be updated, maybe not every single step")
+                new_data_list.append((single_el.detach().numpy(), superclass, subclass))
+                argument_counter.update(tmp_argument_counter)
+
+    # return new datalist
+    return new_data_list, argument_counter
 
 
 def ask_defeat() -> bool:
@@ -508,7 +544,9 @@ def display_input_gradient_argument(
 ):
     print(np.max(gradient.detach().numpy().flatten()))
     print(gradient.detach().numpy().flatten().shape)
-    norm = matplotlib.colors.Normalize(vmin=0, vmax=np.max(gradient.detach().numpy().flatten()))
+    norm = matplotlib.colors.Normalize(
+        vmin=0, vmax=np.max(gradient.detach().numpy().flatten())
+    )
     # show the picture
     plt.colorbar(
         matplotlib.cm.ScalarMappable(cmap="viridis", norm=norm),
@@ -528,7 +566,8 @@ def arguments_loop(
     parents: List[str],
     tau: float,
     labels_names: List[str],
-):
+) -> Tuple[AlgorithmOutcome, ArgumentsCounter]:
+    argument_counter: ArgumentsCounter = ArgumentsCounter()
     outcome: AlgorithmOutcome = AlgorithmOutcome.GOING_ON
     arguments_list: List[
         Tuple[ArgumentType, Union[List[int], Tuple[int, int], int], float, bool]
@@ -566,7 +605,7 @@ def arguments_loop(
                     (ArgumentType.CLASS_ARGUMENT, arg_class_int, -1, True)
                 )
             else:
-                print("Not implemented yet..")
+                print("User admits defeat")
                 outcome = AlgorithmOutcome.USER_DEFEAT
         else:
             # machine turn
@@ -578,6 +617,7 @@ def arguments_loop(
 
             # machine declares defeat
             if arg_score < tau:
+                print("Machine admits defeat")
                 outcome = AlgorithmOutcome.MACHINE_DEFEAT
                 break
 
@@ -605,6 +645,7 @@ def arguments_loop(
                     labels_names[arg_key[0]],
                     arg_score,
                 )
+                argument_counter.add(labels_names[arg_key[1]])
 
             # add the user argument
             arguments_list.append((arg_type, arg_key, arg_score, False))
@@ -616,6 +657,7 @@ def arguments_loop(
         user_turn = not user_turn
 
     print("At this point, update the model...")
+    return outcome, argument_counter
 
 
 def main(args: Namespace) -> None:
@@ -793,6 +835,36 @@ def main(args: Namespace) -> None:
         dataset_type=args.dataset,
         tau=args.tau,
         norm_exponent=args.norm_exponent,
+    )
+
+    # lancia il debug loop
+    debug(
+        net,
+        dataloaders,
+        debug_folder,
+        iterations,
+        cost_function,
+        device,
+        set_wandb,
+        integrated_gradients,
+        optimizer,
+        scheduler,
+        debug_test_loader,
+        batch_size,
+        test_batch_size,
+        reviseLoss,
+        model_folder,
+        network,
+        gradient_analysis,
+        num_workers,
+        prediction_treshold,
+        force_prediction,
+        use_softmax,
+        dataset,
+        balance_subclasses,
+        balance_weights,
+        correct_by_duplicating_samples,
+        to_correct_dataloader,
     )
 
     exit(0)

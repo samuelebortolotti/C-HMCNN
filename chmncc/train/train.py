@@ -11,8 +11,17 @@ import numpy as np
 from typing import Tuple, Optional
 import tqdm
 from chmncc.utils import get_constr_out
-from sklearn.metrics import average_precision_score, f1_score
+from sklearn.metrics import (
+    average_precision_score,
+    precision_score,
+    average_precision_score,
+    hamming_loss,
+    jaccard_score,
+)
 import itertools
+
+from chmncc.probabilistic_circuits.GatingFunction import DenseGatingFunction
+from chmncc.probabilistic_circuits.compute_mpe import CircuitMPE
 
 
 def training_step(
@@ -136,7 +145,8 @@ def training_step(
 
         # backward pass
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(net.parameters(), 10)
+        net.float()
+        torch.nn.utils.clip_grad_norm_(net.parameters(), 1)
         # optimizer
         optimizer.step()
 
@@ -182,3 +192,75 @@ def training_step(
         if cumulative_loss_children is None
         else cumulative_loss_children / len(train_loader),
     )
+
+
+def training_step_with_gate(
+    net: nn.Module,
+    gate: DenseGatingFunction,
+    cmpe: CircuitMPE,
+    train_loader: torch.utils.data.DataLoader,
+    optimizer: torch.optim.Optimizer,
+    train: dotdict,
+    title: str,
+    device: str = "cuda",
+) -> Tuple[float, float, float, float, float]:
+    net.train()
+    gate.train()
+
+    tot_loss = 0
+    tot_accuracy = 0
+
+    for batch_idx, inputs in tqdm.tqdm(
+        enumerate(itertools.islice(train_loader, 1, 5000)), desc=title
+    ):
+        # according to the Giunchiglia dataset
+        inputs, labels = inputs
+
+        inputs = inputs.to(device)
+        labels = labels.to(device)
+
+        # Clear gradients w.r.t. parameters
+        optimizer.zero_grad()
+
+        #MCLoss
+        output = net(inputs.float())
+        thetas = gate(output)
+        cmpe.set_params(thetas)
+
+        loss = cmpe.cross_entropy(labels, log_space=True).mean()
+        # predicted
+        cmpe.set_params(thetas)
+        predicted = (cmpe.get_mpe_inst(inputs.shape[0]) > 0).long()
+
+        tot_accuracy += (predicted == labels.byte()).all(dim=-1).sum()
+        tot_loss += loss
+        loss.backward()
+        optimizer.step()
+
+        if batch_idx == 0:
+            predicted_train = predicted
+            output_train = output
+            y_test = labels
+        else:
+            predicted_train = torch.cat((predicted_train, predicted), dim=0)
+            output_train = torch.cat((output_train, output), dim=0)
+            y_test = torch.cat((y_test, labels), dim=0)
+
+        # TODO increase
+        if batch_idx == 200:
+            break
+
+    y_test = y_test[:, train.to_eval]
+    predicted_train = predicted_train.data[:, train.to_eval].to(torch.float)
+    output_train = output_train.data[:, train.to_eval].to(torch.float)
+
+    # jaccard score
+    jaccard = jaccard_score(y_test, predicted_train, average="micro")
+    # hamming score
+    hamming = hamming_loss(y_test, predicted_train)
+    # average precision score
+    auprc_score = average_precision_score(y_test, output_train, average="micro")
+    # accuracy
+    accuracy = tot_accuracy / len(y_test)
+
+    return tot_loss / len(train_loader), accuracy, jaccard, hamming, auprc_score

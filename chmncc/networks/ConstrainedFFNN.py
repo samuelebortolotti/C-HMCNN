@@ -62,6 +62,7 @@ class ConstrainedFFNNModel(nn.Module):
         Returns:
             constrained_out [torch.Tensor]: constrained ouput
         """
+        x = x.view(-1, 28 * 28 * 1)
         # loop over all the layers, on the last one employ the sigmoid activation
         for i in range(self.nb_layers):
             if i == self.nb_layers - 1:

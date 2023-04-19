@@ -7,6 +7,7 @@ import os
 import torch.nn as nn
 from torch.nn.modules.loss import BCELoss
 from chmncc.networks import ResNet18, LeNet5, LeNet7, AlexNet, MLP
+from chmncc.optimizers.adam import get_adam_optimizer_with_gate
 from chmncc.utils.utils import (
     force_prediction_from_batch,
     load_last_weights,
@@ -18,6 +19,8 @@ from chmncc.utils.utils import (
     get_confounders_and_hierarchy,
     prepare_dict_label_predictions_from_raw_predictions,
     plot_confounded_labels_predictions,
+    prepare_empty_probabilistic_circuit,
+    prepare_probabilistic_circuit
 )
 from chmncc.dataset import (
     load_dataloaders,
@@ -27,10 +30,10 @@ from chmncc.dataset import (
 )
 from chmncc.config import label_confounders
 import wandb
-from chmncc.test import test_step, test_step_with_prediction_statistics
+from chmncc.test import test_step, test_step_with_prediction_statistics, test_circuit, test_step_with_prediction_statistics_with_gates
 from chmncc.explanations import compute_integrated_gradient, output_gradients
-from chmncc.loss import RRRLoss, IGRRRLoss
-from chmncc.revise import revise_step
+from chmncc.loss import RRRLoss, IGRRRLoss, RRRLossWithGate
+from chmncc.revise import revise_step, revise_step_with_gates
 from chmncc.optimizers import get_adam_optimizer, get_plateau_scheduler
 from typing import Dict, Any, Tuple, Union, List
 import tqdm
@@ -42,6 +45,9 @@ from sklearn.linear_model import RidgeClassifier
 from torchsummary import summary
 from itertools import tee
 import itertools
+
+from chmncc.probabilistic_circuits.GatingFunction import DenseGatingFunction
+from chmncc.probabilistic_circuits.compute_mpe import CircuitMPE
 
 def save_sample(
     dataset: str,
@@ -792,6 +798,9 @@ def debug(
     balance_subclasses: List[str],
     balance_weights: List[float],
     correct_by_duplicating_samples: bool,
+    use_probabilistic_circuits: bool,
+    gate: DenseGatingFunction,
+    cmpe: CircuitMPE,
     **kwargs: Any
 ) -> None:
     """Method which performs the debug step by fine-tuning the network employing the right for the right reason loss.
@@ -888,9 +897,9 @@ def debug(
     )
 
     # compute graident confounded correlation
-    compute_gradient_confound_correlation(
-        net, debug_loader, integrated_gradients, 100, debug_folder, "train", device
-    )
+    #  compute_gradient_confound_correlation(
+    #      net, debug_loader, integrated_gradients, 100, debug_folder, "train", device
+    #  )
 
     # best test score
     best_test_score = 0.0
@@ -902,36 +911,30 @@ def debug(
         print("-----------------------------------------------------")
 
         # training with RRRloss feedbacks
-        (
-            train_total_loss,
-            train_total_right_answer_loss,
-            train_total_right_reason_loss,
-            train_total_accuracy,
-            train_total_score_raw,
-            train_total_score_const,
-            train_right_reason_loss_confounded,
-            train_loss_parent,
-            train_loss_children
-        ) = revise_step(
-            epoch_number=it,
-            net=net,
-            debug_loader=iter(debug_loader),
-            R=dataloaders["train_R"],
-            train=dataloaders["train"],
-            optimizer=optimizer,
-            revive_function=reviseLoss,
-            device=device,
-            title="Train with RRR",
-            gradient_analysis=gradient_analysis,
-            folder_where_to_save=debug_folder,
-            prediction_treshold=prediction_treshold,
-            force_prediction=force_prediction,
-            use_softmax=use_softmax,
-            superclasses_number=dataloaders["train_set"].n_superclasses,
-        )
-
-        print(
-            "\n\t Debug full loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, AuPRc raw {:.5f}, AuPRc const {:.5f}, Right Reason Loss on Confounded {:.5f}".format(
+        if use_probabilistic_circuits:
+            (
+                train_total_loss,
+                train_total_right_answer_loss,
+                train_total_right_reason_loss,
+                train_right_reason_loss_confounded,
+                train_total_accuracy,
+                train_total_score_raw,
+                train_hamming,
+                train_jaccard,
+            ) = revise_step_with_gates(
+                net=net,
+                gate=gate,
+                cmpe=cmpe,
+                debug_loader=iter(debug_loader),
+                R=dataloaders["train_R"],
+                train=dataloaders["train"],
+                optimizer=optimizer,
+                revive_function=reviseLoss,
+                device=device,
+                title="Train with RRR",
+            )
+        else:
+            (
                 train_total_loss,
                 train_total_right_answer_loss,
                 train_total_right_reason_loss,
@@ -939,61 +942,123 @@ def debug(
                 train_total_score_raw,
                 train_total_score_const,
                 train_right_reason_loss_confounded,
+                train_loss_parent,
+                train_loss_children
+            ) = revise_step(
+                epoch_number=it,
+                net=net,
+                debug_loader=iter(debug_loader),
+                R=dataloaders["train_R"],
+                train=dataloaders["train"],
+                optimizer=optimizer,
+                revive_function=reviseLoss,
+                device=device,
+                title="Train with RRR",
+                gradient_analysis=gradient_analysis,
+                folder_where_to_save=debug_folder,
+                prediction_treshold=prediction_treshold,
+                force_prediction=force_prediction,
+                use_softmax=use_softmax,
+                superclasses_number=dataloaders["train_set"].n_superclasses,
             )
-        )
+
+        if use_probabilistic_circuits:
+            print(
+                "\n\t Debug full loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, AuPRc raw {:.5f}, Hamming score {:.5f}, Jaccard score {:.5f}, Right Reason Loss on Confounded {:.5f}".format(
+                    train_total_loss,
+                    train_total_right_answer_loss,
+                    train_total_right_reason_loss,
+                    train_total_accuracy,
+                    train_total_score_raw,
+                    train_hamming,
+                    train_jaccard,
+                    train_right_reason_loss_confounded,
+                )
+            )
+        else:
+            print(
+                "\n\t Debug full loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, AuPRc raw {:.5f}, AuPRc const {:.5f}, Right Reason Loss on Confounded {:.5f}".format(
+                    train_total_loss,
+                    train_total_right_answer_loss,
+                    train_total_right_reason_loss,
+                    train_total_accuracy,
+                    train_total_score_raw,
+                    train_total_score_const,
+                    train_right_reason_loss_confounded,
+                )
+            )
 
         print("Testing...")
 
-        #  # validation set
-        val_loss, val_accuracy, val_score_raw, val_score_const, val_loss_parent, val_loss_children = test_step(
-            net=net,
-            test_loader=iter(debug_test_loader),
-            cost_function=cost_function,
-            title="Validation",
-            test=dataloaders["train"],
-            device=device,
-            prediction_treshold=prediction_treshold,
-            force_prediction=force_prediction,
-            superclasses_number=dataloaders["train_set"].n_superclasses,
-        )
-
-        print(
-            "\n\t [Validation set]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve Raw {:.3f}, Area under Precision-Recall Curve Const {:.3f}".format(
-                val_loss, val_accuracy, val_score_raw, val_score_const
+        # validation set
+        if use_probabilistic_circuits:
+            (
+                val_loss,
+                val_accuracy,
+                val_jaccard,
+                val_hamming,
+                val_score_raw,
+            ) = test_circuit(
+                net=net,
+                gate=gate,
+                cmpe=cmpe,
+                test_loader=iter(debug_test_loader),
+                title="Validation",
+                test=dataloaders["train"],
+                device=device,
             )
-        )
+        else:
+            val_loss, val_accuracy, val_score_raw, val_score_const, val_loss_parent, val_loss_children = test_step(
+                net=net,
+                test_loader=iter(debug_test_loader),
+                cost_function=cost_function,
+                title="Validation",
+                test=dataloaders["train"],
+                device=device,
+                prediction_treshold=prediction_treshold,
+                force_prediction=force_prediction,
+                superclasses_number=dataloaders["train_set"].n_superclasses,
+            )
 
-        (
-            test_loss_original,
-            test_total_right_answer_loss,
-            test_total_right_reason_loss,
-            test_accuracy_original,
-            test_score_original_raw,
-            test_score_original_const,
-            test_right_reason_loss_confounded,
-            test_loss_parent,
-            test_loss_children
-        ) = revise_step(
-            epoch_number=it,
-            net=net,
-            debug_loader=iter(test_debug),
-            R=dataloaders["train_R"],
-            train=dataloaders["test"],
-            optimizer=optimizer,
-            revive_function=reviseLoss,
-            device=device,
-            title="Test with RRR",
-            gradient_analysis=gradient_analysis,
-            folder_where_to_save=debug_folder,
-            have_to_train=False,
-            prediction_treshold=prediction_treshold,
-            force_prediction=force_prediction,
-            use_softmax=use_softmax,
-            superclasses_number=dataloaders["train_set"].n_superclasses,
-        )
+        if use_probabilistic_circuits:
+            print(
+                "\t [Validation set]: Loss {:.5f}, Validation accuracy {:.2f}%, Validation Jaccard Score {:.3f}, Validation Hamming Score {:.3f}, Validation Area under Precision-Recall Curve Raw {:.3f}".format(
+                    val_loss, val_accuracy, val_jaccard, val_hamming, val_score_raw
+                )
+            )
+        else:
+            print(
+                "\n\t [Validation set]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve Raw {:.3f}, Area under Precision-Recall Curve Const {:.3f}".format(
+                    val_loss, val_accuracy, val_score_raw, val_score_const
+                )
+            )
 
-        print(
-            "\n\t [Test set]: Loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, AuPRc raw {:.5f}, AuPRc const {:.5f}, Right Reason Loss on Confounded {:.5f}".format(
+
+        if use_probabilistic_circuits:
+            (
+                test_loss_original,
+                test_total_right_answer_loss,
+                test_total_right_reason_loss,
+                test_right_reason_loss_confounded,
+                test_accuracy_original,
+                test_score_original_raw,
+                test_hamming,
+                test_jaccard,
+            ) = revise_step_with_gates(
+                net=net,
+                gate=gate,
+                cmpe=cmpe,
+                debug_loader=iter(test_debug),
+                R=dataloaders["train_R"],
+                train=dataloaders["test"],
+                optimizer=optimizer,
+                revive_function=reviseLoss,
+                device=device,
+                title="Test with RRR",
+                have_to_train=False,
+            )
+        else:
+            (
                 test_loss_original,
                 test_total_right_answer_loss,
                 test_total_right_reason_loss,
@@ -1001,94 +1066,232 @@ def debug(
                 test_score_original_raw,
                 test_score_original_const,
                 test_right_reason_loss_confounded,
+                test_loss_parent,
+                test_loss_children
+            ) = revise_step(
+                epoch_number=it,
+                net=net,
+                debug_loader=iter(test_debug),
+                R=dataloaders["train_R"],
+                train=dataloaders["test"],
+                optimizer=optimizer,
+                revive_function=reviseLoss,
+                device=device,
+                title="Test with RRR",
+                gradient_analysis=gradient_analysis,
+                folder_where_to_save=debug_folder,
+                have_to_train=False,
+                prediction_treshold=prediction_treshold,
+                force_prediction=force_prediction,
+                use_softmax=use_softmax,
+                superclasses_number=dataloaders["train_set"].n_superclasses,
             )
-        )
+
+
+        if use_probabilistic_circuits:
+            print(
+                "\n\t [Test set] Test loss {:.5f}, Test accuracy {:.2f}%, Test Jaccard Score {:.3f}, Test Hamming Score {:.3f}, Test Area under Precision-Recall Curve Raw {:.3f}".format(
+                    test_loss_original, test_accuracy_original, test_jaccard, test_hamming, test_score_original_raw
+                )
+            )
+        else:
+            print(
+                "\n\t [Test set]: Loss {:.5f}, Right Answer Loss {:.5f}, Right Reason Loss {:.5f}, Accuracy {:.2f}%, AuPRc raw {:.5f}, AuPRc const {:.5f}, Right Reason Loss on Confounded {:.5f}".format(
+                    test_loss_original,
+                    test_total_right_answer_loss,
+                    test_total_right_reason_loss,
+                    test_accuracy_original,
+                    test_score_original_raw,
+                    test_score_original_const,
+                    test_right_reason_loss_confounded,
+                )
+            )
 
         # test set only confounder
         print("Test only:")
 
-        test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_in_train_data_raw, test_conf_score_wo_conf_in_train_data_const, _, _ = test_step(
-            net=net,
-            test_loader=iter(for_test_loader_test_only_confounder_wo_conf_in_train_data),
-            cost_function=cost_function,
-            title="Test",
-            test=dataloaders["test"],
-            device=device,
-            debug_mode=True,
-            prediction_treshold=prediction_treshold,
-            force_prediction=force_prediction,
-            superclasses_number=dataloaders["train_set"].n_superclasses,
-        )
-
-        print(
-            "\n\t [Test on confounded train data without confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Area under Precision-Recall Curve const {:.3f}".format(
-                test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_in_train_data_raw, test_conf_score_wo_conf_in_train_data_const
-            )
-        )
-
-        test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_test_data_raw, test_conf_score_wo_conf_test_data_const, _, _ = test_step(
-            net=net,
-            test_loader=iter(for_test_loader_test_only_confounder_wo_conf),
-            cost_function=cost_function,
-            title="Test",
-            test=dataloaders["test"],
-            device=device,
-            debug_mode=True,
-            prediction_treshold=prediction_treshold,
-            force_prediction=force_prediction,
-            superclasses_number=dataloaders["train_set"].n_superclasses,
-        )
-
-        print(
-            "\n\t [Test set Confounder Only WO confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Area under Precision-Recall Curve const {:.3f}".format(
-                test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_test_data_raw, test_conf_score_wo_conf_test_data_const
-            )
-        )
-
-        test_conf_loss, test_conf_accuracy, test_conf_score_only_conf_raw, test_conf_score_only_conf_const, _, _ = test_step(
-            net=net,
-            test_loader=iter(test_only_confounder),
-            cost_function=cost_function,
-            title="Test",
-            test=dataloaders["test"],
-            device=device,
-            debug_mode=True,
-            prediction_treshold=prediction_treshold,
-            force_prediction=force_prediction,
-            superclasses_number=dataloaders["train_set"].n_superclasses,
-        )
-
-        print(
-            "\n\t [Test set Confounder Only]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Area under Precision-Recall Curve const {:.3f}".format(
-                test_conf_loss, test_conf_accuracy, test_conf_score_only_conf_raw, test_conf_score_only_conf_const
-            )
-        )
-
-        # test set
-        test_lab_conf_score_raw = 0
-        if len(label_confounders[dataset]) > 0:
-            test_lab_conf_loss, test_lab_conf_accuracy, test_lab_conf_score_raw, test_lab_score_const, _, _ = test_step(
+        if use_probabilistic_circuits:
+            (
+                test_conf_loss,
+                test_conf_accuracy,
+                test_conf_jaccard,
+                test_conf_hamming,
+                test_conf_score_wo_conf_in_train_data_raw,
+            ) = test_circuit(
                 net=net,
-                test_loader=iter(labels_only_test_loader),
+                gate=gate,
+                cmpe=cmpe,
+                debug_mode=True,
+                test_loader=iter(for_test_loader_test_only_confounder_wo_conf_in_train_data),
+                title="Validation",
+                test=dataloaders["train"],
+                device=device,
+            )
+
+            print(
+                "\n\t [Test on confounded train data without confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Jaccard Score {:.3f}, Hamming Score {:.3f}".format(
+                    test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_in_train_data_raw, test_conf_jaccard, test_conf_hamming
+                )
+            )
+
+        else:
+            test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_in_train_data_raw, test_conf_score_wo_conf_in_train_data_const, _, _ = test_step(
+                net=net,
+                test_loader=iter(for_test_loader_test_only_confounder_wo_conf_in_train_data),
                 cost_function=cost_function,
                 title="Test",
                 test=dataloaders["test"],
                 device=device,
+                debug_mode=True,
                 prediction_treshold=prediction_treshold,
                 force_prediction=force_prediction,
                 superclasses_number=dataloaders["train_set"].n_superclasses,
             )
 
             print(
-                "\n\t [Test set Label confounder Only]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Area under Precision-Recall Curve const {:.3f}".format(
-                    test_lab_conf_loss, test_lab_conf_accuracy, test_lab_conf_score_raw, test_lab_score_const
+                "\n\t [Test on confounded train data without confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Area under Precision-Recall Curve const {:.3f}".format(
+                    test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_in_train_data_raw, test_conf_score_wo_conf_in_train_data_const
                 )
             )
 
+        if use_probabilistic_circuits:
+            (
+                test_conf_loss,
+                test_conf_accuracy,
+                test_conf_jaccard,
+                test_conf_hamming,
+                test_conf_score_wo_conf_test_data_raw,
+            ) = test_circuit(
+                net=net,
+                gate=gate,
+                cmpe=cmpe,
+                test_loader=iter(for_test_loader_test_only_confounder_wo_conf),
+                title="Test",
+                test=dataloaders["test"],
+                device=device,
+                debug_mode=True,
+            )
+
+            print(
+                "\n\t [Test set Confounder Only WO confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Jaccard Score {:.3f}, Hamming Score {:.3f}".format(
+                    test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_test_data_raw, test_conf_jaccard, test_conf_hamming
+                )
+            )
+
+        else:
+            test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_test_data_raw, test_conf_score_wo_conf_test_data_const, _, _ = test_step(
+                net=net,
+                test_loader=iter(for_test_loader_test_only_confounder_wo_conf),
+                cost_function=cost_function,
+                title="Test",
+                test=dataloaders["test"],
+                device=device,
+                debug_mode=True,
+                prediction_treshold=prediction_treshold,
+                force_prediction=force_prediction,
+                superclasses_number=dataloaders["train_set"].n_superclasses,
+            )
+
+            print(
+                "\n\t [Test set Confounder Only WO confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Area under Precision-Recall Curve const {:.3f}".format(
+                    test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_test_data_raw, test_conf_score_wo_conf_test_data_const
+                )
+            )
+
+        if use_probabilistic_circuits:
+            (
+                test_conf_loss,
+                test_conf_accuracy,
+                test_conf_jaccard,
+                test_conf_hamming,
+                test_conf_score_only_conf_raw,
+            ) = test_circuit(
+                net=net,
+                gate=gate,
+                cmpe=cmpe,
+                test_loader=iter(test_only_confounder),
+                title="Test",
+                test=dataloaders["test"],
+                device=device,
+                debug_mode=True,
+            )
+
+            print(
+                "\n\t [Test set Confounder Only]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Jaccard Score {:.3f}, Hamming Score {:.3f}".format(
+                    test_conf_loss, test_conf_accuracy, test_conf_score_only_conf_raw, test_conf_jaccard, test_conf_hamming
+                )
+            )
+
+        else:
+            test_conf_loss, test_conf_accuracy, test_conf_score_only_conf_raw, test_conf_score_only_conf_const, _, _ = test_step(
+                net=net,
+                test_loader=iter(test_only_confounder),
+                cost_function=cost_function,
+                title="Test",
+                test=dataloaders["test"],
+                device=device,
+                debug_mode=True,
+                prediction_treshold=prediction_treshold,
+                force_prediction=force_prediction,
+                superclasses_number=dataloaders["train_set"].n_superclasses,
+            )
+
+            print(
+                "\n\t [Test set Confounder Only]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Area under Precision-Recall Curve const {:.3f}".format(
+                    test_conf_loss, test_conf_accuracy, test_conf_score_only_conf_raw, test_conf_score_only_conf_const
+                )
+            )
+
+        # test set
+        test_lab_conf_score_raw = 0
+        if len(label_confounders[dataset]) > 0:
+            if use_probabilistic_circuits:
+                (
+                    test_lab_conf_loss,
+                    test_lab_conf_accuracy,
+                    test_lab_conf_jaccard,
+                    test_lab_conf_hamming,
+                    test_lab_conf_score_raw,
+                ) = test_circuit(
+                    net=net,
+                    gate=gate,
+                    cmpe=cmpe,
+                    test_loader=iter(labels_only_test_loader),
+                    title="Test",
+                    test=dataloaders["test"],
+                    device=device,
+                )
+
+                print(
+                    "\n\t [Test set Label confounder Only]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Jaccard Score {:.3f}, Hamming Score {:.3f}".format(
+                        test_lab_conf_loss, test_lab_conf_accuracy, test_lab_conf_score_raw, test_lab_conf_jaccard, test_lab_conf_hamming
+                    )
+                )
+
+            else:
+                test_lab_conf_loss, test_lab_conf_accuracy, test_lab_conf_score_raw, test_lab_score_const, _, _ = test_step(
+                    net=net,
+                    test_loader=iter(labels_only_test_loader),
+                    cost_function=cost_function,
+                    title="Test",
+                    test=dataloaders["test"],
+                    device=device,
+                    prediction_treshold=prediction_treshold,
+                    force_prediction=force_prediction,
+                    superclasses_number=dataloaders["train_set"].n_superclasses,
+                )
+
+                print(
+                    "\n\t [Test set Label confounder Only]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Area under Precision-Recall Curve const {:.3f}".format(
+                        test_lab_conf_loss, test_lab_conf_accuracy, test_lab_conf_score_raw, test_lab_score_const
+                    )
+                )
+
         # save the model if the results are better
-        if best_test_score > test_score_original_const:
+        current_score = test_jaccard if use_probabilistic_circuits else test_score_original_const
+        if best_test_score > current_score:
             # save the best score
-            best_test_score = test_score_original_const
+            best_test_score = current_score
             # save the model state of the debugged network
             torch.save(
                 net.state_dict(),
@@ -1107,44 +1310,72 @@ def debug(
 
         print("-----------------------------------------------------")
 
-        logs = {
-            "train/train_loss": train_total_loss,
-            "train/train_right_anwer_loss": train_total_right_answer_loss,
-            "train/train_right_reason_loss": train_total_right_reason_loss,
-            "train/train_accuracy": train_total_accuracy,
-            "train/train_auprc_raw": train_total_score_raw,
-            "train/train_auprc_const": train_total_score_const,
-            "train/train_confounded_samples_only_right_reason": train_right_reason_loss_confounded,
-            "val/val_loss": val_loss,
-            "val/val_accuracy": val_accuracy,
-            "val/val_auprc_raw": val_score_raw,
-            "val/val_auprc_const": val_score_const,
-            "test/only_training_confounded_classes_without_confounders_auprc_raw": test_conf_score_wo_conf_in_train_data_raw,
-            "test/only_test_confounded_casses_without_confounders_auprc_raw": test_conf_score_wo_conf_test_data_raw,
-            "test/only_test_confounded_classes_auprc_raw": test_conf_score_only_conf_raw,
-            "test/test_loss": test_loss_original,
-            "test/test_right_answer_loss": test_total_right_answer_loss,
-            "test/test_right_reason_loss": test_total_right_reason_loss,
-            "test/test_accuracy": test_accuracy_original,
-            "test/test_auprc_raw": test_score_original_raw,
-            "test/test_auprc_const": test_score_original_const,
-            "learning_rate": get_lr(optimizer),
-        }
+        if use_probabilistic_circuits:
+            logs = {
+                "train/train_loss": train_total_loss,
+                "train/train_right_anwer_loss": train_total_right_answer_loss,
+                "train/train_right_reason_loss": train_total_right_reason_loss,
+                "train/train_accuracy": train_total_accuracy,
+                "train/train_auprc_raw": train_total_score_raw,
+                "train/train_hamming": train_hamming,
+                "train/train_jaccard": train_jaccard,
+                "train/train_confounded_samples_only_right_reason": train_right_reason_loss_confounded,
+                "val/val_loss": val_loss,
+                "val/val_accuracy": val_accuracy,
+                "val/val_auprc_raw": val_score_raw,
+                "val/val_hamming": val_hamming,
+                "val/val_jaccard": val_jaccard,
+                "test/only_training_confounded_classes_without_confounders_auprc_raw": test_conf_score_wo_conf_in_train_data_raw,
+                "test/only_test_confounded_casses_without_confounders_auprc_raw": test_conf_score_wo_conf_test_data_raw,
+                "test/only_test_confounded_classes_auprc_raw": test_conf_score_only_conf_raw,
+                "test/test_loss": test_loss_original,
+                "test/test_right_answer_loss": test_total_right_answer_loss,
+                "test/test_right_reason_loss": test_total_right_reason_loss,
+                "test/test_accuracy": test_accuracy_original,
+                "test/test_auprc_raw": test_score_original_raw,
+                "test/test_hamming": test_hamming,
+                "test/test_jaccard": test_jaccard,
+                "learning_rate": get_lr(optimizer),
+            }
+        else:
+            logs = {
+                "train/train_loss": train_total_loss,
+                "train/train_right_anwer_loss": train_total_right_answer_loss,
+                "train/train_right_reason_loss": train_total_right_reason_loss,
+                "train/train_accuracy": train_total_accuracy,
+                "train/train_auprc_raw": train_total_score_raw,
+                "train/train_auprc_const": train_total_score_const,
+                "train/train_confounded_samples_only_right_reason": train_right_reason_loss_confounded,
+                "val/val_loss": val_loss,
+                "val/val_accuracy": val_accuracy,
+                "val/val_auprc_raw": val_score_raw,
+                "val/val_auprc_const": val_score_const,
+                "test/only_training_confounded_classes_without_confounders_auprc_raw": test_conf_score_wo_conf_in_train_data_raw,
+                "test/only_test_confounded_casses_without_confounders_auprc_raw": test_conf_score_wo_conf_test_data_raw,
+                "test/only_test_confounded_classes_auprc_raw": test_conf_score_only_conf_raw,
+                "test/test_loss": test_loss_original,
+                "test/test_right_answer_loss": test_total_right_answer_loss,
+                "test/test_right_reason_loss": test_total_right_reason_loss,
+                "test/test_accuracy": test_accuracy_original,
+                "test/test_auprc_raw": test_score_original_raw,
+                "test/test_auprc_const": test_score_original_const,
+                "learning_rate": get_lr(optimizer),
+            }
 
-        if train_loss_parent is not None and train_loss_children is not None:
-            logs.update({"train/train_right_answer_loss_parent": train_loss_parent})
-            logs.update({"train/train_right_answer_loss_children": train_loss_children})
+            if train_loss_parent is not None and train_loss_children is not None:
+                logs.update({"train/train_right_answer_loss_parent": train_loss_parent})
+                logs.update({"train/train_right_answer_loss_children": train_loss_children})
 
-        if val_loss_parent is not None and val_loss_children is not None:
-            logs.update({"val/val_right_answer_loss_parent": val_loss_parent})
-            logs.update({"val/val_right_answer_loss_children": val_loss_children})
+            if val_loss_parent is not None and val_loss_children is not None:
+                logs.update({"val/val_right_answer_loss_parent": val_loss_parent})
+                logs.update({"val/val_right_answer_loss_children": val_loss_children})
 
-        if test_loss_parent is not None and test_loss_children is not None:
-            logs.update({"test/test_right_answer_loss_parent": test_loss_parent})
-            logs.update({"test/test_right_answer_loss_children": test_loss_children})
+            if test_loss_parent is not None and test_loss_children is not None:
+                logs.update({"test/test_right_answer_loss_parent": test_loss_parent})
+                logs.update({"test/test_right_answer_loss_children": test_loss_children})
 
-        if len(label_confounders[dataset]) > 0:
-            logs.update({"test/only_label_confounders_auprc_raw": test_lab_conf_score_raw})
+            if len(label_confounders[dataset]) > 0:
+                logs.update({"test/only_label_confounders_auprc_raw": test_lab_conf_score_raw})
 
         # log on wandb if and only if the module is loaded
         if set_wandb:
@@ -1174,15 +1405,15 @@ def debug(
     )
 
     # give the correlation
-    compute_gradient_confound_correlation(
-        net,
-        test_debug,
-        integrated_gradients,
-        100,
-        debug_folder,
-        "end_debug_test",
-        device,
-    )
+    #  compute_gradient_confound_correlation(
+    #      net,
+    #      test_debug,
+    #      integrated_gradients,
+    #      100,
+    #      debug_folder,
+    #      "end_debug_test",
+    #      device,
+    #  )
 
 
 def configure_subparsers(subparsers: Subparser) -> None:
@@ -1361,6 +1592,36 @@ def configure_subparsers(subparsers: Subparser) -> None:
         action="store_true",
         help="Correct the model by duplicating samples instead of upweighting"
     )
+    parser.add_argument(
+        "--use-probabilistic-circuits",
+        "-probcirc",
+        action="store_true",
+        help="Whether to use the probabilistic circuit instead of the Giunchiglia approach",
+    )
+    parser.add_argument(
+        "--gates",
+        type=int,
+        default=1,
+        help="Number of hidden layers in gating function (default: 1)"
+    )
+    parser.add_argument(
+        "--num-reps",
+        type=int,
+        default=1,
+        help="Number of hidden layers in gating function (default: 1)"
+    )
+    parser.add_argument(
+        "--S",
+        type=int,
+        default=0,
+        help="PSDD scaling factor (default: 0)"
+    )
+    parser.add_argument(
+        "--constraint-folder",
+        type=str,
+        default="./constraints",
+        help="Folder for storing the constraints"
+    )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(
         func=main,
@@ -1513,10 +1774,30 @@ def main(args: Namespace) -> None:
         # start the log
         wandb.init(project=args.project, entity=args.entity)
 
+    # use the probabilistic circuit
+    cmpe: CircuitMPE = None
+    gate: DenseGatingFunction = None
+
+    if args.use_probabilistic_circuits:
+        print("Using probabilistic circuits...")
+        cmpe, gate = prepare_probabilistic_circuit(
+            dataloaders['train_set'].get_A(),
+            args.constraint_folder,
+            args.dataset,
+            args.device,
+            args.gates,
+            args.num_reps,
+            output_classes,
+            args.S,
+        )
+
     # optimizer
     optimizer = get_adam_optimizer(
         net, args.learning_rate, weight_decay=args.weight_decay
     )
+    if args.use_probabilistic_circuits:
+        optimizer = get_adam_optimizer_with_gate(net, gate, args.learning_rate, weight_decay=args.weight_decay)
+
     # scheduler
     scheduler = get_plateau_scheduler(optimizer=optimizer, patience=args.patience)
 
@@ -1549,17 +1830,34 @@ def main(args: Namespace) -> None:
     cost_function = torch.nn.BCELoss()
 
     # test set
-    test_loss, test_accuracy, test_score_raw, test_score_const, _, _ = test_step(
-        net=net,
-        test_loader=iter(test_loader),
-        cost_function=cost_function,
-        title="Test",
-        test=dataloaders["test"],
-        device=args.device,
-        prediction_treshold=args.prediction_treshold,
-        force_prediction=args.force_prediction,
-        superclasses_number=dataloaders["train_set"].n_superclasses,
-    )
+    if args.use_probabilistic_circuits:
+        (
+            test_loss,
+            test_accuracy,
+            test_jaccard,
+            test_hamming,
+            test_score
+        )= test_circuit(
+            net=net,
+            gate=gate,
+            cmpe=cmpe,
+            test_loader=iter(test_loader),
+            title="Test",
+            test=dataloaders["test"],
+            device=args.device,
+        )
+    else:
+        test_loss, test_accuracy, test_score_raw, test_score_const, _, _ = test_step(
+            net=net,
+            test_loader=iter(test_loader),
+            cost_function=cost_function,
+            title="Test",
+            test=dataloaders["test"],
+            device=args.device,
+            prediction_treshold=args.prediction_treshold,
+            force_prediction=args.force_prediction,
+            superclasses_number=dataloaders["train_set"].n_superclasses,
+        )
 
     # load the human readable labels dataloader
     test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
@@ -1568,30 +1866,53 @@ def main(args: Namespace) -> None:
     training_loader_with_labels_names = dataloaders["training_loader_with_labels_names"]
 
     # collect stats
-    (
-        _,
-        _,
-        _,
-        _,
-        statistics_predicted,
-        statistics_correct,
-        clf_report,  # classification matrix
-        y_test,      # ground-truth for multiclass classification matrix
-        y_pred,      # predited values for multiclass classification matrix
-        _,
-        _
-    ) = test_step_with_prediction_statistics(
-        net=net,
-        test_loader=iter(test_loader_with_label_names),
-        cost_function=cost_function,
-        title="Collect Statistics",
-        test=dataloaders["test"],
-        device=args.device,
-        labels_name=labels_name,
-        prediction_treshold=args.prediction_treshold,
-        force_prediction=args.force_prediction,
-        superclasses_number=dataloaders["train_set"].n_superclasses,
-    )
+    if args.use_probabilistic_circuits:
+        (
+            _,
+            _,
+            _,
+            _,
+            statistics_predicted,
+            statistics_correct,
+            clf_report,  # classification matrix
+            y_test,      # ground-truth for multiclass classification matrix
+            y_pred,      # predited values for multiclass classification matrix
+            _,
+        ) = test_step_with_prediction_statistics_with_gates(
+            net=net,
+            gate=gate,
+            cmpe=cmpe,
+            test_loader=iter(test_loader_with_label_names),
+            title="Collect Statistics",
+            test=dataloaders["test"],
+            device=args.device,
+            labels_name=labels_name,
+        )
+    else:
+        (
+            _,
+            _,
+            _,
+            _,
+            statistics_predicted,
+            statistics_correct,
+            clf_report,  # classification matrix
+            y_test,      # ground-truth for multiclass classification matrix
+            y_pred,      # predited values for multiclass classification matrix
+            _,
+            _
+        ) = test_step_with_prediction_statistics(
+            net=net,
+            test_loader=iter(test_loader_with_label_names),
+            cost_function=cost_function,
+            title="Collect Statistics",
+            test=dataloaders["test"],
+            device=args.device,
+            labels_name=labels_name,
+            prediction_treshold=args.prediction_treshold,
+            force_prediction=args.force_prediction,
+            superclasses_number=dataloaders["train_set"].n_superclasses,
+        )
 
     # confusion matrix before debug
     plot_global_multiLabel_confusion_matrix(
@@ -1619,11 +1940,19 @@ def main(args: Namespace) -> None:
 
     print("Network resumed, performances:")
 
-    print(
-        "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve raw {:.3f}, Test Area under Precision-Recall Curve const {:.3f}".format(
-            test_loss, test_accuracy, test_score_raw, test_score_const
+    if args.use_probabilistic_circuits:
+        print(
+            "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Jaccard Score {:.3f}, Test Hamming Score {:.3f}, Test Area under Precision-Recall Curve Raw {:.3f}".format(
+                test_loss, test_accuracy, test_jaccard, test_hamming, test_score
+            )
         )
-    )
+
+    else:
+        print(
+            "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve raw {:.3f}, Test Area under Precision-Recall Curve const {:.3f}".format(
+                test_loss, test_accuracy, test_score_raw, test_score_const
+            )
+        )
 
     print("-----------------------------------------------------")
 
@@ -1634,7 +1963,14 @@ def main(args: Namespace) -> None:
         wandb.watch(net)
 
     # choose carefully the kind of loss to employ
-    if not args.integrated_gradients:
+    if args.use_probabilistic_circuits:
+        reviseLoss = RRRLossWithGate(
+            net=net,
+            gate=gate,
+            cmpe=cmpe,
+            regularizer_rate=args.rrr_regularization_rate,
+        )
+    elif not args.integrated_gradients:
         # rrr loss based on input gradients
         reviseLoss = RRRLoss(
             net=net,
@@ -1660,57 +1996,107 @@ def main(args: Namespace) -> None:
         debug_test_loader=val_loader, # validation loader on which to validate the model
         reviseLoss=reviseLoss, # RRR
         superclasses_number=dataloaders["train_set"].n_superclasses,
+        gate=gate,
+        cmpe=cmpe,
         **vars(args) # additional variables
     )
 
     print("After debugging...")
 
     # re-test set
-    test_loss, test_accuracy, test_score_raw, test_score_const, _, _ = test_step(
-        net=net,
-        test_loader=iter(test_loader),
-        cost_function=cost_function,
-        title="Test",
-        test=dataloaders["test"],
-        device=args.device,
-        prediction_treshold=args.prediction_treshold,
-        force_prediction=args.force_prediction,
-        superclasses_number=dataloaders["train_set"].n_superclasses,
-
-    )
-
-    print(
-        "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve raw {:.3f}, Test Area under Precision-Recall Curve const {:.3f}".format(
-            test_loss, test_accuracy, test_score_raw, test_score_const
+    if args.use_probabilistic_circuits:
+        (
+            test_loss,
+            test_accuracy,
+            test_jaccard,
+            test_hamming,
+            test_score
+        )= test_circuit(
+            net=net,
+            gate=gate,
+            cmpe=cmpe,
+            test_loader=iter(test_loader),
+            title="Test",
+            test=dataloaders["test"],
+            device=args.device,
         )
-    )
+    else:
+        test_loss, test_accuracy, test_score_raw, test_score_const, _, _ = test_step(
+            net=net,
+            test_loader=iter(test_loader),
+            cost_function=cost_function,
+            title="Test",
+            test=dataloaders["test"],
+            device=args.device,
+            prediction_treshold=args.prediction_treshold,
+            force_prediction=args.force_prediction,
+            superclasses_number=dataloaders["train_set"].n_superclasses,
+
+        )
+
+    if args.use_probabilistic_circuits:
+        print(
+            "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Jaccard Score {:.3f}, Test Hamming Score {:.3f}, Test Area under Precision-Recall Curve Raw {:.3f}".format(
+                test_loss, test_accuracy, test_jaccard, test_hamming, test_score
+            )
+        )
+
+    else:
+        print(
+            "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve raw {:.3f}, Test Area under Precision-Recall Curve const {:.3f}".format(
+                test_loss, test_accuracy, test_score_raw, test_score_const
+            )
+        )
 
     ## TRAIN ##
     # collect stats
-    (
-        _,
-        _,
-        _,
-        _,
-        statistics_predicted,
-        statistics_correct,
-        clf_report,  # classification matrix
-        y_test,  # ground-truth for multiclass classification matrix
-        y_pred,  # predited values for multiclass classification matrix
-        _,
-        _
-    ) = test_step_with_prediction_statistics(
-        net=net,
-        test_loader=iter(training_loader_with_labels_names),
-        cost_function=cost_function,
-        title="Collect Statistics [TRAIN]",
-        test=dataloaders["train"],
-        device=args.device,
-        labels_name=labels_name,
-        prediction_treshold=args.prediction_treshold,
-        force_prediction=args.force_prediction,
-        superclasses_number=dataloaders["train_set"].n_superclasses,
-    )
+    if args.use_probabilistic_circuits:
+        (
+            _,
+            _,
+            _,
+            _,
+            statistics_predicted,
+            statistics_correct,
+            clf_report,  # classification matrix
+            y_test,      # ground-truth for multiclass classification matrix
+            y_pred,      # predited values for multiclass classification matrix
+            _,
+        ) = test_step_with_prediction_statistics_with_gates(
+            net=net,
+            gate=gate,
+            cmpe=cmpe,
+            test_loader=iter(training_loader_with_labels_names),
+            title="Collect Statistics [TRAIN]",
+            test=dataloaders["train"],
+            device=args.device,
+            labels_name=labels_name,
+        )
+    else:
+        (
+            _,
+            _,
+            _,
+            _,
+            statistics_predicted,
+            statistics_correct,
+            clf_report,  # classification matrix
+            y_test,  # ground-truth for multiclass classification matrix
+            y_pred,  # predited values for multiclass classification matrix
+            _,
+            _
+        ) = test_step_with_prediction_statistics(
+            net=net,
+            test_loader=iter(training_loader_with_labels_names),
+            cost_function=cost_function,
+            title="Collect Statistics [TRAIN]",
+            test=dataloaders["train"],
+            device=args.device,
+            labels_name=labels_name,
+            prediction_treshold=args.prediction_treshold,
+            force_prediction=args.force_prediction,
+            superclasses_number=dataloaders["train_set"].n_superclasses,
+        )
 
     ## ! Confusion matrix !
     plot_global_multiLabel_confusion_matrix(
@@ -1754,30 +2140,53 @@ def main(args: Namespace) -> None:
     )
 
     # collect stats
-    (
-        _,
-        _,
-        _,
-        _,
-        statistics_predicted,
-        statistics_correct,
-        clf_report,  # classification matrix
-        y_test,  # ground-truth for multiclass classification matrix
-        y_pred,  # predited values for multiclass classification matrix
-        _,
-        _
-    ) = test_step_with_prediction_statistics(
-        net=net,
-        test_loader=iter(test_loader_with_label_names),
-        cost_function=cost_function,
-        title="Collect Statistics [TEST]",
-        test=dataloaders["test"],
-        device=args.device,
-        labels_name=labels_name,
-        prediction_treshold=args.prediction_treshold,
-        force_prediction=args.force_prediction,
-        superclasses_number=dataloaders["train_set"].n_superclasses,
-    )
+    if args.use_probabilistic_circuits:
+        (
+            _,
+            _,
+            _,
+            _,
+            statistics_predicted,
+            statistics_correct,
+            clf_report,  # classification matrix
+            y_test,      # ground-truth for multiclass classification matrix
+            y_pred,      # predited values for multiclass classification matrix
+            _,
+        ) = test_step_with_prediction_statistics_with_gates(
+            net=net,
+            gate=gate,
+            cmpe=cmpe,
+            test_loader=iter(test_loader_with_label_names),
+            title="Collect Statistics [TEST]",
+            test=dataloaders["test"],
+            device=args.device,
+            labels_name=labels_name,
+        )
+    else:
+        (
+            _,
+            _,
+            _,
+            _,
+            statistics_predicted,
+            statistics_correct,
+            clf_report,  # classification matrix
+            y_test,  # ground-truth for multiclass classification matrix
+            y_pred,  # predited values for multiclass classification matrix
+            _,
+            _
+        ) = test_step_with_prediction_statistics(
+            net=net,
+            test_loader=iter(test_loader_with_label_names),
+            cost_function=cost_function,
+            title="Collect Statistics [TEST]",
+            test=dataloaders["test"],
+            device=args.device,
+            labels_name=labels_name,
+            prediction_treshold=args.prediction_treshold,
+            force_prediction=args.force_prediction,
+            superclasses_number=dataloaders["train_set"].n_superclasses,
+        )
 
     ## confusion matrix after debug
     plot_global_multiLabel_confusion_matrix(
@@ -1821,31 +2230,54 @@ def main(args: Namespace) -> None:
         "test_accuracy",
     )
 
-    (
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        y_test,  # ground-truth for multiclass classification matrix
-        y_pred,  # predited values for multiclass classification matrix
-        _,
-        _,
-    ) = test_step_with_prediction_statistics(
-        net=net,
-        test_loader=iter(dataloaders["test_loader_only_label_confounders_with_labels_names"]),
-        cost_function=cost_function,
-        title="Computing statistics in label confoundings",
-        test=dataloaders["train"],
-        device=args.device,
-        labels_name=labels_name,
-        prediction_treshold=args.prediction_treshold,
-        force_prediction=args.force_prediction,
-        use_softmax=args.use_softmax,
-        superclasses_number=dataloaders["train_set"].n_superclasses,
-    )
+    if args.use_probabilistic_circuits:
+        (
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            y_test,      # ground-truth for multiclass classification matrix
+            y_pred,      # predited values for multiclass classification matrix
+            _,
+        ) = test_step_with_prediction_statistics_with_gates(
+            net=net,
+            gate=gate,
+            cmpe=cmpe,
+            test_loader=iter(dataloaders["test_loader_only_label_confounders_with_labels_names"]),
+            title="Computing statistics in label confoundings",
+            test=dataloaders["train"],
+            device=args.device,
+            labels_name=labels_name,
+        )
+    else:
+        (
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            y_test,  # ground-truth for multiclass classification matrix
+            y_pred,  # predited values for multiclass classification matrix
+            _,
+            _,
+        ) = test_step_with_prediction_statistics(
+            net=net,
+            test_loader=iter(dataloaders["test_loader_only_label_confounders_with_labels_names"]),
+            cost_function=cost_function,
+            title="Computing statistics in label confoundings",
+            test=dataloaders["train"],
+            device=args.device,
+            labels_name=labels_name,
+            prediction_treshold=args.prediction_treshold,
+            force_prediction=args.force_prediction,
+            use_softmax=args.use_softmax,
+            superclasses_number=dataloaders["train_set"].n_superclasses,
+        )
 
     labels_predictions_dict, counter_dict = prepare_dict_label_predictions_from_raw_predictions(y_pred, y_test, labels_name, args.dataset, True)
     plot_confounded_labels_predictions(

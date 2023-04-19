@@ -289,12 +289,13 @@ def load_dataloaders(
             or dataset_type == "fashion"
             or dataset_type == "omniglot"
         ):
-            transform_train.append(
-                torchvision.transforms.Normalize((0.1307,), (0.3081,))
-            )
-            transform_test.append(
-                torchvision.transforms.Normalize((0.1307,), (0.3081,))
-            )
+            pass
+            #  transform_train.append(
+            #      torchvision.transforms.Normalize((0.1307,), (0.3081,))
+            #  )
+            #  transform_test.append(
+            #      torchvision.transforms.Normalize((0.1307,), (0.3081,))
+            #  )
         else:
             transform_train.append(torchvision.transforms.Normalize(mean, stdev))
             transform_test.append(torchvision.transforms.Normalize(mean, stdev))
@@ -645,7 +646,8 @@ def load_dataloaders(
     training_loader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=batch_size,
-        shuffle=True,
+        #  shuffle=True,
+        shuffle=False,
         num_workers=num_workers,
     )
 

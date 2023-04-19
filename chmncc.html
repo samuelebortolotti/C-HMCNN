@@ -55,6 +55,7 @@
 <li class="toctree-l4"><a class="reference internal" href="chmncc.multi_step_argumentation.html">chmncc.multi_step_argumentation package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html">chmncc.networks package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.optimizers.html">chmncc.optimizers package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html">chmncc.probabilistic_circuits package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.revise.html">chmncc.revise package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.test.html">chmncc.test package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.train.html">chmncc.train package</a></li>
@@ -205,6 +206,12 @@
 <li class="toctree-l4"><a class="reference internal" href="chmncc.loss.html#chmncc.loss.RRR.RRRLoss.training"><code class="docutils literal notranslate"><span class="pre">RRRLoss.training</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.loss.html#chmncc.loss.RRR.RRRLossWithGate"><code class="docutils literal notranslate"><span class="pre">RRRLossWithGate</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.loss.html#chmncc.loss.RRR.RRRLossWithGate._is_full_backward_hook"><code class="docutils literal notranslate"><span class="pre">RRRLossWithGate._is_full_backward_hook</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.loss.html#chmncc.loss.RRR.RRRLossWithGate.forward"><code class="docutils literal notranslate"><span class="pre">RRRLossWithGate.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.loss.html#chmncc.loss.RRR.RRRLossWithGate.training"><code class="docutils literal notranslate"><span class="pre">RRRLossWithGate.training</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.loss.html#module-chmncc.loss">Module contents</a></li>
@@ -298,6 +305,7 @@
 <li class="toctree-l2"><a class="reference internal" href="chmncc.optimizers.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.optimizers.html#module-chmncc.optimizers.adam">chmncc.optimizers.adam module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.optimizers.html#chmncc.optimizers.adam.get_adam_optimizer"><code class="docutils literal notranslate"><span class="pre">get_adam_optimizer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.optimizers.html#chmncc.optimizers.adam.get_adam_optimizer_with_gate"><code class="docutils literal notranslate"><span class="pre">get_adam_optimizer_with_gate()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.optimizers.html#module-chmncc.optimizers.exponential">chmncc.optimizers.exponential module</a><ul>
@@ -319,10 +327,51 @@
 <li class="toctree-l2"><a class="reference internal" href="chmncc.optimizers.html#module-chmncc.optimizers">Module contents</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="chmncc.probabilistic_circuits.html">chmncc.probabilistic_circuits package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.probabilistic_circuits.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.probabilistic_circuits.html#module-chmncc.probabilistic_circuits.GatingFunction">chmncc.probabilistic_circuits.GatingFunction module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction"><code class="docutils literal notranslate"><span class="pre">DenseGatingFunction</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction._is_full_backward_hook"><code class="docutils literal notranslate"><span class="pre">DenseGatingFunction._is_full_backward_hook</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction.forward"><code class="docutils literal notranslate"><span class="pre">DenseGatingFunction.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction.init_weights"><code class="docutils literal notranslate"><span class="pre">DenseGatingFunction.init_weights()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction.initialize"><code class="docutils literal notranslate"><span class="pre">DenseGatingFunction.initialize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction.training"><code class="docutils literal notranslate"><span class="pre">DenseGatingFunction.training</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.probabilistic_circuits.html#module-chmncc.probabilistic_circuits.compute_mpe">chmncc.probabilistic_circuits.compute_mpe module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE"><code class="docutils literal notranslate"><span class="pre">CircuitMPE</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.Shannon_entropy"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.Shannon_entropy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.Shannon_entropy_stable"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.Shannon_entropy_stable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.compute_mpe_inst"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.compute_mpe_inst()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.cross_entropy"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.cross_entropy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.cross_entropy_psdd"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.cross_entropy_psdd()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.entropy_kld"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.entropy_kld()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.generate_torch_ac_stable"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.generate_torch_ac_stable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_models"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.get_models()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_mpe_inst"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.get_mpe_inst()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_norm_ac"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.get_norm_ac()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_tf_ac"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.get_tf_ac()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_torch_ac"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.get_torch_ac()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.overparameterize"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.overparameterize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.plot_circuit"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.plot_circuit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.pr_inst"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.pr_inst()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.rand_params"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.rand_params()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.set_params"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.set_params()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.weighted_model_count"><code class="docutils literal notranslate"><span class="pre">CircuitMPE.weighted_model_count()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="chmncc.probabilistic_circuits.html#module-chmncc.probabilistic_circuits">Module contents</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="chmncc.revise.html">chmncc.revise package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.revise.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.revise.html#module-chmncc.revise.revise">chmncc.revise.revise module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.revise.html#chmncc.revise.revise.revise_step"><code class="docutils literal notranslate"><span class="pre">revise_step()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.revise.html#chmncc.revise.revise.revise_step_with_gates"><code class="docutils literal notranslate"><span class="pre">revise_step_with_gates()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.revise.html#chmncc.revise.revise.show_computational_graph"><code class="docutils literal notranslate"><span class="pre">show_computational_graph()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.revise.html#chmncc.revise.revise.show_gradient_behavior"><code class="docutils literal notranslate"><span class="pre">show_gradient_behavior()</span></code></a></li>
 </ul>
@@ -333,8 +382,10 @@
 <li class="toctree-l1"><a class="reference internal" href="chmncc.test.html">chmncc.test package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.test.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.test.html#module-chmncc.test.test">chmncc.test.test module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.test.html#chmncc.test.test.test_circuit"><code class="docutils literal notranslate"><span class="pre">test_circuit()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.test.html#chmncc.test.test.test_step"><code class="docutils literal notranslate"><span class="pre">test_step()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.test.html#chmncc.test.test.test_step_with_prediction_statistics"><code class="docutils literal notranslate"><span class="pre">test_step_with_prediction_statistics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.test.html#chmncc.test.test.test_step_with_prediction_statistics_with_gates"><code class="docutils literal notranslate"><span class="pre">test_step_with_prediction_statistics_with_gates()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.test.html#chmncc.test.test.tr_image"><code class="docutils literal notranslate"><span class="pre">tr_image()</span></code></a></li>
 </ul>
 </li>
@@ -345,6 +396,7 @@
 <li class="toctree-l2"><a class="reference internal" href="chmncc.train.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.train.html#module-chmncc.train.train">chmncc.train.train module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.train.html#chmncc.train.train.training_step"><code class="docutils literal notranslate"><span class="pre">training_step()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.train.html#chmncc.train.train.training_step_with_gate"><code class="docutils literal notranslate"><span class="pre">training_step_with_gate()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="chmncc.train.html#module-chmncc.train">Module contents</a></li>
@@ -379,6 +431,8 @@
 <li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.plot_confusion_matrix_statistics"><code class="docutils literal notranslate"><span class="pre">plot_confusion_matrix_statistics()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.plot_global_multiLabel_confusion_matrix"><code class="docutils literal notranslate"><span class="pre">plot_global_multiLabel_confusion_matrix()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.prepare_dict_label_predictions_from_raw_predictions"><code class="docutils literal notranslate"><span class="pre">prepare_dict_label_predictions_from_raw_predictions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.prepare_empty_probabilistic_circuit"><code class="docutils literal notranslate"><span class="pre">prepare_empty_probabilistic_circuit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.prepare_probabilistic_circuit"><code class="docutils literal notranslate"><span class="pre">prepare_probabilistic_circuit()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.resume_training"><code class="docutils literal notranslate"><span class="pre">resume_training()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.split"><code class="docutils literal notranslate"><span class="pre">split()</span></code></a></li>
 </ul>

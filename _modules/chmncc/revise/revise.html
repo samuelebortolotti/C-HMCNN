@@ -76,12 +76,19 @@
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span>
 <span class="kn">from</span> <span class="nn">chmncc.utils</span> <span class="kn">import</span> <span class="n">get_constr_out</span><span class="p">,</span> <span class="n">force_prediction_from_batch</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
-<span class="kn">from</span> <span class="nn">chmncc.loss</span> <span class="kn">import</span> <span class="n">RRRLoss</span><span class="p">,</span> <span class="n">IGRRRLoss</span>
-<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">average_precision_score</span>
+<span class="kn">from</span> <span class="nn">chmncc.loss</span> <span class="kn">import</span> <span class="n">RRRLoss</span><span class="p">,</span> <span class="n">IGRRRLoss</span><span class="p">,</span> <span class="n">RRRLossWithGate</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">average_precision_score</span><span class="p">,</span>
+    <span class="n">hamming_loss</span><span class="p">,</span>
+    <span class="n">jaccard_score</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">matplotlib.lines</span> <span class="kn">import</span> <span class="n">Line2D</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">from</span> <span class="nn">torchviz</span> <span class="kn">import</span> <span class="n">make_dot</span>
 <span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="kn">from</span> <span class="nn">chmncc.probabilistic_circuits.GatingFunction</span> <span class="kn">import</span> <span class="n">DenseGatingFunction</span>
+<span class="kn">from</span> <span class="nn">chmncc.probabilistic_circuits.compute_mpe</span> <span class="kn">import</span> <span class="n">CircuitMPE</span>
 
 
 <div class="viewcode-block" id="show_computational_graph"><a class="viewcode-back" href="../../../chmncc.revise.html#chmncc.revise.revise.show_computational_graph">[docs]</a><span class="k">def</span> <span class="nf">show_computational_graph</span><span class="p">(</span>
@@ -377,6 +384,175 @@
         <span class="kc">None</span>
         <span class="k">if</span> <span class="n">cumulative_loss_children</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="k">else</span> <span class="n">cumulative_loss_children</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">debug_loader</span><span class="p">),</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="revise_step_with_gates"><a class="viewcode-back" href="../../../chmncc.revise.html#chmncc.revise.revise.revise_step_with_gates">[docs]</a><span class="k">def</span> <span class="nf">revise_step_with_gates</span><span class="p">(</span>
+    <span class="n">net</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+    <span class="n">gate</span><span class="p">:</span> <span class="n">DenseGatingFunction</span><span class="p">,</span>
+    <span class="n">cmpe</span><span class="p">:</span> <span class="n">CircuitMPE</span><span class="p">,</span>
+    <span class="n">debug_loader</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">,</span>
+    <span class="n">train</span><span class="p">:</span> <span class="n">dotdict</span><span class="p">,</span>
+    <span class="n">R</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">optimizer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">,</span>
+    <span class="n">revive_function</span><span class="p">:</span> <span class="n">RRRLossWithGate</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
+    <span class="n">have_to_train</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Revise step of the network. It integrates the user feedback and revise the network by the means</span>
+<span class="sd">    of the RRRLoss.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        epoch_number [int]: epoch number</span>
+<span class="sd">        net [nn.Module] network on device</span>
+<span class="sd">        debug_loader [torch.utils.data.DataLoader]: debug loader</span>
+<span class="sd">        train [dotdict]: training set dictionary</span>
+<span class="sd">        R [torch.Tensor]: adjency matrix</span>
+<span class="sd">        optimizer [torch.optim.Optimizer]: optimizer</span>
+<span class="sd">        revive_function [Union[IGRRRLoss, RRRLoss]]: revive function (RRR loss)</span>
+<span class="sd">        title [str]: title for tqdm</span>
+<span class="sd">        folder_where_to_save [str]: where to save the data</span>
+<span class="sd">        device [str]: on which device to run the experiment [default: cuda]</span>
+<span class="sd">        have_to_train [bool]: whether to train or not the model</span>
+<span class="sd">        gradient_analysis [bool]: whether to analyze the gradients by means of plots</span>
+<span class="sd">        prediction_treshold [float]: threshold used to consider a class as predicted</span>
+<span class="sd">        force_prediction [bool]: force prediction</span>
+<span class="sd">        use_softmax [bool] = False: whether to use softmax</span>
+<span class="sd">        superclasses_number [int] = 20: superclass number</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        loss [float]</span>
+<span class="sd">        right_answer_loss [float]: error considering the training loss</span>
+<span class="sd">        right_reason_loss [float]: error considering the penalty on the wrong focus of the model</span>
+<span class="sd">        accuracy [float]: accuracy of the model in percentage</span>
+<span class="sd">        score [float]: area under the precision/recall curve raw</span>
+<span class="sd">        score [float]: area under the precision/recall curve const</span>
+<span class="sd">        right_reason_loss_confounded [float]: cumulative right_reason_loss divided over the number of confounded samples</span>
+<span class="sd">        rigth_answer_parent [Optional[float]] right answer for the parent</span>
+<span class="sd">        rigth_answer_children [Optional[float]] right answer for the children</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">comulative_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">cumulative_accuracy</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">cumulative_right_answer_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">cumulative_right_reason_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">confounded_samples</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># set the network to training mode</span>
+    <span class="k">if</span> <span class="n">have_to_train</span><span class="p">:</span>
+        <span class="n">net</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+        <span class="n">gate</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">net</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+        <span class="n">gate</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">inputs</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span>
+        <span class="nb">enumerate</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="n">debug_loader</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5000</span><span class="p">)),</span> <span class="n">desc</span><span class="o">=</span><span class="n">title</span>
+    <span class="p">):</span>
+        <span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">ground_truth</span><span class="p">,</span> <span class="n">confounder_mask</span><span class="p">,</span> <span class="n">confounded</span><span class="p">,</span> <span class="n">superc</span><span class="p">,</span> <span class="n">subc</span><span class="p">)</span> <span class="o">=</span> <span class="n">inputs</span>
+
+        <span class="c1"># load data into device</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">sample</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># ground_truth element</span>
+        <span class="n">ground_truth</span> <span class="o">=</span> <span class="n">ground_truth</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="c1"># confounder mask</span>
+        <span class="n">confounder_mask</span> <span class="o">=</span> <span class="n">confounder_mask</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="c1"># confounded</span>
+        <span class="n">confounded</span> <span class="o">=</span> <span class="n">confounded</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="c1"># gradients reset</span>
+        <span class="k">if</span> <span class="n">have_to_train</span><span class="p">:</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+
+        <span class="c1"># output</span>
+        <span class="n">outputs</span> <span class="o">=</span> <span class="n">net</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
+        <span class="n">thetas</span> <span class="o">=</span> <span class="n">gate</span><span class="p">(</span><span class="n">outputs</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
+        <span class="n">cmpe</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">thetas</span><span class="p">)</span>
+        <span class="n">predicted</span> <span class="o">=</span> <span class="p">(</span><span class="n">cmpe</span><span class="o">.</span><span class="n">get_mpe_inst</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+
+        <span class="c1"># general prediction loss computation</span>
+        <span class="c1"># MCLoss (their loss)</span>
+        <span class="n">constr_output</span> <span class="o">=</span> <span class="n">get_constr_out</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">R</span><span class="p">)</span>
+        <span class="n">train_output</span> <span class="o">=</span> <span class="n">ground_truth</span> <span class="o">*</span> <span class="n">outputs</span><span class="o">.</span><span class="n">double</span><span class="p">()</span>
+        <span class="n">train_output</span> <span class="o">=</span> <span class="n">get_constr_out</span><span class="p">(</span><span class="n">train_output</span><span class="p">,</span> <span class="n">R</span><span class="p">)</span>
+        <span class="n">train_output</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="mi">1</span> <span class="o">-</span> <span class="n">ground_truth</span>
+        <span class="p">)</span> <span class="o">*</span> <span class="n">constr_output</span><span class="o">.</span><span class="n">double</span><span class="p">()</span> <span class="o">+</span> <span class="n">ground_truth</span> <span class="o">*</span> <span class="n">train_output</span>
+
+        <span class="c1"># get the loss masking the prediction on the root -&gt; confunder</span>
+        <span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="n">right_answer_loss</span><span class="p">,</span> <span class="n">right_reason_loss</span><span class="p">,)</span> <span class="o">=</span> <span class="n">revive_function</span><span class="p">(</span>
+            <span class="n">thetas</span><span class="o">=</span><span class="n">thetas</span><span class="p">,</span>
+            <span class="n">X</span><span class="o">=</span><span class="n">sample</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">ground_truth</span><span class="p">,</span>
+            <span class="n">expl</span><span class="o">=</span><span class="n">confounder_mask</span><span class="p">,</span>
+            <span class="n">logits</span><span class="o">=</span><span class="n">train_output</span><span class="p">,</span>
+            <span class="n">confounded</span><span class="o">=</span><span class="n">confounded</span><span class="p">,</span>
+            <span class="n">to_eval</span><span class="o">=</span><span class="n">train</span><span class="o">.</span><span class="n">to_eval</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># compute the amount of confounded samples</span>
+        <span class="n">confounded_samples</span> <span class="o">+=</span> <span class="n">confounded</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+        <span class="c1"># compute training accuracy</span>
+        <span class="n">cumulative_accuracy</span> <span class="o">+=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">ground_truth</span><span class="o">.</span><span class="n">byte</span><span class="p">())</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+        <span class="c1"># for calculating loss, acc per epoch</span>
+        <span class="n">comulative_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">cumulative_right_answer_loss</span> <span class="o">+=</span> <span class="n">right_answer_loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">cumulative_right_reason_loss</span> <span class="o">+=</span> <span class="n">right_reason_loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">have_to_train</span><span class="p">:</span>
+            <span class="c1"># backward pass</span>
+            <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+            <span class="c1"># optimizer</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+        <span class="c1"># compute the au(prc)</span>
+        <span class="n">predicted</span> <span class="o">=</span> <span class="n">predicted</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+        <span class="n">ground_truth</span> <span class="o">=</span> <span class="n">ground_truth</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">predicted_train</span> <span class="o">=</span> <span class="n">predicted</span>
+            <span class="n">y_test</span> <span class="o">=</span> <span class="n">ground_truth</span>
+            <span class="n">output_train</span> <span class="o">=</span> <span class="n">train_output</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">predicted_train</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">predicted_train</span><span class="p">,</span> <span class="n">predicted</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">output_train</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">output_train</span><span class="p">,</span> <span class="n">train_output</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span>
+            <span class="n">y_test</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">y_test</span><span class="p">,</span> <span class="n">ground_truth</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># TODO force exit</span>
+        <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">break</span>
+
+    <span class="n">y_test</span> <span class="o">=</span> <span class="n">y_test</span><span class="p">[:,</span> <span class="n">train</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
+    <span class="n">predicted_train</span> <span class="o">=</span> <span class="n">predicted_train</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">train</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+    <span class="n">output_train</span> <span class="o">=</span> <span class="n">output_train</span><span class="p">[:,</span> <span class="n">train</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
+
+    <span class="c1"># jaccard score</span>
+    <span class="n">jaccard</span> <span class="o">=</span> <span class="n">jaccard_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">predicted_train</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s2">&quot;micro&quot;</span><span class="p">)</span>
+    <span class="c1"># hamming score</span>
+    <span class="n">hamming</span> <span class="o">=</span> <span class="n">hamming_loss</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">predicted_train</span><span class="p">)</span>
+    <span class="c1"># average precision score</span>
+    <span class="n">auprc_score</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># average_precision_score(y_test, output_train, average=&quot;micro&quot;)</span>
+    <span class="c1"># accuracy</span>
+    <span class="n">accuracy</span> <span class="o">=</span> <span class="n">cumulative_accuracy</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_test</span><span class="p">)</span>
+
+    <span class="c1"># confounded samples</span>
+    <span class="k">if</span> <span class="n">confounded_samples</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">confounded_samples</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">comulative_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">debug_loader</span><span class="p">),</span>
+        <span class="n">cumulative_right_answer_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">debug_loader</span><span class="p">),</span>
+        <span class="n">cumulative_right_reason_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">debug_loader</span><span class="p">),</span>
+        <span class="n">cumulative_right_reason_loss</span> <span class="o">/</span> <span class="n">confounded_samples</span><span class="p">,</span>
+        <span class="n">accuracy</span><span class="p">,</span>
+        <span class="n">auprc_score</span><span class="p">,</span>
+        <span class="n">hamming</span><span class="p">,</span>
+        <span class="n">jaccard</span><span class="p">,</span>
     <span class="p">)</span></div>
 </pre></div>
 

@@ -55,6 +55,7 @@
 <li class="toctree-l4"><a class="reference internal" href="chmncc.multi_step_argumentation.html">chmncc.multi_step_argumentation package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.networks.html">chmncc.networks package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.optimizers.html">chmncc.optimizers package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.probabilistic_circuits.html">chmncc.probabilistic_circuits package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.revise.html">chmncc.revise package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.test.html">chmncc.test package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.train.html">chmncc.train package</a></li>
@@ -173,6 +174,42 @@ DOI: <a class="reference external" href="https://arxiv.org/abs/2203.03668">https
 <dl class="py attribute">
 <dt class="sig sig-object py" id="chmncc.loss.RRR.RRRLoss.training">
 <span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#chmncc.loss.RRR.RRRLoss.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="chmncc.loss.RRR.RRRLossWithGate">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.loss.RRR.</span></span><span class="sig-name descname"><span class="pre">RRRLossWithGate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">net</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction" title="chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction"><span class="pre">DenseGatingFunction</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmpe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE" title="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE"><span class="pre">CircuitMPE</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularizer_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rr_clipping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/loss/RRR.html#RRRLossWithGate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.loss.RRR.RRRLossWithGate" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Right for the Right Reason loss (RRR) as proposed by Ross et. al (2017) with minor changes.
+See <a class="reference external" href="https://arxiv.org/abs/1703.03717">https://arxiv.org/abs/1703.03717</a>.
+The RRR loss calculates the Input Gradients as prediction explanation and compares it
+with the (ground-truth) user explanation.
+Taken from <a class="reference external" href="https://github.com/ml-research/A-Typology-to-Explore-and-Guide-Explanatory-Interactive-Machine-Learning/blob/main/xil_methods/xil_loss.py">https://github.com/ml-research/A-Typology-to-Explore-and-Guide-Explanatory-Interactive-Machine-Learning/blob/main/xil_methods/xil_loss.py</a>
+DOI: <a class="reference external" href="https://arxiv.org/abs/2203.03668">https://arxiv.org/abs/2203.03668</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.loss.RRR.RRRLossWithGate._is_full_backward_hook">
+<span class="sig-name descname"><span class="pre">_is_full_backward_hook</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#chmncc.loss.RRR.RRRLossWithGate._is_full_backward_hook" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="chmncc.loss.RRR.RRRLossWithGate.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">thetas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confounded</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_eval</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/loss/RRR.html#RRRLossWithGate.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.loss.RRR.RRRLossWithGate.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Returns (loss, right_answer_loss, right_reason_loss, right_answer_parent, right_answer_children)
+:param X: inputs.
+:param y: ground-truth labels.
+:param expl: explanation annotations masks (ones penalize regions) [is basically the annotation matrix]
+:param logits: model output logits.
+:param confounded: whether the sampleis confounded
+:param use_softmax: use softmax for the predictions
+:param to_eval: evaluation
+:param superclasses_number=20: superclass number</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="chmncc.loss.RRR.RRRLossWithGate.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#chmncc.loss.RRR.RRRLossWithGate.training" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

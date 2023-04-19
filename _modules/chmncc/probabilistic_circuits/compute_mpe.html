@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>chmncc.probabilistic_circuits.compute_mpe &mdash; chmncc 0.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            chmncc
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">chmncc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">chmncc</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">chmncc.probabilistic_circuits.compute_mpe</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for chmncc.probabilistic_circuits.compute_mpe</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;pypsdd&quot;</span><span class="p">))</span>
+
+<span class="kn">import</span> <span class="nn">graphviz</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+<span class="kn">from</span> <span class="nn">pypsdd</span> <span class="kn">import</span> <span class="n">Vtree</span><span class="p">,</span> <span class="n">SddManager</span><span class="p">,</span> <span class="n">PSddManager</span><span class="p">,</span> <span class="n">SddNode</span><span class="p">,</span> <span class="n">Inst</span><span class="p">,</span> <span class="n">io</span>
+<span class="kn">from</span> <span class="nn">pypsdd</span> <span class="kn">import</span> <span class="n">UniformSmoothing</span><span class="p">,</span> <span class="n">Prior</span>
+
+<span class="sd">&quot;&quot;&quot; This is the main way in which SDDs should be used to compute semantic loss.</span>
+<span class="sd">Construct an instance from a given SDD and vtree file, and then use the available</span>
+<span class="sd">functions for computing the most probable explanation, weighted model count, or</span>
+<span class="sd">constructing a tensorflow circuit for integrating semantic loss into a project.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="CircuitMPE"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE">[docs]</a><span class="k">class</span> <span class="nc">CircuitMPE</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vtree_filename</span><span class="p">,</span> <span class="n">sdd_filename</span><span class="p">):</span>
+        <span class="c1"># Load the Sdd</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vtree</span> <span class="o">=</span> <span class="n">Vtree</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">vtree_filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_circuit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vtree</span><span class="p">,</span> <span class="s2">&quot;constraints&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">manager</span> <span class="o">=</span> <span class="n">SddManager</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vtree</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">sdd_read</span><span class="p">(</span><span class="n">sdd_filename</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="p">)</span>
+
+        <span class="c1"># Convert to psdd</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmanager</span> <span class="o">=</span> <span class="n">PSddManager</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vtree</span><span class="p">)</span>
+
+        <span class="c1"># Storing psdd</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmanager</span><span class="o">.</span><span class="n">copy_and_normalize_sdd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vtree</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CircuitMPE.overparameterize"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.overparameterize">[docs]</a>    <span class="k">def</span> <span class="nf">overparameterize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">S</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">overparameterize</span><span class="p">(</span><span class="n">S</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CircuitMPE.rand_params"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.rand_params">[docs]</a>    <span class="k">def</span> <span class="nf">rand_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">rand_parameters</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="CircuitMPE.set_params"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.set_params">[docs]</a>    <span class="k">def</span> <span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thetas</span><span class="p">,</span> <span class="n">log_space</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+        <span class="c1"># self.beta.mixing = thetas[-1].log_softmax(dim=1) if log_space else thetas[-1].softmax(dim=1)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">mixing</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">thetas</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">log_space</span> <span class="k">else</span> <span class="n">thetas</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">root_mixing</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">thetas</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">log_space</span> <span class="k">else</span> <span class="n">thetas</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">theta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">root_mixing</span>
+        <span class="c1"># self.beta.num_branches is an ordered dict of num_children: [sum_nodes]</span>
+        <span class="k">for</span> <span class="n">theta</span><span class="p">,</span> <span class="n">grouping</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">thetas</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">num_branches</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+
+            <span class="c1"># (batch_size x num_sum_nodes x num_children, K)</span>
+            <span class="c1"># -&gt; (num_sum_nodes x batch_size x num_children, K)</span>
+            <span class="k">assert</span> <span class="n">theta</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">grouping</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="ow">and</span> <span class="n">theta</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="n">grouping</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">log_space</span><span class="p">:</span>
+                <span class="n">theta</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">grouping</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">grouping</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+
+                <span class="c1"># shape: (batch_size x num_children, K)</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">theta</span> <span class="o">=</span> <span class="n">param</span></div>
+
+<div class="viewcode-block" id="CircuitMPE.compute_mpe_inst"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.compute_mpe_inst">[docs]</a>    <span class="k">def</span> <span class="nf">compute_mpe_inst</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lit_weights</span><span class="p">,</span> <span class="n">binary_encoding</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">mpe_inst</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">get_weighted_mpe</span><span class="p">(</span><span class="n">lit_weights</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">binary_encoding</span><span class="p">:</span>
+            <span class="c1"># Sort by variable, but ignoring negatives</span>
+            <span class="n">mpe_inst</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+            <span class="k">return</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">mpe_inst</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mpe_inst</span></div>
+
+<div class="viewcode-block" id="CircuitMPE.get_mpe_inst"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_mpe_inst">[docs]</a>    <span class="k">def</span> <span class="nf">get_mpe_inst</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+        <span class="n">mpe_inst</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">get_mpe</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="n">argmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">mixing</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mpe_inst</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">batch_size</span><span class="p">),</span> <span class="p">:,</span> <span class="n">argmax</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="CircuitMPE.weighted_model_count"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.weighted_model_count">[docs]</a>    <span class="k">def</span> <span class="nf">weighted_model_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lit_weights</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">weighted_model_count</span><span class="p">(</span><span class="n">lit_weights</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CircuitMPE.get_norm_ac"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_norm_ac">[docs]</a>    <span class="k">def</span> <span class="nf">get_norm_ac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">litleaves</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">generate_normalized_ac</span><span class="p">(</span><span class="n">litleaves</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CircuitMPE.get_tf_ac"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_tf_ac">[docs]</a>    <span class="k">def</span> <span class="nf">get_tf_ac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">litleaves</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">generate_tf_ac</span><span class="p">(</span><span class="n">litleaves</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CircuitMPE.get_torch_ac"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_torch_ac">[docs]</a>    <span class="k">def</span> <span class="nf">get_torch_ac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">litleaves</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">generate_normalized_torch_ac</span><span class="p">(</span><span class="n">litleaves</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CircuitMPE.generate_torch_ac_stable"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.generate_torch_ac_stable">[docs]</a>    <span class="k">def</span> <span class="nf">generate_torch_ac_stable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">litleaves</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">generate_normalized_torch_ac_stable</span><span class="p">(</span><span class="n">litleaves</span><span class="p">)</span></div>
+
+    <span class="c1"># Mainly used for debugging purposes</span>
+<div class="viewcode-block" id="CircuitMPE.pr_inst"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.pr_inst">[docs]</a>    <span class="k">def</span> <span class="nf">pr_inst</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inst</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">pr_inst</span><span class="p">(</span><span class="n">inst</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CircuitMPE.entropy_kld"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.entropy_kld">[docs]</a>    <span class="k">def</span> <span class="nf">entropy_kld</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">math</span>
+
+        <span class="n">pmanager</span> <span class="o">=</span> <span class="n">PSddManager</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vtree</span><span class="p">)</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">pmanager</span><span class="o">.</span><span class="n">copy_and_normalize_sdd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vtree</span><span class="p">)</span>
+        <span class="n">prior</span> <span class="o">=</span> <span class="n">UniformSmoothing</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">prior</span><span class="o">.</span><span class="n">initialize_psdd</span><span class="p">(</span><span class="n">gamma</span><span class="p">)</span>
+
+        <span class="c1"># log model_count(beta) - ent(beta)</span>
+        <span class="n">kld</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">kl_psdd</span><span class="p">(</span><span class="n">gamma</span><span class="p">)</span>
+        <span class="n">mc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">model_count</span><span class="p">()</span>
+        <span class="n">entropy</span> <span class="o">=</span> <span class="o">-</span><span class="n">kld</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">mc</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">entropy</span></div>
+
+<div class="viewcode-block" id="CircuitMPE.Shannon_entropy"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.Shannon_entropy">[docs]</a>    <span class="k">def</span> <span class="nf">Shannon_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">litleaves</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">Shannon_entropy</span><span class="p">(</span><span class="n">litleaves</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CircuitMPE.Shannon_entropy_stable"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.Shannon_entropy_stable">[docs]</a>    <span class="k">def</span> <span class="nf">Shannon_entropy_stable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">Shannon_entropy_stable</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="CircuitMPE.get_models"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_models">[docs]</a>    <span class="k">def</span> <span class="nf">get_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">models</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vtree</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CircuitMPE.cross_entropy"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.cross_entropy">[docs]</a>    <span class="k">def</span> <span class="nf">cross_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">log_space</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="c1">#  print(&quot;Target&quot;, target)</span>
+        <span class="c1">#  print(type(self.beta))</span>
+        <span class="c1">#  print(self.beta)</span>
+        <span class="n">ll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">ll</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">log_space</span><span class="o">=</span><span class="n">log_space</span><span class="p">)</span>
+        <span class="c1">#  print(&quot;First&quot;, ll)</span>
+        <span class="n">ll</span> <span class="o">=</span> <span class="p">(</span><span class="n">ll</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">mixing</span><span class="p">)</span><span class="o">.</span><span class="n">logsumexp</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1">#  print(&quot;Second&quot;, ll)</span>
+        <span class="c1">#  exit(0)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">ll</span></div>
+
+<div class="viewcode-block" id="CircuitMPE.cross_entropy_psdd"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.cross_entropy_psdd">[docs]</a>    <span class="k">def</span> <span class="nf">cross_entropy_psdd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">(</span><span class="n">target</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CircuitMPE.plot_circuit"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.plot_circuit">[docs]</a>    <span class="k">def</span> <span class="nf">plot_circuit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v_tree</span><span class="p">:</span> <span class="n">Vtree</span><span class="p">,</span> <span class="n">folder</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">graph</span> <span class="o">=</span> <span class="n">graphviz</span><span class="o">.</span><span class="n">Digraph</span><span class="p">(</span><span class="s2">&quot;prob-circuit&quot;</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Probabilistic Circuit&quot;</span><span class="p">)</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">el</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">v_tree</span><span class="p">]</span>
+        <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">el</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">:</span>
+            <span class="n">graph</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">el</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">():</span>
+                <span class="n">graph</span><span class="o">.</span><span class="n">edge</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">el</span><span class="o">.</span><span class="n">id</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">el</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+                <span class="n">graph</span><span class="o">.</span><span class="n">edge</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">el</span><span class="o">.</span><span class="n">id</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">el</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+        <span class="n">graph</span><span class="o">.</span><span class="n">format</span> <span class="o">=</span> <span class="s2">&quot;png&quot;</span>
+        <span class="n">graph</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">folder</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span></div></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">torch</span>
+    <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">log</span>
+
+    <span class="n">torch</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Testing overparameterization</span>
+    <span class="kn">import</span> <span class="nn">pysdd.sdd</span> <span class="k">as</span> <span class="nn">pysdd</span>
+
+    <span class="n">mgr</span> <span class="o">=</span> <span class="n">pysdd</span><span class="o">.</span><span class="n">SddManager</span><span class="p">(</span><span class="n">var_count</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">mgr</span><span class="o">.</span><span class="n">true</span><span class="p">()</span>
+    <span class="n">vtree</span> <span class="o">=</span> <span class="n">pysdd</span><span class="o">.</span><span class="n">Vtree</span><span class="p">(</span>
+        <span class="n">var_count</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">var_order</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">vtree_type</span><span class="o">=</span><span class="s2">&quot;balanced&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">alpha</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;abc_true.sdd&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+    <span class="n">vtree</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;abc_true.vtree&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+
+    <span class="n">cmpe</span> <span class="o">=</span> <span class="n">CircuitMPE</span><span class="p">(</span><span class="s2">&quot;abc_true.vtree&quot;</span><span class="p">,</span> <span class="s2">&quot;abc_true.sdd&quot;</span><span class="p">)</span>
+    <span class="n">nodes</span> <span class="o">=</span> <span class="n">cmpe</span><span class="o">.</span><span class="n">overparameterize</span><span class="p">()</span>
+    <span class="kn">import</span> <span class="nn">pdb</span>
+
+    <span class="n">pdb</span><span class="o">.</span><span class="n">set_trace</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="n">cmpe</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">weighted_model_count</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]])</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">io</span><span class="o">.</span><span class="n">psdd_save_as_dot</span><span class="p">(</span><span class="n">cmpe</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="s2">&quot;abc_true.dot&quot;</span><span class="p">)</span>
+    <span class="n">exit</span><span class="p">()</span>
+
+    <span class="c1"># Testing nll</span>
+    <span class="kn">import</span> <span class="nn">pysdd.sdd</span> <span class="k">as</span> <span class="nn">pysdd</span>  <span class="c1"># import Vtree, SddManager, WmcManager, Fnf</span>
+
+    <span class="n">mgr</span> <span class="o">=</span> <span class="n">pysdd</span><span class="o">.</span><span class="n">SddManager</span><span class="p">(</span><span class="n">var_count</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="p">(</span><span class="n">mgr</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">mgr</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">|</span> <span class="p">(</span><span class="n">mgr</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">mgr</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+
+    <span class="c1"># Saving circuit &amp; vtree to disk</span>
+    <span class="n">alpha</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;./abcd.sdd&quot;</span><span class="p">))</span>
+    <span class="n">vtree</span> <span class="o">=</span> <span class="n">alpha</span><span class="o">.</span><span class="n">vtree</span><span class="p">()</span>
+    <span class="n">vtree</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;./abcd.vtree&quot;</span><span class="p">))</span>
+    <span class="n">cmpe</span> <span class="o">=</span> <span class="n">CircuitMPE</span><span class="p">(</span><span class="s2">&quot;./abcd.vtree&quot;</span><span class="p">,</span> <span class="s2">&quot;./abcd.sdd&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">cmpe</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">as_positive_list</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">is_decomposition</span><span class="p">()</span> <span class="ow">or</span> <span class="n">node</span><span class="o">.</span><span class="n">is_true</span><span class="p">():</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">theta</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]])</span>
+    <span class="n">nll</span> <span class="o">=</span> <span class="n">cmpe</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]))</span>
+    <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">nll</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">3.4657</span><span class="p">),</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-05</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">cmpe</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">as_positive_list</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">is_decomposition</span><span class="p">()</span> <span class="ow">or</span> <span class="n">node</span><span class="o">.</span><span class="n">is_true</span><span class="p">():</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">theta</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">]])</span>
+    <span class="n">nll</span> <span class="o">=</span> <span class="n">cmpe</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]))</span>
+    <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">nll</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">6.6609</span><span class="p">),</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-05</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">cmpe</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">as_positive_list</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">is_decomposition</span><span class="p">()</span> <span class="ow">or</span> <span class="n">node</span><span class="o">.</span><span class="n">is_true</span><span class="p">():</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">theta</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]])</span>
+    <span class="n">nll</span> <span class="o">=</span> <span class="n">cmpe</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]))</span>
+    <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">nll</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;nll all good&quot;</span><span class="p">)</span>
+    <span class="n">exit</span><span class="p">()</span>
+
+    <span class="n">vtree</span> <span class="o">=</span> <span class="n">Vtree</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">&quot;abcd_constraint.vtree&quot;</span><span class="p">)</span>
+    <span class="n">manager</span> <span class="o">=</span> <span class="n">SddManager</span><span class="p">(</span><span class="n">vtree</span><span class="p">)</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">sdd_read</span><span class="p">(</span><span class="s2">&quot;abcd_constraint.sdd&quot;</span><span class="p">,</span> <span class="n">manager</span><span class="p">)</span>
+
+    <span class="c1"># Convert to psdd</span>
+    <span class="n">pmanager</span> <span class="o">=</span> <span class="n">PSddManager</span><span class="p">(</span><span class="n">vtree</span><span class="p">)</span>
+
+    <span class="c1"># Storing psdd</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="n">pmanager</span><span class="o">.</span><span class="n">copy_and_normalize_sdd</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">vtree</span><span class="p">)</span>
+    <span class="n">prior</span> <span class="o">=</span> <span class="n">UniformSmoothing</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">prior</span><span class="o">.</span><span class="n">initialize_psdd</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
+
+    <span class="c1"># An sdd for the formula (a &amp; b) | (c &amp; d)</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">CircuitMPE</span><span class="p">(</span><span class="s2">&quot;abcd_constraint.vtree&quot;</span><span class="p">,</span> <span class="s2">&quot;abcd_constraint.sdd&quot;</span><span class="p">)</span>
+
+    <span class="c1"># literal weights are of the form [[-a, a], [-b, b], [-c, c], [-d, d]]</span>
+    <span class="n">lit_weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+        <span class="p">[[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">]],</span>
+        <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">current_device</span><span class="p">(),</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Weighted model counts of both the normalized and unnormalized circuits</span>
+    <span class="n">wmc</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get_norm_ac</span><span class="p">(</span><span class="n">lit_weights</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">entropy_kld</span><span class="p">())</span>
+
+    <span class="c1"># Test 1</span>
+    <span class="c1"># An sdd for the formula (a &amp; b) | (c &amp; d)</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">CircuitMPE</span><span class="p">(</span><span class="s2">&quot;abcd_constraint.vtree&quot;</span><span class="p">,</span> <span class="s2">&quot;abcd_constraint.sdd&quot;</span><span class="p">)</span>
+
+    <span class="c1"># literal weights are of the form [[-a, a], [-b, b], [-c, c], [-d, d]]</span>
+    <span class="n">lit_weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+        <span class="p">[[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">]],</span>
+        <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">current_device</span><span class="p">(),</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Weighted model counts of both the normalized and unnormalized circuits</span>
+    <span class="n">wmc</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get_tf_ac</span><span class="p">(</span><span class="n">lit_weights</span><span class="p">)</span>
+    <span class="n">wmc_normalized</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get_torch_ac</span><span class="p">(</span><span class="n">lit_weights</span><span class="p">)</span>
+
+    <span class="c1"># assert the wmc of the normalized and unnormalized circuits match</span>
+    <span class="k">assert</span> <span class="n">c</span><span class="o">.</span><span class="n">get_tf_ac</span><span class="p">(</span><span class="n">lit_weights</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.0976</span>
+    <span class="k">assert</span> <span class="n">c</span><span class="o">.</span><span class="n">get_torch_ac</span><span class="p">(</span><span class="n">lit_weights</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.0976</span>
+
+    <span class="c1"># Entropy of the probability distribution</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+        <span class="p">[</span><span class="mf">0.0224</span><span class="p">,</span> <span class="mf">0.0096</span><span class="p">,</span> <span class="mf">0.0056</span><span class="p">,</span> <span class="mf">0.0324</span><span class="p">,</span> <span class="mf">0.0036</span><span class="p">,</span> <span class="mf">0.0216</span><span class="p">,</span> <span class="mf">0.0024</span><span class="p">],</span>
+        <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">current_device</span><span class="p">(),</span>
+    <span class="p">)</span>
+    <span class="n">probs</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">/</span> <span class="n">wmc</span>
+    <span class="n">entropy</span> <span class="o">=</span> <span class="o">-</span><span class="nb">sum</span><span class="p">([</span><span class="n">p</span> <span class="o">*</span> <span class="n">log</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">probs</span><span class="p">])</span>
+
+    <span class="c1"># Circuit Entropy</span>
+    <span class="n">circuit_entropy</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">Shannon_entropy</span><span class="p">(</span><span class="n">lit_weights</span><span class="p">)</span>
+
+    <span class="c1"># Assert the circuit&#39;s entropy and the entropy of the groundtruth distribution match</span>
+    <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">circuit_entropy</span><span class="p">,</span> <span class="n">entropy</span><span class="p">)</span>
+
+    <span class="c1">## Check probabilities of all the models of the formula</span>
+    <span class="c1"># assert(torch.isclose(c.pr_inst([-1, -2, 3, 4]), torch.tensor(0.2295), atol=1e-04))</span>
+    <span class="c1"># assert(torch.isclose(c.pr_inst([-1, 2, 3, 4]), torch.tensor(0.0984), atol=1e-04))</span>
+    <span class="c1"># assert(torch.isclose(c.pr_inst([1, -2, 3, 4]), torch.tensor(0.0574), atol=1e-04))</span>
+    <span class="c1"># assert(torch.isclose(c.pr_inst([1, 2, -3, -4]), torch.tensor(0.3320), atol=1e-04))</span>
+    <span class="c1"># assert(torch.isclose(c.pr_inst([1, 2, -3, 4]), torch.tensor(0.0369), atol=1e-04))</span>
+    <span class="c1"># assert(torch.isclose(c.pr_inst([1, 2, 3, -4]), torch.tensor(0.2213), atol=1e-04))</span>
+    <span class="c1"># assert(torch.isclose(c.pr_inst([1, 2, 3, 4]), torch.tensor(0.0246), atol=1e-04))</span>
+
+    <span class="c1">## Test 2</span>
+    <span class="c1">## An sdd for the formula true</span>
+    <span class="c1"># c = CircuitMPE(&#39;abcd_constraint.vtree&#39;, &#39;true_constraint.sdd&#39;)</span>
+
+    <span class="c1">## literal weights are of the form [[-a, a], [-b, b], [-c, c], [-d, d]]</span>
+    <span class="c1"># lit_weights = torch.tensor([[0.8, 0.2], [0.7, 0.3], [0.6, 0.4], [0.9, 0.1]], device=torch.cuda.current_device())</span>
+
+    <span class="c1"># models = [[0, 0, 0, 0],</span>
+    <span class="c1">#         [0, 0, 0, 1],</span>
+    <span class="c1">#         [0, 0, 1, 0],</span>
+    <span class="c1">#         [0, 0, 1, 1],</span>
+    <span class="c1">#         [0, 1, 0, 0],</span>
+    <span class="c1">#         [0, 1, 0, 1],</span>
+    <span class="c1">#         [0, 1, 1, 0],</span>
+    <span class="c1">#         [0, 1, 1, 1],</span>
+    <span class="c1">#         [1, 0, 0, 0],</span>
+    <span class="c1">#         [1, 0, 0, 1],</span>
+    <span class="c1">#         [1, 0, 1, 0],</span>
+    <span class="c1">#         [1, 0, 1, 1],</span>
+    <span class="c1">#         [1, 1, 0, 0],</span>
+    <span class="c1">#         [1, 1, 0, 1],</span>
+    <span class="c1">#         [1, 1, 1, 0],</span>
+    <span class="c1">#         [1, 1, 1, 1]]</span>
+
+    <span class="c1"># probs = []</span>
+    <span class="c1"># for model in models:</span>
+    <span class="c1">#    prob = 1</span>
+    <span class="c1">#    for i, val in enumerate(model):</span>
+    <span class="c1">#        prob *= lit_weights[i][val]</span>
+    <span class="c1">#    probs += [prob]</span>
+
+    <span class="c1">## Weighted model counts of both the normalized and unnormalized circuits</span>
+    <span class="c1"># wmc = c.get_tf_ac(lit_weights)</span>
+    <span class="c1"># wmc_normalized = c.get_torch_ac(lit_weights)</span>
+
+    <span class="c1"># assert(wmc == wmc_normalized == 1)</span>
+
+    <span class="c1">## Brute force entropy</span>
+    <span class="c1"># entropy = -sum([p*log(p) for p in probs])</span>
+
+    <span class="c1">## Circuit Entropy</span>
+    <span class="c1"># circuit_entropy = c.Shannon_entropy()</span>
+    <span class="c1"># assert(circuit_entropy == entropy)</span>
+
+    <span class="c1">## Test 3</span>
+    <span class="c1">## An sdd for the formula (P | L) &amp; (-A | P) &amp; (-K | (A | L))</span>
+    <span class="c1"># c = CircuitMPE(&#39;LKPA_constraint.vtree&#39;, &#39;LKPA_constraint.sdd&#39;)</span>
+
+    <span class="c1">## literal weights form     [[-L,    L], [-K,    K], [-P,    P], [-A,    A]]</span>
+    <span class="c1"># lit_weights = torch.tensor([[0.8, 0.2], [0.7, 0.3], [0.6, 0.4], [0.9, 0.1]], device=torch.cuda.current_device())</span>
+
+    <span class="c1">## Weighted model counts of both the normalized and unnormalized circuits</span>
+    <span class="c1"># wmc = c.get_tf_ac(lit_weights)</span>
+    <span class="c1"># wmc_normalized = c.get_torch_ac(lit_weights)</span>
+
+    <span class="c1"># print(c.get_tf_ac(lit_weights))</span>
+    <span class="c1"># print(c.get_torch_ac(lit_weights))</span>
+    <span class="c1"># assert(c.get_tf_ac(lit_weights) == 0.4216)</span>
+    <span class="c1"># assert(c.get_torch_ac(lit_weights) == 0.4216)</span>
+    <span class="c1">#</span>
+    <span class="c1">## Entropy of the probability distribution</span>
+    <span class="c1"># weights = torch.tensor([0.2016, 0.0224, 0.0096, 0.0756, 0.0504, 0.0056, 0.0324, 0.0216, 0.0024], device=torch.cuda.current_device())</span>
+    <span class="c1"># probs = weights/wmc</span>
+    <span class="c1"># entropy = -sum([p*log(p) for p in probs])</span>
+
+    <span class="c1">## Circuit Entropy</span>
+    <span class="c1"># circuit_entropy = c.Shannon_entropy()</span>
+
+    <span class="c1">## Assert the circuit&#39;s entropy and the entropy of the groundtruth distribution match</span>
+    <span class="c1"># assert(torch.isclose(circuit_entropy, entropy))</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Eleonora Giunchiglia, Thomas Lukasiewicz, Samuele Bortolotti.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

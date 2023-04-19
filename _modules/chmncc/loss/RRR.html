@@ -77,6 +77,9 @@
 <span class="kn">from</span> <span class="nn">chmncc.utils</span> <span class="kn">import</span> <span class="n">cross_entropy_from_softmax</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
+<span class="kn">from</span> <span class="nn">chmncc.probabilistic_circuits.GatingFunction</span> <span class="kn">import</span> <span class="n">DenseGatingFunction</span>
+<span class="kn">from</span> <span class="nn">chmncc.probabilistic_circuits.compute_mpe</span> <span class="kn">import</span> <span class="n">CircuitMPE</span>
+
 
 <div class="viewcode-block" id="RRRLoss"><a class="viewcode-back" href="../../../chmncc.loss.html#chmncc.loss.RRR.RRRLoss">[docs]</a><span class="k">class</span> <span class="nc">RRRLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -347,6 +350,120 @@
             <span class="n">right_reason_loss</span><span class="p">,</span>
             <span class="n">right_answer_loss_parent</span><span class="p">,</span>
             <span class="n">right_answer_loss_children</span><span class="p">,</span>
+        <span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="RRRLossWithGate"><a class="viewcode-back" href="../../../chmncc.loss.html#chmncc.loss.RRR.RRRLossWithGate">[docs]</a><span class="k">class</span> <span class="nc">RRRLossWithGate</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Right for the Right Reason loss (RRR) as proposed by Ross et. al (2017) with minor changes.</span>
+<span class="sd">    See https://arxiv.org/abs/1703.03717.</span>
+<span class="sd">    The RRR loss calculates the Input Gradients as prediction explanation and compares it</span>
+<span class="sd">    with the (ground-truth) user explanation.</span>
+<span class="sd">    Taken from https://github.com/ml-research/A-Typology-to-Explore-and-Guide-Explanatory-Interactive-Machine-Learning/blob/main/xil_methods/xil_loss.py</span>
+<span class="sd">    DOI: https://arxiv.org/abs/2203.03668</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">net</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">gate</span><span class="p">:</span> <span class="n">DenseGatingFunction</span><span class="p">,</span>
+        <span class="n">cmpe</span><span class="p">:</span> <span class="n">CircuitMPE</span><span class="p">,</span>
+        <span class="n">regularizer_rate</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">rr_clipping</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            net [nn.Module]: trained neural network</span>
+<span class="sd">            regularizer_rate: controls the influence of the right reason loss.</span>
+<span class="sd">            base_criterion: criterion to use for right answer l</span>
+<span class="sd">            weight: if specified then weight right reason loss by classes. Tensor</span>
+<span class="sd">                with shape (c,) c=classes. WARNING !! Currently only working for</span>
+<span class="sd">                the special case that whole X in fwd has the same class (as is the</span>
+<span class="sd">                case in isic 2019).</span>
+<span class="sd">            rr_clipping: clip the RR loss to a maximum per batch.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gate</span> <span class="o">=</span> <span class="n">gate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmpe</span> <span class="o">=</span> <span class="n">cmpe</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">regularizer_rate</span> <span class="o">=</span> <span class="n">regularizer_rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">net</span> <span class="o">=</span> <span class="n">net</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rr_clipping</span> <span class="o">=</span> <span class="n">rr_clipping</span>
+
+<div class="viewcode-block" id="RRRLossWithGate.forward"><a class="viewcode-back" href="../../../chmncc.loss.html#chmncc.loss.RRR.RRRLossWithGate.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">thetas</span><span class="p">,</span>
+        <span class="n">X</span><span class="p">,</span>
+        <span class="n">y</span><span class="p">,</span>
+        <span class="n">expl</span><span class="p">,</span>
+        <span class="n">logits</span><span class="p">,</span>
+        <span class="n">confounded</span><span class="p">,</span>
+        <span class="n">to_eval</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns (loss, right_answer_loss, right_reason_loss, right_answer_parent, right_answer_children)</span>
+<span class="sd">        Args:</span>
+<span class="sd">            X: inputs.</span>
+<span class="sd">            y: ground-truth labels.</span>
+<span class="sd">            expl: explanation annotations masks (ones penalize regions) [is basically the annotation matrix]</span>
+<span class="sd">            logits: model output logits.</span>
+<span class="sd">            confounded: whether the sampleis confounded</span>
+<span class="sd">            use_softmax: use softmax for the predictions</span>
+<span class="sd">            to_eval: evaluation</span>
+<span class="sd">            superclasses_number=20: superclass number</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># use the basic criterion</span>
+        <span class="n">logits</span> <span class="o">=</span> <span class="n">logits</span><span class="p">[:,</span> <span class="n">to_eval</span><span class="p">]</span>
+        <span class="c1"># the normal training loss</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmpe</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">thetas</span><span class="p">)</span>
+        <span class="n">right_answer_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmpe</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">log_space</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="c1"># change the part of the evaluation</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="n">to_eval</span><span class="p">]</span>
+
+        <span class="c1"># get gradients w.r.t. to the input</span>
+        <span class="n">log_prob_ys</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">log_prob_ys</span><span class="o">.</span><span class="n">retain_grad</span><span class="p">()</span>
+
+        <span class="c1"># integrated gradients</span>
+        <span class="n">gradXes</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># if the example is not confunded from the beginning,</span>
+        <span class="c1"># then I can simply avoid computing the right reason loss!</span>
+        <span class="k">if</span> <span class="p">((</span><span class="n">confounded</span><span class="o">.</span><span class="n">byte</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="o">.</span><span class="n">item</span><span class="p">():</span>
+            <span class="n">gradXes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span>
+                <span class="n">log_prob_ys</span><span class="p">,</span>
+                <span class="n">X</span><span class="p">,</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">log_prob_ys</span><span class="p">),</span>
+                <span class="n">create_graph</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">allow_unused</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">gradXes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+        <span class="n">expl</span> <span class="o">=</span> <span class="n">expl</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">A_gradX</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">expl</span><span class="p">,</span> <span class="n">gradXes</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+        <span class="c1"># sum each axes contribution</span>
+        <span class="n">right_reason_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">A_gradX</span><span class="p">)</span>
+        <span class="n">right_reason_loss</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularizer_rate</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">right_reason_loss</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rr_clipping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">right_reason_loss</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rr_clipping</span><span class="p">:</span>
+                <span class="n">right_reason_loss</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">right_reason_loss</span> <span class="o">-</span> <span class="n">right_reason_loss</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">rr_clipping</span>
+                <span class="p">)</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="n">right_answer_loss</span> <span class="o">+</span> <span class="n">right_reason_loss</span>
+
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">res</span><span class="p">,</span>
+            <span class="n">right_answer_loss</span><span class="p">,</span>
+            <span class="n">right_reason_loss</span><span class="p">,</span>
         <span class="p">)</span></div></div>
 </pre></div>
 

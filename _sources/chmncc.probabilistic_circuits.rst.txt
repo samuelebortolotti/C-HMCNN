@@ -1,0 +1,32 @@
+chmncc.probabilistic\_circuits package
+======================================
+
+Submodules
+----------
+
+chmncc.probabilistic\_circuits.GatingFunction module
+----------------------------------------------------
+
+.. automodule:: chmncc.probabilistic_circuits.GatingFunction
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+chmncc.probabilistic\_circuits.compute\_mpe module
+--------------------------------------------------
+
+.. automodule:: chmncc.probabilistic_circuits.compute_mpe
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+
+Module contents
+---------------
+
+.. automodule:: chmncc.probabilistic_circuits
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:

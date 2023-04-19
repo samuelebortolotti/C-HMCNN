@@ -77,9 +77,18 @@
     <span class="n">force_prediction_from_batch</span><span class="p">,</span>
     <span class="n">cross_entropy_from_softmax</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">average_precision_score</span><span class="p">,</span> <span class="n">classification_report</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">average_precision_score</span><span class="p">,</span>
+    <span class="n">classification_report</span><span class="p">,</span>
+    <span class="n">average_precision_score</span><span class="p">,</span>
+    <span class="n">hamming_loss</span><span class="p">,</span>
+    <span class="n">jaccard_score</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="kn">from</span> <span class="nn">chmncc.probabilistic_circuits.GatingFunction</span> <span class="kn">import</span> <span class="n">DenseGatingFunction</span>
+<span class="kn">from</span> <span class="nn">chmncc.probabilistic_circuits.compute_mpe</span> <span class="kn">import</span> <span class="n">CircuitMPE</span>
 
 
 <div class="viewcode-block" id="tr_image"><a class="viewcode-back" href="../../../chmncc.test.html#chmncc.test.test.tr_image">[docs]</a><span class="k">def</span> <span class="nf">tr_image</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
@@ -466,6 +475,295 @@
         <span class="kc">None</span>
         <span class="k">if</span> <span class="n">cumulative_loss_children</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="k">else</span> <span class="n">cumulative_loss_children</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_loader</span><span class="p">),</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="test_circuit"><a class="viewcode-back" href="../../../chmncc.test.html#chmncc.test.test.test_circuit">[docs]</a><span class="k">def</span> <span class="nf">test_circuit</span><span class="p">(</span>
+    <span class="n">net</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+    <span class="n">test_loader</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">test</span><span class="p">:</span> <span class="n">dotdict</span><span class="p">,</span>
+    <span class="n">gate</span><span class="p">:</span> <span class="n">DenseGatingFunction</span><span class="p">,</span>
+    <span class="n">cmpe</span><span class="p">:</span> <span class="n">CircuitMPE</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gpu&quot;</span><span class="p">,</span>
+    <span class="n">debug_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Test function for the network.</span>
+<span class="sd">    It computes the accuracy together with the area under the precision-recall-curve as a metric</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        net [nn.Module] network</span>
+<span class="sd">        test_loader [torch.utils.data.DataLoader] test data loader</span>
+<span class="sd">        cost_function [torch.nn.modules.loss.BCELoss] binary cross entropy function</span>
+<span class="sd">        title [str]: title of the experiment</span>
+<span class="sd">        test [dotdict] test set dictionary</span>
+<span class="sd">        device [str] = &quot;gpu&quot;: device on which to run the experiment</span>
+<span class="sd">        debug_mode [bool] = False: whether the test is done on the debug dataloader</span>
+<span class="sd">        print_me [bool] = False: whether to print the data or not</span>
+<span class="sd">        prediction_treshold [float]: threshold used to consider a class as predicted</span>
+<span class="sd">        force_prediction [bool]: force prediction or not</span>
+<span class="sd">        use_softmax [bool]: use the softmax</span>
+<span class="sd">        superclasses_number [int]: number of superclasses</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        cumulative_loss [float] loss on the test set [not used to train!]</span>
+<span class="sd">        cumulative_accuracy [float] accuracy on the test set in percentage</span>
+<span class="sd">        score [float] area under the precision-recall curve raw</span>
+<span class="sd">        score [float] area under the precision-recall curve const</span>
+<span class="sd">        rigth_answer_parent [Optional[float]] right answer for the parent</span>
+<span class="sd">        rigth_answer_children [Optional[float]] right answer for the children</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cumulative_accuracy</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">cumulative_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># set the network to evaluation mode</span>
+    <span class="n">net</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="n">gate</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+    <span class="c1"># disable gradient computation (we are only testing, we do not want our model to be modified in this step!)</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="c1"># iterate over the test set</span>
+        <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span>
+            <span class="nb">enumerate</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="n">test_loader</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5000</span><span class="p">)),</span> <span class="n">desc</span><span class="o">=</span><span class="n">title</span>
+        <span class="p">):</span>
+            <span class="k">if</span> <span class="n">debug_mode</span><span class="p">:</span>
+                <span class="c1"># debug dataloader</span>
+                <span class="p">(</span>
+                    <span class="n">inputs</span><span class="p">,</span>  <span class="c1"># image</span>
+                    <span class="n">superclass</span><span class="p">,</span>  <span class="c1"># string label</span>
+                    <span class="n">subclass</span><span class="p">,</span>  <span class="c1"># string label</span>
+                    <span class="n">targets</span><span class="p">,</span>  <span class="c1"># hierarchical label [that matrix of 1 hot encodings]</span>
+                    <span class="n">confunder_pos_1_x</span><span class="p">,</span>  <span class="c1"># int position</span>
+                    <span class="n">confunder_pos_1_y</span><span class="p">,</span>  <span class="c1"># int position</span>
+                    <span class="n">confunder_pos_2_x</span><span class="p">,</span>  <span class="c1"># int position</span>
+                    <span class="n">confunder_pos_2_y</span><span class="p">,</span>  <span class="c1"># int position</span>
+                    <span class="n">confunder_shape</span><span class="p">,</span>  <span class="c1"># dictionary containing informations</span>
+                <span class="p">)</span> <span class="o">=</span> <span class="n">items</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># test dataloader</span>
+                <span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span> <span class="o">=</span> <span class="n">items</span>
+
+            <span class="c1"># load data into device</span>
+            <span class="n">inputs</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="c1"># forward pass</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="n">net</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
+            <span class="c1"># thetas</span>
+            <span class="n">thetas</span> <span class="o">=</span> <span class="n">gate</span><span class="p">(</span><span class="n">outputs</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
+
+            <span class="c1"># negative log likelihood and map</span>
+            <span class="n">cmpe</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">thetas</span><span class="p">)</span>
+            <span class="n">predicted</span> <span class="o">=</span> <span class="p">(</span><span class="n">cmpe</span><span class="o">.</span><span class="n">get_mpe_inst</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+
+            <span class="c1"># compute the loss</span>
+            <span class="n">cmpe</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">thetas</span><span class="p">)</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="n">cmpe</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span>
+                <span class="n">targets</span><span class="p">,</span> <span class="n">log_space</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>  <span class="c1"># set them to None</span>
+
+            <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">predicted</span> <span class="o">=</span> <span class="n">predicted</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+            <span class="n">num_correct</span> <span class="o">=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">targets</span><span class="o">.</span><span class="n">byte</span><span class="p">())</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+            <span class="c1"># total correct predictions</span>
+            <span class="n">cumulative_accuracy</span> <span class="o">+=</span> <span class="n">num_correct</span>
+            <span class="c1"># total loss</span>
+            <span class="n">cumulative_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">predicted_test</span> <span class="o">=</span> <span class="n">predicted</span>
+                <span class="n">y_test</span> <span class="o">=</span> <span class="n">targets</span>
+                <span class="n">output_train</span> <span class="o">=</span> <span class="n">outputs</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">predicted_test</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">predicted_test</span><span class="p">,</span> <span class="n">predicted</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">output_train</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">output_train</span><span class="p">,</span> <span class="n">outputs</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">y_test</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">y_test</span><span class="p">,</span> <span class="n">targets</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="k">break</span>
+
+    <span class="n">y_test</span> <span class="o">=</span> <span class="n">y_test</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
+    <span class="n">predicted_test</span> <span class="o">=</span> <span class="n">predicted_test</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
+    <span class="n">output_train</span> <span class="o">=</span> <span class="n">output_train</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
+
+    <span class="c1"># average precision score and other statistics</span>
+    <span class="n">accuracy</span> <span class="o">=</span> <span class="n">cumulative_accuracy</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_test</span><span class="p">)</span>
+    <span class="n">jaccard</span> <span class="o">=</span> <span class="n">jaccard_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">predicted_test</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s2">&quot;micro&quot;</span><span class="p">)</span>
+    <span class="n">hamming</span> <span class="o">=</span> <span class="n">hamming_loss</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">predicted_test</span><span class="p">)</span>
+    <span class="n">auprc_score</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># average_precision_score(y_test, output_train, average=&quot;micro&quot;)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">cumulative_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_loader</span><span class="p">),</span> <span class="n">accuracy</span><span class="p">,</span> <span class="n">jaccard</span><span class="p">,</span> <span class="n">hamming</span><span class="p">,</span> <span class="n">auprc_score</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="test_step_with_prediction_statistics_with_gates"><a class="viewcode-back" href="../../../chmncc.test.html#chmncc.test.test.test_step_with_prediction_statistics_with_gates">[docs]</a><span class="k">def</span> <span class="nf">test_step_with_prediction_statistics_with_gates</span><span class="p">(</span>
+    <span class="n">net</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+    <span class="n">test_loader</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">,</span>
+    <span class="n">gate</span><span class="p">:</span> <span class="n">DenseGatingFunction</span><span class="p">,</span>
+    <span class="n">cmpe</span><span class="p">:</span> <span class="n">CircuitMPE</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">test</span><span class="p">:</span> <span class="n">dotdict</span><span class="p">,</span>
+    <span class="n">labels_name</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gpu&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
+    <span class="nb">float</span><span class="p">,</span>
+    <span class="nb">float</span><span class="p">,</span>
+    <span class="nb">float</span><span class="p">,</span>
+    <span class="nb">float</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
+    <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
+    <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="nb">float</span><span class="p">,</span>
+<span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Test function for the network.</span>
+<span class="sd">    It computes the accuracy together with the area under the precision-recall-curve as a metric</span>
+<span class="sd">    and returns the statistics of predicted and non-predicted data.</span>
+<span class="sd">    Predicted means that the network has put at least one value positive, whereas unpredicted means that all the predictions are zeros</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        net [nn.Module] network</span>
+<span class="sd">        test_loader [torch.utils.data.DataLoader] test data loader with labels</span>
+<span class="sd">        cost_function [torch.nn.modules.loss.BCELoss] binary cross entropy function</span>
+<span class="sd">        title [str]: title of the experiment</span>
+<span class="sd">        test [dotdict] test set dictionary</span>
+<span class="sd">        labels_name [List[str]] name of the labels</span>
+<span class="sd">        device [str] = &quot;gpu&quot;: device on which to run the experiment</span>
+<span class="sd">        prediction_treshold [float]: threshold used to consider a class as predicted</span>
+<span class="sd">        force_prediction [bool]: force prediction</span>
+<span class="sd">        use_softmax [bool]: use the softmax</span>
+<span class="sd">        superclasses_number [int]: number of superclasses</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        cumulative_loss [float] loss on the test set [not used to train!]</span>
+<span class="sd">        cumulative_accuracy [float] accuracy on the test set in percentage</span>
+<span class="sd">        score [float] area under the precision-recall curve raw</span>
+<span class="sd">        score [float] area under the precision-recall curve const</span>
+<span class="sd">        statistics [Dict[str, List[int]]]: name of the class : [not-predicted, predicted]</span>
+<span class="sd">        statistics correct [Dict[str, List[int]]]: name of the class : [not-correct, correct]</span>
+<span class="sd">        clf_report Dict[str, float]: confusion matrix statistics</span>
+<span class="sd">        ground_truth ndarray: ground_truth predictions</span>
+<span class="sd">        prediction ndarray: predictions</span>
+<span class="sd">        rigth_answer_parent [Optional[float]] right answer for the parent</span>
+<span class="sd">        rigth_answer_children [Optional[float]] right answer for the children</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cumulative_accuracy</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">cumulative_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># statistics</span>
+    <span class="n">stats_predicted</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]}</span>
+    <span class="n">stats_correct</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]}</span>
+
+    <span class="c1"># set the network to evaluation mode</span>
+    <span class="n">net</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="n">gate</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+    <span class="c1"># disable gradient computation (we are only testing, we do not want our model to be modified in this step!)</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="c1"># iterate over the test set</span>
+        <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span>
+            <span class="nb">enumerate</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="n">test_loader</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5000</span><span class="p">)),</span> <span class="n">desc</span><span class="o">=</span><span class="n">title</span>
+        <span class="p">):</span>
+            <span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">superclass</span><span class="p">,</span> <span class="n">subclass</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span> <span class="o">=</span> <span class="n">items</span>
+
+            <span class="c1"># load data into device</span>
+            <span class="n">inputs</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="c1"># forward pass</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="n">net</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
+            <span class="c1"># thetas</span>
+            <span class="n">thetas</span> <span class="o">=</span> <span class="n">gate</span><span class="p">(</span><span class="n">outputs</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
+
+            <span class="c1"># negative log likelihood and map</span>
+            <span class="n">cmpe</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">thetas</span><span class="p">)</span>
+            <span class="n">predicted</span> <span class="o">=</span> <span class="p">(</span><span class="n">cmpe</span><span class="o">.</span><span class="n">get_mpe_inst</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+
+            <span class="c1"># compute the loss</span>
+            <span class="n">cmpe</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">thetas</span><span class="p">)</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="n">cmpe</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span>
+                <span class="n">targets</span><span class="p">,</span> <span class="n">log_space</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>  <span class="c1"># set them to None</span>
+
+            <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">predicted</span> <span class="o">=</span> <span class="n">predicted</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+            <span class="n">num_correct</span> <span class="o">=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">targets</span><span class="o">.</span><span class="n">byte</span><span class="p">())</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+            <span class="c1"># total correct predictions</span>
+            <span class="n">cumulative_accuracy</span> <span class="o">+=</span> <span class="n">num_correct</span>
+            <span class="c1"># total loss</span>
+            <span class="n">cumulative_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">predicted_test</span> <span class="o">=</span> <span class="n">predicted</span>
+                <span class="n">y_test</span> <span class="o">=</span> <span class="n">targets</span>
+                <span class="n">output_train</span> <span class="o">=</span> <span class="n">outputs</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">predicted_test</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">predicted_test</span><span class="p">,</span> <span class="n">predicted</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">output_train</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">output_train</span><span class="p">,</span> <span class="n">outputs</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">y_test</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">y_test</span><span class="p">,</span> <span class="n">targets</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="c1"># create the statistics - predicted</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">predicted_idx</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">predicted</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">stats_predicted</span><span class="p">:</span>
+                    <span class="n">stats_predicted</span><span class="p">[</span><span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">stats_predicted</span><span class="p">:</span>
+                    <span class="n">stats_predicted</span><span class="p">[</span><span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="n">stats_predicted</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">][</span><span class="n">predicted_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">stats_predicted</span><span class="p">[</span><span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">predicted_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">stats_predicted</span><span class="p">[</span><span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">predicted_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c1"># create the statistics - correct</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">correct_idx</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="mi">0</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">predicted</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">targets</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">byte</span><span class="p">())</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                    <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">predicted</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="k">else</span> <span class="mi">1</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">stats_correct</span><span class="p">:</span>
+                    <span class="n">stats_correct</span><span class="p">[</span><span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">stats_correct</span><span class="p">:</span>
+                    <span class="n">stats_correct</span><span class="p">[</span><span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="n">stats_correct</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">][</span><span class="n">correct_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">stats_correct</span><span class="p">[</span><span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">correct_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">stats_correct</span><span class="p">[</span><span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">correct_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="k">break</span>
+
+    <span class="n">y_test</span> <span class="o">=</span> <span class="n">y_test</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
+    <span class="n">predicted_test</span> <span class="o">=</span> <span class="n">predicted_test</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
+    <span class="n">output_train</span> <span class="o">=</span> <span class="n">output_train</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
+
+    <span class="c1"># average precision score and other statistics</span>
+    <span class="n">accuracy</span> <span class="o">=</span> <span class="n">cumulative_accuracy</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_test</span><span class="p">)</span>
+    <span class="n">jaccard</span> <span class="o">=</span> <span class="n">jaccard_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">predicted_test</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s2">&quot;micro&quot;</span><span class="p">)</span>
+    <span class="n">hamming</span> <span class="o">=</span> <span class="n">hamming_loss</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">predicted_test</span><span class="p">)</span>
+    <span class="n">auprc_score</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># average_precision_score(y_test, output_train, average=&quot;micro&quot;)</span>
+
+    <span class="c1"># classification report on the confusion matrix</span>
+    <span class="n">clf_report</span> <span class="o">=</span> <span class="n">classification_report</span><span class="p">(</span>
+        <span class="n">y_test</span><span class="p">,</span>
+        <span class="n">predicted_test</span><span class="p">,</span>
+        <span class="n">output_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">target_names</span><span class="o">=</span><span class="n">labels_name</span><span class="p">,</span>
+        <span class="n">zero_division</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">cumulative_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_loader</span><span class="p">),</span>
+        <span class="n">accuracy</span><span class="p">,</span>
+        <span class="n">jaccard</span><span class="p">,</span>
+        <span class="n">hamming</span><span class="p">,</span>
+        <span class="n">stats_predicted</span><span class="p">,</span>
+        <span class="n">stats_correct</span><span class="p">,</span>
+        <span class="n">clf_report</span><span class="p">,</span>  <span class="c1"># classification matrix</span>
+        <span class="n">y_test</span><span class="p">,</span>  <span class="c1"># ground-truth for multiclass classification matrix</span>
+        <span class="n">predicted_test</span><span class="p">,</span>  <span class="c1"># predited values for multiclass classification matrix</span>
+        <span class="n">auprc_score</span><span class="p">,</span>
     <span class="p">)</span></div>
 </pre></div>
 

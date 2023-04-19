@@ -70,6 +70,7 @@
 <span></span><span class="sd">&quot;&quot;&quot;Adam module&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 <span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">chmncc.probabilistic_circuits.GatingFunction</span> <span class="kn">import</span> <span class="n">DenseGatingFunction</span>
 
 
 <div class="viewcode-block" id="get_adam_optimizer"><a class="viewcode-back" href="../../../chmncc.optimizers.html#chmncc.optimizers.adam.get_adam_optimizer">[docs]</a><span class="k">def</span> <span class="nf">get_adam_optimizer</span><span class="p">(</span>
@@ -86,6 +87,26 @@
 <span class="sd">        optimizer [nn.Optimizer]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">net</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="n">weight_decay</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_adam_optimizer_with_gate"><a class="viewcode-back" href="../../../chmncc.optimizers.html#chmncc.optimizers.adam.get_adam_optimizer_with_gate">[docs]</a><span class="k">def</span> <span class="nf">get_adam_optimizer_with_gate</span><span class="p">(</span>
+    <span class="n">net</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">gate</span><span class="p">:</span> <span class="n">DenseGatingFunction</span><span class="p">,</span> <span class="n">lr</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">weight_decay</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ADAM optimizer</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        net [nn.Module]: network architecture</span>
+<span class="sd">        lr [float]: learning rate</span>
+<span class="sd">        weight_decay [float]: weight_decay</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        optimizer [nn.Optimizer]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span>
+        <span class="nb">list</span><span class="p">(</span><span class="n">net</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">gate</span><span class="o">.</span><span class="n">parameters</span><span class="p">()),</span>
+        <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span>
+        <span class="n">weight_decay</span><span class="o">=</span><span class="n">weight_decay</span><span class="p">,</span>
+    <span class="p">)</span></div>
 </pre></div>
 
            </div>

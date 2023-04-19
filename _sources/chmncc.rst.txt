@@ -17,6 +17,7 @@ Subpackages
    chmncc.multi_step_argumentation
    chmncc.networks
    chmncc.optimizers
+   chmncc.probabilistic_circuits
    chmncc.revise
    chmncc.test
    chmncc.train

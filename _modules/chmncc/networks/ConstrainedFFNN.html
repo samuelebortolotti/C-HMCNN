@@ -131,6 +131,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            constrained_out [torch.Tensor]: constrained ouput</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">28</span> <span class="o">*</span> <span class="mi">28</span> <span class="o">*</span> <span class="mi">1</span><span class="p">)</span>
         <span class="c1"># loop over all the layers, on the last one employ the sigmoid activation</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nb_layers</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">nb_layers</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>

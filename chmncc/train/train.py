@@ -207,6 +207,7 @@ def training_step_with_gate(
     net.train()
     gate.train()
 
+    total_train = 0
     tot_loss = 0
     tot_accuracy = 0
 
@@ -222,7 +223,7 @@ def training_step_with_gate(
         # Clear gradients w.r.t. parameters
         optimizer.zero_grad()
 
-        #MCLoss
+        # MCLoss
         output = net(inputs.float())
         thetas = gate(output)
         cmpe.set_params(thetas)
@@ -232,35 +233,41 @@ def training_step_with_gate(
         cmpe.set_params(thetas)
         predicted = (cmpe.get_mpe_inst(inputs.shape[0]) > 0).long()
 
-        tot_accuracy += (predicted == labels.byte()).all(dim=-1).sum()
+        # fetch prediction and loss value
+        total_train += labels.shape[0] * labels.shape[1]
+
+        # compute training accuracy
+        tot_accuracy += (predicted == labels.byte()).sum().item()
+
         tot_loss += loss
         loss.backward()
         optimizer.step()
 
+        # compute the au(prc)
+        predicted = predicted.to("cpu")
+        labels = labels.to("cpu")
+
         if batch_idx == 0:
             predicted_train = predicted
-            output_train = output
             y_test = labels
         else:
             predicted_train = torch.cat((predicted_train, predicted), dim=0)
-            output_train = torch.cat((output_train, output), dim=0)
             y_test = torch.cat((y_test, labels), dim=0)
 
         # TODO increase
-        if batch_idx == 200:
-            break
+        #  if batch_idx == 200:
+        #      break
 
     y_test = y_test[:, train.to_eval]
     predicted_train = predicted_train.data[:, train.to_eval].to(torch.float)
-    output_train = output_train.data[:, train.to_eval].to(torch.float)
 
     # jaccard score
     jaccard = jaccard_score(y_test, predicted_train, average="micro")
     # hamming score
     hamming = hamming_loss(y_test, predicted_train)
     # average precision score
-    auprc_score = average_precision_score(y_test, output_train, average="micro")
+    auprc_score = average_precision_score(y_test, predicted_train, average="micro")
     # accuracy
-    accuracy = tot_accuracy / len(y_test)
+    accuracy = tot_accuracy / total_train
 
-    return tot_loss / len(train_loader), accuracy, jaccard, hamming, auprc_score
+    return tot_loss / total_train, accuracy * 100, jaccard, hamming, auprc_score

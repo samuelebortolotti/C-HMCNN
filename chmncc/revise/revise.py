@@ -368,6 +368,7 @@ def revise_step_with_gates(
     cumulative_right_answer_loss = 0.0
     cumulative_right_reason_loss = 0.0
     confounded_samples = 0.0
+    total_train = 0
 
     # set the network to training mode
     if have_to_train:
@@ -425,6 +426,9 @@ def revise_step_with_gates(
         # compute the amount of confounded samples
         confounded_samples += confounded.sum().item()
 
+        # fetch prediction and loss value
+        total_train += ground_truth.shape[0] * ground_truth.shape[1]
+
         # compute training accuracy
         cumulative_accuracy += (predicted == ground_truth.byte()).sum().item()
 
@@ -446,30 +450,25 @@ def revise_step_with_gates(
         if batch_idx == 0:
             predicted_train = predicted
             y_test = ground_truth
-            output_train = train_output.detach().clone()
         else:
             predicted_train = torch.cat((predicted_train, predicted), dim=0)
-            output_train = torch.cat(
-                (output_train, train_output.detach().clone()), dim=0
-            )
             y_test = torch.cat((y_test, ground_truth), dim=0)
 
         # TODO force exit
-        if batch_idx == 200:
-            break
+        #  if batch_idx == 200:
+        #      break
 
     y_test = y_test[:, train.to_eval]
     predicted_train = predicted_train.data[:, train.to_eval].to(torch.float)
-    output_train = output_train[:, train.to_eval]
 
     # jaccard score
     jaccard = jaccard_score(y_test, predicted_train, average="micro")
     # hamming score
     hamming = hamming_loss(y_test, predicted_train)
     # average precision score
-    auprc_score = 0  # average_precision_score(y_test, output_train, average="micro")
+    auprc_score = average_precision_score(y_test, predicted_train, average="micro")
     # accuracy
-    accuracy = cumulative_accuracy / len(y_test)
+    accuracy = cumulative_accuracy / total_train
 
     # confounded samples
     if confounded_samples == 0:
@@ -480,7 +479,7 @@ def revise_step_with_gates(
         cumulative_right_answer_loss / len(debug_loader),
         cumulative_right_reason_loss / len(debug_loader),
         cumulative_right_reason_loss / confounded_samples,
-        accuracy,
+        accuracy * 100,
         auprc_score,
         hamming,
         jaccard,

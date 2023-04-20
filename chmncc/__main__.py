@@ -1463,7 +1463,11 @@ def c_hmcnn(
             torch.set_printoptions(profile="full")
             # get the prediction
             if use_probabilistic_circuits:
-                predicted_1_0 = preds
+                # thetas
+                thetas = gate(preds.float())
+                # negative log likelihood and map
+                cmpe.set_params(thetas)
+                predicted_1_0  = (cmpe.get_mpe_inst(single_el.shape[0]) > 0).long()
             elif force_prediction:
                 predicted_1_0 = force_prediction_from_batch(
                     preds.data,

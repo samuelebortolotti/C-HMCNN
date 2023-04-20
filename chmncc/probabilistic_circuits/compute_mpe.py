@@ -20,7 +20,6 @@ class CircuitMPE:
     def __init__(self, vtree_filename, sdd_filename):
         # Load the Sdd
         self.vtree = Vtree.read(vtree_filename)
-        self.plot_circuit(self.vtree, "constraints")
         self.manager = SddManager(self.vtree)
         self.alpha = io.sdd_read(sdd_filename, self.manager)
 
@@ -29,6 +28,11 @@ class CircuitMPE:
 
         # Storing psdd
         self.beta = self.pmanager.copy_and_normalize_sdd(self.alpha, self.vtree)
+
+        # plotting the circuit
+        self.plot_circuit(self.beta, "constraints", "beta")
+        #  self.plot_circuit(self.alpha, "constraints", "alpha")
+        #  exit(0)
 
     def overparameterize(self, S=2):
         self.beta = self.beta.overparameterize(S)
@@ -136,18 +140,9 @@ class CircuitMPE:
     def cross_entropy_psdd(self, target):
         return self.beta.log_likelihood(target)
 
-    def plot_circuit(self, v_tree: Vtree, folder: str):
-        graph = graphviz.Digraph("prob-circuit", comment="Probabilistic Circuit")
-        nodes = [el for el in v_tree]
-        ids = [el.id for el in nodes]
-        for i in ids:
-            graph.node(str(i), str(i))
-        for el in nodes:
-            if not el.is_leaf():
-                graph.edge(str(el.id), str(el.left.id))
-                graph.edge(str(el.id), str(el.right.id))
-        graph.format = "png"
-        graph.render(directory=folder).replace("\\", "/")
+    def plot_circuit(self, circuit, folder: str, name: str):
+        io.psdd_save_as_dot(circuit, f"{folder}/{name}.dot")
+        graphviz.render("dot", "svg", f"{folder}/{name}.dot")
 
 
 if __name__ == "__main__":

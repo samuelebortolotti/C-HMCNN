@@ -126,7 +126,8 @@ class ArgumentBucket:
             foreach i,j in {1...#classes}
         """
         if cincer_approach:
-            print("Uso cincer")
+            pass
+            #  print("Uso cincer")
         # out
         out = net(self.sample.float())
         # disable constrained layer

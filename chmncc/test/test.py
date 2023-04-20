@@ -446,6 +446,7 @@ def test_circuit(
     """
     cumulative_accuracy = 0.0
     cumulative_loss = 0.0
+    total_train = 0
 
     # set the network to evaluation mode
     net.eval()
@@ -492,39 +493,44 @@ def test_circuit(
                 targets, log_space=True
             ).mean()  # set them to None
 
-            targets = targets.to(device)
-            predicted = predicted.to("cpu")
-
-            num_correct = (predicted == targets.byte()).all(dim=-1).sum()
+            total_train += targets.shape[0] * targets.shape[1]
+            num_correct = (predicted == targets.byte()).sum().item()
 
             # total correct predictions
             cumulative_accuracy += num_correct
             # total loss
             cumulative_loss += loss.item()
 
+            # compute the au(prc)
+            targets = targets.to("cpu")
+            predicted = predicted.to("cpu")
+
             if batch_idx == 0:
                 predicted_test = predicted
                 y_test = targets
-                output_train = outputs
             else:
                 predicted_test = torch.cat((predicted_test, predicted), dim=0)
-                output_train = torch.cat((output_train, outputs), dim=0)
                 y_test = torch.cat((y_test, targets), dim=0)
 
-            if batch_idx == 200:
-                break
+            #  if batch_idx == 200:
+            #      break
 
     y_test = y_test[:, test.to_eval]
     predicted_test = predicted_test[:, test.to_eval]
-    output_train = output_train[:, test.to_eval]
 
     # average precision score and other statistics
-    accuracy = cumulative_accuracy / len(y_test)
+    accuracy = cumulative_accuracy / total_train
     jaccard = jaccard_score(y_test, predicted_test, average="micro")
     hamming = hamming_loss(y_test, predicted_test)
-    auprc_score = 0  # average_precision_score(y_test, output_train, average="micro")
+    auprc_score = average_precision_score(y_test, predicted_test, average="micro")
 
-    return (cumulative_loss / len(test_loader), accuracy, jaccard, hamming, auprc_score)
+    return (
+        cumulative_loss / len(test_loader),
+        accuracy * 100,
+        jaccard,
+        hamming,
+        auprc_score,
+    )
 
 
 def test_step_with_prediction_statistics_with_gates(
@@ -581,6 +587,7 @@ def test_step_with_prediction_statistics_with_gates(
     """
     cumulative_accuracy = 0.0
     cumulative_loss = 0.0
+    total_train = 0
 
     # statistics
     stats_predicted = {"total": [0, 0]}
@@ -616,23 +623,23 @@ def test_step_with_prediction_statistics_with_gates(
                 targets, log_space=True
             ).mean()  # set them to None
 
-            targets = targets.to(device)
-            predicted = predicted.to("cpu")
-
-            num_correct = (predicted == targets.byte()).all(dim=-1).sum()
+            total_train += targets.shape[0] * targets.shape[1]
+            num_correct = (predicted == targets.byte()).sum().item()
 
             # total correct predictions
             cumulative_accuracy += num_correct
             # total loss
             cumulative_loss += loss.item()
 
+            # compute the au(prc)
+            targets = targets.to("cpu")
+            predicted = predicted.to("cpu")
+
             if batch_idx == 0:
                 predicted_test = predicted
                 y_test = targets
-                output_train = outputs
             else:
                 predicted_test = torch.cat((predicted_test, predicted), dim=0)
-                output_train = torch.cat((output_train, outputs), dim=0)
                 y_test = torch.cat((y_test, targets), dim=0)
 
             # create the statistics - predicted
@@ -662,18 +669,17 @@ def test_step_with_prediction_statistics_with_gates(
                 stats_correct[superclass[i]][correct_idx] += 1
                 stats_correct[subclass[i]][correct_idx] += 1
 
-            if batch_idx == 200:
-                break
+            #  if batch_idx == 200:
+            #      break
 
     y_test = y_test[:, test.to_eval]
     predicted_test = predicted_test[:, test.to_eval]
-    output_train = output_train[:, test.to_eval]
 
     # average precision score and other statistics
-    accuracy = cumulative_accuracy / len(y_test)
+    accuracy = cumulative_accuracy / total_train
     jaccard = jaccard_score(y_test, predicted_test, average="micro")
     hamming = hamming_loss(y_test, predicted_test)
-    auprc_score = 0  # average_precision_score(y_test, output_train, average="micro")
+    auprc_score = average_precision_score(y_test, predicted_test, average="micro")
 
     # classification report on the confusion matrix
     clf_report = classification_report(
@@ -686,7 +692,7 @@ def test_step_with_prediction_statistics_with_gates(
 
     return (
         cumulative_loss / len(test_loader),
-        accuracy,
+        accuracy * 100,
         jaccard,
         hamming,
         stats_predicted,

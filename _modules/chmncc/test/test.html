@@ -515,6 +515,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">cumulative_accuracy</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="n">cumulative_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">total_train</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="c1"># set the network to evaluation mode</span>
     <span class="n">net</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
@@ -561,39 +562,44 @@
                 <span class="n">targets</span><span class="p">,</span> <span class="n">log_space</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>  <span class="c1"># set them to None</span>
 
-            <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-            <span class="n">predicted</span> <span class="o">=</span> <span class="n">predicted</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
-
-            <span class="n">num_correct</span> <span class="o">=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">targets</span><span class="o">.</span><span class="n">byte</span><span class="p">())</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">total_train</span> <span class="o">+=</span> <span class="n">targets</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">targets</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">num_correct</span> <span class="o">=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">targets</span><span class="o">.</span><span class="n">byte</span><span class="p">())</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
             <span class="c1"># total correct predictions</span>
             <span class="n">cumulative_accuracy</span> <span class="o">+=</span> <span class="n">num_correct</span>
             <span class="c1"># total loss</span>
             <span class="n">cumulative_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
+            <span class="c1"># compute the au(prc)</span>
+            <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+            <span class="n">predicted</span> <span class="o">=</span> <span class="n">predicted</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">predicted_test</span> <span class="o">=</span> <span class="n">predicted</span>
                 <span class="n">y_test</span> <span class="o">=</span> <span class="n">targets</span>
-                <span class="n">output_train</span> <span class="o">=</span> <span class="n">outputs</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">predicted_test</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">predicted_test</span><span class="p">,</span> <span class="n">predicted</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-                <span class="n">output_train</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">output_train</span><span class="p">,</span> <span class="n">outputs</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
                 <span class="n">y_test</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">y_test</span><span class="p">,</span> <span class="n">targets</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
-                <span class="k">break</span>
+            <span class="c1">#  if batch_idx == 200:</span>
+            <span class="c1">#      break</span>
 
     <span class="n">y_test</span> <span class="o">=</span> <span class="n">y_test</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
     <span class="n">predicted_test</span> <span class="o">=</span> <span class="n">predicted_test</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
-    <span class="n">output_train</span> <span class="o">=</span> <span class="n">output_train</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
 
     <span class="c1"># average precision score and other statistics</span>
-    <span class="n">accuracy</span> <span class="o">=</span> <span class="n">cumulative_accuracy</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_test</span><span class="p">)</span>
+    <span class="n">accuracy</span> <span class="o">=</span> <span class="n">cumulative_accuracy</span> <span class="o">/</span> <span class="n">total_train</span>
     <span class="n">jaccard</span> <span class="o">=</span> <span class="n">jaccard_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">predicted_test</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s2">&quot;micro&quot;</span><span class="p">)</span>
     <span class="n">hamming</span> <span class="o">=</span> <span class="n">hamming_loss</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">predicted_test</span><span class="p">)</span>
-    <span class="n">auprc_score</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># average_precision_score(y_test, output_train, average=&quot;micro&quot;)</span>
+    <span class="n">auprc_score</span> <span class="o">=</span> <span class="n">average_precision_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">predicted_test</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s2">&quot;micro&quot;</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="p">(</span><span class="n">cumulative_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_loader</span><span class="p">),</span> <span class="n">accuracy</span><span class="p">,</span> <span class="n">jaccard</span><span class="p">,</span> <span class="n">hamming</span><span class="p">,</span> <span class="n">auprc_score</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">cumulative_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_loader</span><span class="p">),</span>
+        <span class="n">accuracy</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="n">jaccard</span><span class="p">,</span>
+        <span class="n">hamming</span><span class="p">,</span>
+        <span class="n">auprc_score</span><span class="p">,</span>
+    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="test_step_with_prediction_statistics_with_gates"><a class="viewcode-back" href="../../../chmncc.test.html#chmncc.test.test.test_step_with_prediction_statistics_with_gates">[docs]</a><span class="k">def</span> <span class="nf">test_step_with_prediction_statistics_with_gates</span><span class="p">(</span>
@@ -650,6 +656,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">cumulative_accuracy</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="n">cumulative_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">total_train</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="c1"># statistics</span>
     <span class="n">stats_predicted</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]}</span>
@@ -685,23 +692,23 @@
                 <span class="n">targets</span><span class="p">,</span> <span class="n">log_space</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>  <span class="c1"># set them to None</span>
 
-            <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-            <span class="n">predicted</span> <span class="o">=</span> <span class="n">predicted</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
-
-            <span class="n">num_correct</span> <span class="o">=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">targets</span><span class="o">.</span><span class="n">byte</span><span class="p">())</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">total_train</span> <span class="o">+=</span> <span class="n">targets</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">targets</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">num_correct</span> <span class="o">=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">targets</span><span class="o">.</span><span class="n">byte</span><span class="p">())</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
             <span class="c1"># total correct predictions</span>
             <span class="n">cumulative_accuracy</span> <span class="o">+=</span> <span class="n">num_correct</span>
             <span class="c1"># total loss</span>
             <span class="n">cumulative_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
+            <span class="c1"># compute the au(prc)</span>
+            <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+            <span class="n">predicted</span> <span class="o">=</span> <span class="n">predicted</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">predicted_test</span> <span class="o">=</span> <span class="n">predicted</span>
                 <span class="n">y_test</span> <span class="o">=</span> <span class="n">targets</span>
-                <span class="n">output_train</span> <span class="o">=</span> <span class="n">outputs</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">predicted_test</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">predicted_test</span><span class="p">,</span> <span class="n">predicted</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-                <span class="n">output_train</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">output_train</span><span class="p">,</span> <span class="n">outputs</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
                 <span class="n">y_test</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">y_test</span><span class="p">,</span> <span class="n">targets</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
             <span class="c1"># create the statistics - predicted</span>
@@ -731,18 +738,17 @@
                 <span class="n">stats_correct</span><span class="p">[</span><span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">correct_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">stats_correct</span><span class="p">[</span><span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">correct_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
 
-            <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
-                <span class="k">break</span>
+            <span class="c1">#  if batch_idx == 200:</span>
+            <span class="c1">#      break</span>
 
     <span class="n">y_test</span> <span class="o">=</span> <span class="n">y_test</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
     <span class="n">predicted_test</span> <span class="o">=</span> <span class="n">predicted_test</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
-    <span class="n">output_train</span> <span class="o">=</span> <span class="n">output_train</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
 
     <span class="c1"># average precision score and other statistics</span>
-    <span class="n">accuracy</span> <span class="o">=</span> <span class="n">cumulative_accuracy</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_test</span><span class="p">)</span>
+    <span class="n">accuracy</span> <span class="o">=</span> <span class="n">cumulative_accuracy</span> <span class="o">/</span> <span class="n">total_train</span>
     <span class="n">jaccard</span> <span class="o">=</span> <span class="n">jaccard_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">predicted_test</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s2">&quot;micro&quot;</span><span class="p">)</span>
     <span class="n">hamming</span> <span class="o">=</span> <span class="n">hamming_loss</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">predicted_test</span><span class="p">)</span>
-    <span class="n">auprc_score</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># average_precision_score(y_test, output_train, average=&quot;micro&quot;)</span>
+    <span class="n">auprc_score</span> <span class="o">=</span> <span class="n">average_precision_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">predicted_test</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s2">&quot;micro&quot;</span><span class="p">)</span>
 
     <span class="c1"># classification report on the confusion matrix</span>
     <span class="n">clf_report</span> <span class="o">=</span> <span class="n">classification_report</span><span class="p">(</span>
@@ -755,7 +761,7 @@
 
     <span class="k">return</span> <span class="p">(</span>
         <span class="n">cumulative_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_loader</span><span class="p">),</span>
-        <span class="n">accuracy</span><span class="p">,</span>
+        <span class="n">accuracy</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
         <span class="n">jaccard</span><span class="p">,</span>
         <span class="n">hamming</span><span class="p">,</span>
         <span class="n">stats_predicted</span><span class="p">,</span>

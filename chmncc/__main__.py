@@ -95,11 +95,20 @@ sys.path.insert(
         "probabilistic_circuits",
     )
 )
+sys.path.insert(
+    1,
+    os.path.join(
+        os.path.dirname(__file__),
+        "probabilistic_circuits",
+        "pypsdd",
+    )
+)
 
 from chmncc.probabilistic_circuits.GatingFunction import DenseGatingFunction
 from chmncc.probabilistic_circuits.compute_mpe import CircuitMPE
 
 from pysdd.sdd import SddManager, Vtree
+from pypsdd.sdd import change_sdd_device
 
 class TerminationError(Exception):
     """
@@ -592,7 +601,7 @@ def c_hmcnn(
 
     print("#> Model")
 
-    #  summary(net, (img_depth, img_size, img_size))
+    summary(net, (img_depth, img_size, img_size))
 
     # print the statistics
     print("Train dataset statistics:")
@@ -1428,7 +1437,7 @@ def c_hmcnn(
     net.eval()
     if use_probabilistic_circuits:
         gate = gate.to("cpu")
-        gate.move_on_device('cpu')
+        change_sdd_device('cuda')
         gate.eval()
     net.R = net.R.to("cpu")
 

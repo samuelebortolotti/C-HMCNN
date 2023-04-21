@@ -8,6 +8,10 @@ from torch import log
 DEVICE = torch.device(torch.cuda.current_device() if torch.cuda.is_available() else "cpu")
 #  DEVICE = torch.device("cuda")#torch.device(torch.cuda.current_device() if torch.cuda.is_available() else "cpu")
 
+def change_sdd_device(device):
+    global DEVICE
+    DEVICE = device
+
 from torch import Tensor    
 def logsumexp(tensor: Tensor, dim: int, keepdim: bool = False) -> Tensor:
     with torch.no_grad():

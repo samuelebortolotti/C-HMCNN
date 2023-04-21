@@ -324,8 +324,8 @@
             <span class="n">y_test</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">y_test</span><span class="p">,</span> <span class="n">labels</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># TODO increase</span>
-        <span class="c1">#  if batch_idx == 200:</span>
-        <span class="c1">#      break</span>
+        <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">break</span>
 
     <span class="n">y_test</span> <span class="o">=</span> <span class="n">y_test</span><span class="p">[:,</span> <span class="n">train</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
     <span class="n">predicted_train</span> <span class="o">=</span> <span class="n">predicted_train</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">train</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
@@ -339,7 +339,7 @@
     <span class="c1"># accuracy</span>
     <span class="n">accuracy</span> <span class="o">=</span> <span class="n">tot_accuracy</span> <span class="o">/</span> <span class="n">total_train</span>
 
-    <span class="k">return</span> <span class="n">tot_loss</span> <span class="o">/</span> <span class="n">total_train</span><span class="p">,</span> <span class="n">accuracy</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="n">jaccard</span><span class="p">,</span> <span class="n">hamming</span><span class="p">,</span> <span class="n">auprc_score</span></div>
+    <span class="k">return</span> <span class="n">tot_loss</span> <span class="o">/</span> <span class="p">(</span><span class="n">batch_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">accuracy</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="n">jaccard</span><span class="p">,</span> <span class="n">hamming</span><span class="p">,</span> <span class="n">auprc_score</span></div>
 </pre></div>
 
            </div>

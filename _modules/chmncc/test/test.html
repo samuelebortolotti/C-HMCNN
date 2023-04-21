@@ -581,8 +581,8 @@
                 <span class="n">predicted_test</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">predicted_test</span><span class="p">,</span> <span class="n">predicted</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
                 <span class="n">y_test</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">y_test</span><span class="p">,</span> <span class="n">targets</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-            <span class="c1">#  if batch_idx == 200:</span>
-            <span class="c1">#      break</span>
+            <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="k">break</span>
 
     <span class="n">y_test</span> <span class="o">=</span> <span class="n">y_test</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
     <span class="n">predicted_test</span> <span class="o">=</span> <span class="n">predicted_test</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
@@ -594,7 +594,7 @@
     <span class="n">auprc_score</span> <span class="o">=</span> <span class="n">average_precision_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">predicted_test</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s2">&quot;micro&quot;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="p">(</span>
-        <span class="n">cumulative_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_loader</span><span class="p">),</span>
+        <span class="n">cumulative_loss</span> <span class="o">/</span> <span class="p">(</span><span class="n">batch_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
         <span class="n">accuracy</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
         <span class="n">jaccard</span><span class="p">,</span>
         <span class="n">hamming</span><span class="p">,</span>
@@ -738,8 +738,8 @@
                 <span class="n">stats_correct</span><span class="p">[</span><span class="n">superclass</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">correct_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">stats_correct</span><span class="p">[</span><span class="n">subclass</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">correct_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
 
-            <span class="c1">#  if batch_idx == 200:</span>
-            <span class="c1">#      break</span>
+            <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="k">break</span>
 
     <span class="n">y_test</span> <span class="o">=</span> <span class="n">y_test</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
     <span class="n">predicted_test</span> <span class="o">=</span> <span class="n">predicted_test</span><span class="p">[:,</span> <span class="n">test</span><span class="o">.</span><span class="n">to_eval</span><span class="p">]</span>
@@ -760,7 +760,7 @@
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="p">(</span>
-        <span class="n">cumulative_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_loader</span><span class="p">),</span>
+        <span class="n">cumulative_loss</span> <span class="o">/</span> <span class="p">(</span><span class="n">batch_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
         <span class="n">accuracy</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
         <span class="n">jaccard</span><span class="p">,</span>
         <span class="n">hamming</span><span class="p">,</span>

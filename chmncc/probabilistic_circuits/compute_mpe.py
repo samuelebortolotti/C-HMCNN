@@ -30,7 +30,7 @@ class CircuitMPE:
         self.beta = self.pmanager.copy_and_normalize_sdd(self.alpha, self.vtree)
 
         # plotting the circuit
-        self.plot_circuit(self.beta, "constraints", "beta")
+        #  self.plot_circuit(self.beta, "constraints", "beta")
         #  self.plot_circuit(self.alpha, "constraints", "alpha")
         #  exit(0)
 

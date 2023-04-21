@@ -512,8 +512,8 @@ def test_circuit(
                 predicted_test = torch.cat((predicted_test, predicted), dim=0)
                 y_test = torch.cat((y_test, targets), dim=0)
 
-            #  if batch_idx == 200:
-            #      break
+            if batch_idx == 200:
+                break
 
     y_test = y_test[:, test.to_eval]
     predicted_test = predicted_test[:, test.to_eval]
@@ -525,7 +525,7 @@ def test_circuit(
     auprc_score = average_precision_score(y_test, predicted_test, average="micro")
 
     return (
-        cumulative_loss / len(test_loader),
+        cumulative_loss / (batch_idx + 1),
         accuracy * 100,
         jaccard,
         hamming,
@@ -669,8 +669,8 @@ def test_step_with_prediction_statistics_with_gates(
                 stats_correct[superclass[i]][correct_idx] += 1
                 stats_correct[subclass[i]][correct_idx] += 1
 
-            #  if batch_idx == 200:
-            #      break
+            if batch_idx == 200:
+                break
 
     y_test = y_test[:, test.to_eval]
     predicted_test = predicted_test[:, test.to_eval]
@@ -691,7 +691,7 @@ def test_step_with_prediction_statistics_with_gates(
     )
 
     return (
-        cumulative_loss / len(test_loader),
+        cumulative_loss / (batch_idx + 1),
         accuracy * 100,
         jaccard,
         hamming,

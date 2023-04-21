@@ -255,8 +255,8 @@ def training_step_with_gate(
             y_test = torch.cat((y_test, labels), dim=0)
 
         # TODO increase
-        #  if batch_idx == 200:
-        #      break
+        if batch_idx == 200:
+            break
 
     y_test = y_test[:, train.to_eval]
     predicted_train = predicted_train.data[:, train.to_eval].to(torch.float)
@@ -270,4 +270,4 @@ def training_step_with_gate(
     # accuracy
     accuracy = tot_accuracy / total_train
 
-    return tot_loss / total_train, accuracy * 100, jaccard, hamming, auprc_score
+    return tot_loss / (batch_idx + 1), accuracy * 100, jaccard, hamming, auprc_score

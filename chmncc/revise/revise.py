@@ -455,8 +455,8 @@ def revise_step_with_gates(
             y_test = torch.cat((y_test, ground_truth), dim=0)
 
         # TODO force exit
-        #  if batch_idx == 200:
-        #      break
+        if batch_idx == 200:
+            break
 
     y_test = y_test[:, train.to_eval]
     predicted_train = predicted_train.data[:, train.to_eval].to(torch.float)
@@ -475,9 +475,9 @@ def revise_step_with_gates(
         confounded_samples = 1
 
     return (
-        comulative_loss / len(debug_loader),
-        cumulative_right_answer_loss / len(debug_loader),
-        cumulative_right_reason_loss / len(debug_loader),
+        comulative_loss / (batch_idx + 1),
+        cumulative_right_answer_loss / (batch_idx + 1),
+        cumulative_right_reason_loss / (batch_idx + 1),
         cumulative_right_reason_loss / confounded_samples,
         accuracy * 100,
         auprc_score,

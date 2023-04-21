@@ -1,30 +1,33 @@
 #!/usr/bin/env python
 
 from os import path
-import locale # for printing numbers with commas
+import locale  # for printing numbers with commas
+
 locale.setlocale(locale.LC_ALL, "en_US.UTF8")
-from pypsdd import Timer,Vtree,SddManager,PSddManager,SddNode,Inst
-from pypsdd import Prior,DirichletPrior,UniformSmoothing
+from pypsdd import Timer, Vtree, SddManager, PSddManager, SddNode, Inst
+from pypsdd import Prior, DirichletPrior, UniformSmoothing
 from pypsdd import io
 
-def fmt(number):
-    return locale.format("%d",number,grouping=True)
 
-def run_test(vtree_filename,sdd_filename,seed=0,enum_models=0):
+def fmt(number):
+    return locale.format("%d", number, grouping=True)
+
+
+def run_test(vtree_filename, sdd_filename, seed=0, enum_models=0):
 
     # READ SDD
     with Timer("reading vtree and sdd"):
         vtree = Vtree.read(vtree_filename)
         manager = SddManager(vtree)
-        alpha = io.sdd_read(sdd_filename,manager)
+        alpha = io.sdd_read(sdd_filename, manager)
 
     # CONVERT TO PSDD
     with Timer("converting to psdd"):
         pmanager = PSddManager(vtree)
-        beta = pmanager.copy_and_normalize_sdd(alpha,vtree)
+        beta = pmanager.copy_and_normalize_sdd(alpha, vtree)
         prior = UniformSmoothing(2.0)
-        #prior.initialize_psdd(beta)
-        Prior.random_parameters(beta,seed=seed)
+        # prior.initialize_psdd(beta)
+        Prior.random_parameters(beta, seed=seed)
 
     # PRINT SOME STATS
     print("================================")
@@ -42,20 +45,21 @@ def run_test(vtree_filename,sdd_filename,seed=0,enum_models=0):
 
     if beta.vtree.var_count <= 10:
         print(beta.as_table())
-    mpe_val,mpe_inst = beta.mpe()
-    mpe_val = mpe_val if beta.is_false_sdd else mpe_val/beta.theta_sum
-    print("mpe: %s %.8f" % (mpe_inst,mpe_val))
+    mpe_val, mpe_inst = beta.mpe()
+    mpe_val = mpe_val if beta.is_false_sdd else mpe_val / beta.theta_sum
+    print("mpe: %s %.8f" % (mpe_inst, mpe_val))
 
     if enum_models:
         models = []
         with Timer("enumerating %d models" % enum_models):
             for model in beta.enumerate_mpe(pmanager):
                 models.append(model)
-                if len(models) >= enum_models: break
+                if len(models) >= enum_models:
+                    break
 
         for model in models[:10]:
             print(model)
-        print("%d models (%d max)" % (len(models),10))
+        print("%d models (%d max)" % (len(models), 10))
 
         """
         with Timer("evaluating %d models" % enum_models):
@@ -65,24 +69,26 @@ def run_test(vtree_filename,sdd_filename,seed=0,enum_models=0):
                 if not alpha._is_bits_and_data_clear(): # random check
                     print "error: bits or data not clear"
         """
-    return beta,pmanager
+    return beta, pmanager
 
-def run_test_basename(basename,enum_models=1000):
+
+def run_test_basename(basename, enum_models=1000):
     print("######## " + basename)
-    dirname = path.join(path.dirname(__file__),'examples')
-    vtree_filename = path.join(dirname,basename + '.vtree')
-    sdd_filename = path.join(dirname,basename + '.sdd')
-    alpha,pmanager = run_test(vtree_filename,sdd_filename,enum_models=enum_models)
+    dirname = path.join(path.dirname(__file__), "examples")
+    vtree_filename = path.join(dirname, basename + ".vtree")
+    sdd_filename = path.join(dirname, basename + ".sdd")
+    alpha, pmanager = run_test(vtree_filename, sdd_filename, enum_models=enum_models)
     print()
-    return alpha,pmanager
+    return alpha, pmanager
 
-if __name__ == '__main__':
-    alpha,pmanager = run_test_basename('ranking-3')
-    alpha,pmanager = run_test_basename('example')
-    alpha,pmanager = run_test_basename('true')
-    alpha,pmanager = run_test_basename('literal')
-    alpha,pmanager = run_test_basename('false')
-    alpha,pmanager = run_test_basename('xor-16')
-    run_test_basename('xor-32')
-    run_test_basename('alarm')
-    run_test_basename('c432')
+
+if __name__ == "__main__":
+    alpha, pmanager = run_test_basename("ranking-3")
+    alpha, pmanager = run_test_basename("example")
+    alpha, pmanager = run_test_basename("true")
+    alpha, pmanager = run_test_basename("literal")
+    alpha, pmanager = run_test_basename("false")
+    alpha, pmanager = run_test_basename("xor-16")
+    run_test_basename("xor-32")
+    run_test_basename("alarm")
+    run_test_basename("c432")

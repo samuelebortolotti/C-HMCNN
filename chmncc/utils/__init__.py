@@ -11,6 +11,6 @@ from .utils import (
     prepare_dict_label_predictions_from_raw_predictions,
     plot_confounded_labels_predictions,
     prepare_probabilistic_circuit,
-    prepare_empty_probabilistic_circuit
+    prepare_empty_probabilistic_circuit,
 )
 from .cifar_helper import read_meta, unpickle

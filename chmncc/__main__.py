@@ -53,7 +53,7 @@ from chmncc.utils.utils import (
     plot_confounded_labels_predictions,
     prepare_empty_probabilistic_circuit,
     prepare_probabilistic_circuit,
-    get_constr_out
+    get_constr_out,
 )
 from chmncc.early_stopper import EarlyStopper
 from chmncc.networks.ConstrainedFFNN import initializeConstrainedFFNNModel
@@ -66,7 +66,12 @@ from chmncc.optimizers import (
     get_step_lr_scheduler,
     get_plateau_scheduler,
 )
-from chmncc.test import test_step, test_step_with_prediction_statistics, test_circuit, test_step_with_prediction_statistics_with_gates
+from chmncc.test import (
+    test_step,
+    test_step_with_prediction_statistics,
+    test_circuit,
+    test_step_with_prediction_statistics_with_gates,
+)
 from chmncc.dataset import (
     load_old_dataloaders,
     load_dataloaders,
@@ -88,12 +93,13 @@ import chmncc.multi_step_argumentation.multi_step_argumentation as msarg
 
 # Circuit imports
 import sys
+
 sys.path.insert(
     0,
     os.path.join(
         os.path.dirname(__file__),
         "probabilistic_circuits",
-    )
+    ),
 )
 sys.path.insert(
     1,
@@ -101,7 +107,7 @@ sys.path.insert(
         os.path.dirname(__file__),
         "probabilistic_circuits",
         "pypsdd",
-    )
+    ),
 )
 
 from chmncc.probabilistic_circuits.GatingFunction import DenseGatingFunction
@@ -109,6 +115,7 @@ from chmncc.probabilistic_circuits.compute_mpe import CircuitMPE
 
 from pysdd.sdd import SddManager, Vtree
 from pypsdd.sdd import change_sdd_device
+
 
 class TerminationError(Exception):
     """
@@ -330,19 +337,16 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--gates",
         type=int,
         default=1,
-        help="Number of hidden layers in gating function (default: 1)"
+        help="Number of hidden layers in gating function (default: 1)",
     )
     parser.add_argument(
         "--num-reps",
         type=int,
         default=1,
-        help="Number of hidden layers in gating function (default: 1)"
+        help="Number of hidden layers in gating function (default: 1)",
     )
     parser.add_argument(
-        "--S",
-        type=int,
-        default=0,
-        help="PSDD scaling factor (default: 0)"
+        "--S", type=int, default=0, help="PSDD scaling factor (default: 0)"
     )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(
@@ -385,9 +389,9 @@ def c_hmcnn(
     imbalance_dataset: bool = False,
     use_probabilistic_circuits: bool = False,
     constraint_folder: str = "./constraints",
-    gates: int = 1, # Number of hidden layers in gating function (default: 1)
-    num_reps: int = 1, # Number of PSDDs in the ensemble
-    S: int = 0, # PSDD scaling factor (default: 0)
+    gates: int = 1,  # Number of hidden layers in gating function (default: 1)
+    num_reps: int = 1,  # Number of PSDDs in the ensemble
+    S: int = 0,  # PSDD scaling factor (default: 0)
     **kwargs: Any,
 ) -> None:
     r"""
@@ -559,9 +563,9 @@ def c_hmcnn(
         elif network == "mlp":
             # MLP
             hyperparams = {
-                'num_layers': 3,
-                'dropout': 0.7,
-                'non_lin': 'relu',
+                "num_layers": 3,
+                "dropout": 0.7,
+                "non_lin": "relu",
             }
             net = MLP(
                 dataloaders["train_R"],
@@ -578,7 +582,6 @@ def c_hmcnn(
                 dataloaders["train_R"], output_classes, pretrained, constrained_layer
             )  # 20 superclasses, 100 subclasses + the root
 
-
     # use the probabilistic circuit
     cmpe: CircuitMPE
     gate: DenseGatingFunction
@@ -586,7 +589,7 @@ def c_hmcnn(
     if use_probabilistic_circuits:
         print("Using probabilistic circuits...")
         cmpe, gate = prepare_probabilistic_circuit(
-            dataloaders['train_set'].get_A(),
+            dataloaders["train_set"].get_A(),
             constraint_folder,
             dataset,
             device,
@@ -648,7 +651,9 @@ def c_hmcnn(
 
     if use_probabilistic_circuits:
         print("Get Adam optimizer...")
-        optimizer = get_adam_optimizer_with_gate(net, gate, learning_rate, weight_decay=weight_decay)
+        optimizer = get_adam_optimizer_with_gate(
+            net, gate, learning_rate, weight_decay=weight_decay
+        )
 
     # scheduler
     scheduler = get_plateau_scheduler(optimizer=optimizer, patience=patience)
@@ -691,7 +696,7 @@ def c_hmcnn(
                 train_jaccard,
                 train_hamming,
                 train_score,
-             ) = training_step_with_gate(
+            ) = training_step_with_gate(
                 net=net,
                 gate=gate,
                 cmpe=cmpe,
@@ -728,7 +733,9 @@ def c_hmcnn(
         # save the values in the metrics
         metrics["loss"]["train"] = train_loss
         metrics["acc"]["train"] = train_accuracy
-        metrics["score"]["train"] = train_score if use_probabilistic_circuits else train_au_prc_score_const
+        metrics["score"]["train"] = (
+            train_score if use_probabilistic_circuits else train_au_prc_score_const
+        )
 
         # revise step
         if use_probabilistic_circuits:
@@ -834,7 +841,9 @@ def c_hmcnn(
         # save the values in the metrics
         metrics["loss"]["val"] = val_loss
         metrics["acc"]["val"] = val_accuracy
-        metrics["score"]["val"] = val_score if use_probabilistic_circuits else val_au_prc_score_const
+        metrics["score"]["val"] = (
+            val_score if use_probabilistic_circuits else val_au_prc_score_const
+        )
 
         # test values
         if use_probabilistic_circuits:
@@ -940,7 +949,9 @@ def c_hmcnn(
         # save the values in the metrics
         metrics["loss"]["test"] = test_loss
         metrics["acc"]["test"] = test_accuracy
-        metrics["score"]["test"] = test_score if use_probabilistic_circuits else test_score_const
+        metrics["score"]["test"] = (
+            test_score if use_probabilistic_circuits else test_score_const
+        )
 
         # save model and checkpoint
         training_params["start_epoch"] = e + 1  # epoch where to start
@@ -1004,7 +1015,8 @@ def c_hmcnn(
             )
             print(
                 "Test loss {:.5f}, RRLoss {:.5f}".format(
-                    test_revise_total_right_answer_loss, test_revise_total_right_reason_loss
+                    test_revise_total_right_answer_loss,
+                    test_revise_total_right_reason_loss,
                 )
             )
 
@@ -1059,7 +1071,8 @@ def c_hmcnn(
             )
             print(
                 "Test loss {:.5f}, RRLoss {:.5f}".format(
-                    test_revise_total_right_answer_loss, test_revise_total_right_reason_loss
+                    test_revise_total_right_answer_loss,
+                    test_revise_total_right_reason_loss,
                 )
             )
 
@@ -1086,7 +1099,9 @@ def c_hmcnn(
 
             if train_loss_parent is not None and train_loss_children is not None:
                 logs.update({"train/train_right_answer_loss_parent": train_loss_parent})
-                logs.update({"train/train_right_answer_loss_children": train_loss_children})
+                logs.update(
+                    {"train/train_right_answer_loss_children": train_loss_children}
+                )
 
             if val_loss_parent is not None and val_loss_children is not None:
                 logs.update({"val/val_right_answer_loss_parent": val_loss_parent})
@@ -1094,7 +1109,9 @@ def c_hmcnn(
 
             if test_loss_parent is not None and test_loss_children is not None:
                 logs.update({"test/test_right_answer_loss_parent": test_loss_parent})
-                logs.update({"test/test_right_answer_loss_children": test_loss_children})
+                logs.update(
+                    {"test/test_right_answer_loss_children": test_loss_children}
+                )
 
             print(
                 "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve Raw {:.3f}, Test Area under Precision-Recall Curve Const {:.3f}".format(
@@ -1125,7 +1142,13 @@ def c_hmcnn(
     # test values
     if use_probabilistic_circuits:
         # test set
-        (test_loss, test_accuracy, test_jaccard, test_hamming, test_score) = test_circuit(
+        (
+            test_loss,
+            test_accuracy,
+            test_jaccard,
+            test_hamming,
+            test_score,
+        ) = test_circuit(
             net=net,
             gate=gate,
             cmpe=cmpe,
@@ -1137,7 +1160,7 @@ def c_hmcnn(
 
         print(
             "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Jaccard Score {:.3f}, Test Hamming Loss {:.3f}, Test Area under Precision-Recall Curve Raw {:.3f}".format(
-                    test_loss, test_accuracy, test_jaccard, test_hamming, test_score
+                test_loss, test_accuracy, test_jaccard, test_hamming, test_score
             )
         )
 
@@ -1370,7 +1393,6 @@ def c_hmcnn(
             "test_accuracy",
         )
 
-
         if use_probabilistic_circuits:
             (
                 _,
@@ -1387,7 +1409,9 @@ def c_hmcnn(
                 net=net,
                 cmpe=cmpe,
                 gate=gate,
-                test_loader=iter(dataloaders["test_loader_only_label_confounders_with_labels_names"]),
+                test_loader=iter(
+                    dataloaders["test_loader_only_label_confounders_with_labels_names"]
+                ),
                 title="Computing statistics in label confoundings",
                 test=dataloaders["train"],
                 device=device,
@@ -1408,7 +1432,9 @@ def c_hmcnn(
                 _,
             ) = test_step_with_prediction_statistics(
                 net=net,
-                test_loader=iter(dataloaders["test_loader_only_label_confounders_with_labels_names"]),
+                test_loader=iter(
+                    dataloaders["test_loader_only_label_confounders_with_labels_names"]
+                ),
                 cost_function=cost_function,
                 title="Computing statistics in label confoundings",
                 test=dataloaders["train"],
@@ -1420,13 +1446,18 @@ def c_hmcnn(
                 superclasses_number=dataloaders["train_set"].n_superclasses,
             )
 
-        labels_predictions_dict, counter_dict = prepare_dict_label_predictions_from_raw_predictions(y_pred, y_test, labels_name, dataset, True)
+        (
+            labels_predictions_dict,
+            counter_dict,
+        ) = prepare_dict_label_predictions_from_raw_predictions(
+            y_pred, y_test, labels_name, dataset, True
+        )
         plot_confounded_labels_predictions(
             labels_predictions_dict,
             counter_dict,
             os.environ["IMAGE_FOLDER"],
             "imbalancing_predictions",
-            dataset
+            dataset,
         )
 
         # extract also the names of the classes
@@ -1437,7 +1468,7 @@ def c_hmcnn(
     net.eval()
     if use_probabilistic_circuits:
         gate = gate.to("cpu")
-        change_sdd_device('cuda')
+        change_sdd_device("cpu")
         gate.eval()
     net.R = net.R.to("cpu")
 
@@ -1477,7 +1508,7 @@ def c_hmcnn(
                 thetas = gate(preds.float())
                 # negative log likelihood and map
                 cmpe.set_params(thetas)
-                predicted_1_0  = (cmpe.get_mpe_inst(single_el.shape[0]) > 0).long()
+                predicted_1_0 = (cmpe.get_mpe_inst(single_el.shape[0]) > 0).long()
             elif force_prediction:
                 predicted_1_0 = force_prediction_from_batch(
                     preds.data,

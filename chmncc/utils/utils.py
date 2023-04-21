@@ -154,7 +154,7 @@ def resume_training(
     experiment_name: str,
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
-    gate: DenseGatingFunction = None
+    gate: DenseGatingFunction = None,
 ) -> Tuple[Dict, Dict, int]:
     r"""
     Resumes the training if the corresponding flag is specified.
@@ -427,6 +427,7 @@ def plot_global_multiLabel_confusion_matrix(
         colorbar=True,
     )
     plt.title("Global multi-label confusion matrix")
+    print(fig_name)
     fig.savefig("{}.png".format(fig_name))
     plt.close(fig)
 

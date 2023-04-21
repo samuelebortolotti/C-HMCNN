@@ -730,7 +730,7 @@ def c_hmcnn(
                 revise_right_reason_loss_confounded,
                 revise_total_accuracy,
                 revise_total_score_raw,
-                revise_hamming_score,
+                revise_hamming_loss,
                 revise_jaccard_score,
             ) = revise_step_with_gates(
                 net=net,
@@ -874,7 +874,7 @@ def c_hmcnn(
                 test_revise_right_reason_loss_confounded,
                 test_revise_total_accuracy,
                 test_revise_total_score_raw,
-                test_revise_hamming_score,
+                test_revise_hamming_loss,
                 test_revise_jaccard_score,
             ) = revise_step_with_gates(
                 net=net,
@@ -975,7 +975,7 @@ def c_hmcnn(
 
         if use_probabilistic_circuits:
             print(
-                "\t Training loss {:.5f}, Training accuracy {:.2f}%, Training Jaccard Score {:.3f}, Training Hamming Score {:.3f}, Training Area under Precision-Recall Curve Raw {:.3f}".format(
+                "\t Training loss {:.5f}, Training accuracy {:.2f}%, Training Jaccard Score {:.3f}, Training Hamming Loss {:.3f}, Training Area under Precision-Recall Curve Raw {:.3f}".format(
                     train_loss,
                     train_accuracy,
                     train_jaccard,
@@ -989,7 +989,7 @@ def c_hmcnn(
                 )
             )
             print(
-                "\t Validation loss {:.5f}, Validation accuracy {:.2f}%, Validation Jaccard Score {:.3f}, Validation Hamming Score {:.3f}, Validation Area under Precision-Recall Curve Raw {:.3f}".format(
+                "\t Validation loss {:.5f}, Validation accuracy {:.2f}%, Validation Jaccard Score {:.3f}, Validation Hamming Loss {:.3f}, Validation Area under Precision-Recall Curve Raw {:.3f}".format(
                     val_loss, val_accuracy, val_jaccard, val_hamming, val_score
                 )
             )
@@ -1004,19 +1004,19 @@ def c_hmcnn(
                 "train/train_loss": train_loss,
                 "train/train_accuracy": train_accuracy,
                 "train/train_jaccard": train_jaccard,
-                "train/train_hamming": train_hamming,
+                "train/train_hamming_loss": train_hamming,
                 "train/train_auprc_raw": train_score,
                 "train/train_right_anwer_loss": train_loss,
                 "train/train_right_reason_loss": revise_total_right_reason_loss,
                 "val/val_loss": val_loss,
                 "val/val_accuracy": val_accuracy,
                 "val/val_jaccard": val_jaccard,
-                "val/val_hamming": val_hamming,
+                "val/val_hamming_loss": val_hamming,
                 "val/val_auprc_raw": val_score,
                 "test/test_loss": test_loss,
                 "test/test_accuracy": test_accuracy,
                 "test/test_jaccard": test_jaccard,
-                "test/test_hamming": test_hamming,
+                "test/test_hamming_loss": test_hamming,
                 "test/test_auprc_raw": test_score,
                 "test/test_right_answer_loss": test_revise_total_right_answer_loss,
                 "test/test_right_reason_loss": test_revise_total_right_reason_loss,
@@ -1024,7 +1024,7 @@ def c_hmcnn(
             }
 
             print(
-                "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Jaccard Score {:.3f}, Test Hamming Score {:.3f}, Test Area under Precision-Recall Curve Raw {:.3f}".format(
+                "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Jaccard Score {:.3f}, Test Hamming Loss {:.3f}, Test Area under Precision-Recall Curve Raw {:.3f}".format(
                     test_loss, test_accuracy, test_jaccard, test_hamming, test_score
                 )
             )
@@ -1127,7 +1127,7 @@ def c_hmcnn(
         )
 
         print(
-            "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Jaccard Score {:.3f}, Test Hamming Score {:.3f}, Test Area under Precision-Recall Curve Raw {:.3f}".format(
+            "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Jaccard Score {:.3f}, Test Hamming Loss {:.3f}, Test Area under Precision-Recall Curve Raw {:.3f}".format(
                     test_loss, test_accuracy, test_jaccard, test_hamming, test_score
             )
         )
@@ -1428,6 +1428,7 @@ def c_hmcnn(
     net.eval()
     if use_probabilistic_circuits:
         gate = gate.to("cpu")
+        gate.move_on_device('cpu')
         gate.eval()
     net.R = net.R.to("cpu")
 

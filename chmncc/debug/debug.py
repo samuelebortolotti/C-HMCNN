@@ -1022,7 +1022,7 @@ def debug(
 
         if use_probabilistic_circuits:
             print(
-                "\t [Validation set]: Loss {:.5f}, Validation accuracy {:.2f}%, Validation Jaccard Score {:.3f}, Validation Hamming Score {:.3f}, Validation Area under Precision-Recall Curve Raw {:.3f}".format(
+                "\t [Validation set]: Loss {:.5f}, Validation accuracy {:.2f}%, Validation Jaccard Score {:.3f}, Validation Hamming Loss {:.3f}, Validation Area under Precision-Recall Curve Raw {:.3f}".format(
                     val_loss, val_accuracy, val_jaccard, val_hamming, val_score_raw
                 )
             )
@@ -1090,7 +1090,7 @@ def debug(
 
         if use_probabilistic_circuits:
             print(
-                "\n\t [Test set] Test loss {:.5f}, Test accuracy {:.2f}%, Test Jaccard Score {:.3f}, Test Hamming Score {:.3f}, Test Area under Precision-Recall Curve Raw {:.3f}".format(
+                "\n\t [Test set] Test loss {:.5f}, Test accuracy {:.2f}%, Test Jaccard Score {:.3f}, Test Hamming Loss {:.3f}, Test Area under Precision-Recall Curve Raw {:.3f}".format(
                     test_loss_original, test_accuracy_original, test_jaccard, test_hamming, test_score_original_raw
                 )
             )
@@ -1129,7 +1129,7 @@ def debug(
             )
 
             print(
-                "\n\t [Test on confounded train data without confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Jaccard Score {:.3f}, Hamming Score {:.3f}".format(
+                "\n\t [Test on confounded train data without confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Jaccard Score {:.3f}, Hamming Loss {:.3f}".format(
                     test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_in_train_data_raw, test_conf_jaccard, test_conf_hamming
                 )
             )
@@ -1173,7 +1173,7 @@ def debug(
             )
 
             print(
-                "\n\t [Test set Confounder Only WO confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Jaccard Score {:.3f}, Hamming Score {:.3f}".format(
+                "\n\t [Test set Confounder Only WO confounders]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Jaccard Score {:.3f}, Hamming Loss {:.3f}".format(
                     test_conf_loss, test_conf_accuracy, test_conf_score_wo_conf_test_data_raw, test_conf_jaccard, test_conf_hamming
                 )
             )
@@ -1217,7 +1217,7 @@ def debug(
             )
 
             print(
-                "\n\t [Test set Confounder Only]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Jaccard Score {:.3f}, Hamming Score {:.3f}".format(
+                "\n\t [Test set Confounder Only]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Jaccard Score {:.3f}, Hamming Loss {:.3f}".format(
                     test_conf_loss, test_conf_accuracy, test_conf_score_only_conf_raw, test_conf_jaccard, test_conf_hamming
                 )
             )
@@ -1263,7 +1263,7 @@ def debug(
                 )
 
                 print(
-                    "\n\t [Test set Label confounder Only]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Jaccard Score {:.3f}, Hamming Score {:.3f}".format(
+                    "\n\t [Test set Label confounder Only]: Loss {:.5f}, Accuracy {:.2f}%, Area under Precision-Recall Curve raw {:.3f}, Jaccard Score {:.3f}, Hamming Loss {:.3f}".format(
                         test_lab_conf_loss, test_lab_conf_accuracy, test_lab_conf_score_raw, test_lab_conf_jaccard, test_lab_conf_hamming
                     )
                 )
@@ -1317,13 +1317,13 @@ def debug(
                 "train/train_right_reason_loss": train_total_right_reason_loss,
                 "train/train_accuracy": train_total_accuracy,
                 "train/train_auprc_raw": train_total_score_raw,
-                "train/train_hamming": train_hamming,
+                "train/train_hamming_loss": train_hamming,
                 "train/train_jaccard": train_jaccard,
                 "train/train_confounded_samples_only_right_reason": train_right_reason_loss_confounded,
                 "val/val_loss": val_loss,
                 "val/val_accuracy": val_accuracy,
                 "val/val_auprc_raw": val_score_raw,
-                "val/val_hamming": val_hamming,
+                "val/val_hamming_loss": val_hamming,
                 "val/val_jaccard": val_jaccard,
                 "test/only_training_confounded_classes_without_confounders_auprc_raw": test_conf_score_wo_conf_in_train_data_raw,
                 "test/only_test_confounded_casses_without_confounders_auprc_raw": test_conf_score_wo_conf_test_data_raw,
@@ -1333,7 +1333,7 @@ def debug(
                 "test/test_right_reason_loss": test_total_right_reason_loss,
                 "test/test_accuracy": test_accuracy_original,
                 "test/test_auprc_raw": test_score_original_raw,
-                "test/test_hamming": test_hamming,
+                "test/test_hamming_loss": test_hamming,
                 "test/test_jaccard": test_jaccard,
                 "learning_rate": get_lr(optimizer),
             }
@@ -1942,7 +1942,7 @@ def main(args: Namespace) -> None:
 
     if args.use_probabilistic_circuits:
         print(
-            "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Jaccard Score {:.3f}, Test Hamming Score {:.3f}, Test Area under Precision-Recall Curve Raw {:.3f}".format(
+            "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Jaccard Score {:.3f}, Test Hamming Loss {:.3f}, Test Area under Precision-Recall Curve Raw {:.3f}".format(
                 test_loss, test_accuracy, test_jaccard, test_hamming, test_score
             )
         )
@@ -2036,7 +2036,7 @@ def main(args: Namespace) -> None:
 
     if args.use_probabilistic_circuits:
         print(
-            "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Jaccard Score {:.3f}, Test Hamming Score {:.3f}, Test Area under Precision-Recall Curve Raw {:.3f}".format(
+            "\n\t Test loss {:.5f}, Test accuracy {:.2f}%, Test Jaccard Score {:.3f}, Test Hamming Loss {:.3f}, Test Area under Precision-Recall Curve Raw {:.3f}".format(
                 test_loss, test_accuracy, test_jaccard, test_hamming, test_score
             )
         )

@@ -81,6 +81,11 @@ class DenseGatingFunction(torch.nn.Module):
 
         self.initialize()
 
+    def move_on_device(self, device: str):
+        self.gate = self.gate.to(device)
+        for o in self.outputs:
+            o = o.to(device)
+
     def forward(self, x):
         x = self.gate(x)
         return [o(x).reshape(-1, *s) for o, s in zip(self.outputs, self.output_shapes)]

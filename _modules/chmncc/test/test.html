@@ -552,6 +552,10 @@
             <span class="c1"># thetas</span>
             <span class="n">thetas</span> <span class="o">=</span> <span class="n">gate</span><span class="p">(</span><span class="n">outputs</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
 
+            <span class="c1">#  print(&quot;Likelihood&quot;, gate.get_likelihood(outputs.float()))</span>
+            <span class="c1">#  print(&quot;Y&quot;, targets)</span>
+            <span class="c1">#  print(&quot;Likelihood shape&quot;, gate.get_likelihood(outputs.float()).shape)</span>
+
             <span class="c1"># negative log likelihood and map</span>
             <span class="n">cmpe</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">thetas</span><span class="p">)</span>
             <span class="n">predicted</span> <span class="o">=</span> <span class="p">(</span><span class="n">cmpe</span><span class="o">.</span><span class="n">get_mpe_inst</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>

@@ -15,6 +15,8 @@ from chmncc.utils.utils import (
     dotdict,
     split,
     get_confounders,
+    prepare_probabilistic_circuit,
+    prepare_empty_probabilistic_circuit
 )
 from chmncc.dataset import (
     load_dataloaders,
@@ -30,6 +32,8 @@ from sklearn.linear_model import RidgeClassifier
 from chmncc.arguments.arguments_bucket import ArgumentBucket
 from chmncc.debug.debug import plot_decision_surface
 
+from chmncc.probabilistic_circuits.GatingFunction import DenseGatingFunction
+from chmncc.probabilistic_circuits.compute_mpe import CircuitMPE
 
 class ArgumentsStepArgs:
     """Class which serves as a bucket in order to hold all the data used so as to produce the plots"""
@@ -264,6 +268,36 @@ def configure_subparsers(subparsers: Subparser) -> None:
         action="store_true",
         dest="cincer",
         help="Use the cincer approach in order to compute the label gradient",
+    )
+    parser.add_argument(
+        "--use-probabilistic-circuits",
+        "-probcirc",
+        action="store_true",
+        help="Whether to use the probabilistic circuit instead of the Giunchiglia approach",
+    )
+    parser.add_argument(
+        "--gates",
+        type=int,
+        default=1,
+        help="Number of hidden layers in gating function (default: 1)"
+    )
+    parser.add_argument(
+        "--num-reps",
+        type=int,
+        default=1,
+        help="Number of hidden layers in gating function (default: 1)"
+    )
+    parser.add_argument(
+        "--S",
+        type=int,
+        default=0,
+        help="PSDD scaling factor (default: 0)"
+    )
+    parser.add_argument(
+        "--constraint-folder",
+        type=str,
+        default="./constraints",
+        help="Folder for storing the constraints"
     )
 
     # set the main function to run when blob is called from the command line
@@ -556,6 +590,9 @@ def arguments(
     tau: float,
     multiply_by_probability_for_label_gradient: bool,
     cincer: bool,
+    gate: DenseGatingFunction,
+    cmpe: CircuitMPE,
+    use_probabilistic_circuits: bool,
     **kwargs: Any,
 ) -> None:
     """Arguments method: it displays some functions useful in order to understand whether the score is suitable for the identification of the
@@ -605,6 +642,9 @@ def arguments(
             norm_exponent=norm_exponent,
             multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
             cincer=cincer,
+            gate=gate,
+            cmpe=cmpe,
+            use_probabilistic_circuits=use_probabilistic_circuits,
         )
         print("Corr+Conf #", len(correct_confound.bucket_list))
 
@@ -626,6 +666,9 @@ def arguments(
             norm_exponent=norm_exponent,
             multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
             cincer=cincer,
+            gate=gate,
+            cmpe=cmpe,
+            use_probabilistic_circuits=use_probabilistic_circuits,
         )
         print("Wrong+Conf #", len(wrong_confound.bucket_list))
 
@@ -647,6 +690,9 @@ def arguments(
             norm_exponent=norm_exponent,
             multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
             cincer=cincer,
+            gate=gate,
+            cmpe=cmpe,
+            use_probabilistic_circuits=use_probabilistic_circuits,
         )
         print("Corr+NotConf #", len(correct_not_confound.bucket_list))
 
@@ -668,6 +714,9 @@ def arguments(
             norm_exponent=norm_exponent,
             multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
             cincer=cincer,
+            gate=gate,
+            cmpe=cmpe,
+            use_probabilistic_circuits=use_probabilistic_circuits,
         )
         print("NotCorr+NotConf #", len(wrong_not_confound.bucket_list))
 
@@ -689,6 +738,9 @@ def arguments(
             norm_exponent=norm_exponent,
             multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
             cincer=cincer,
+            gate=gate,
+            cmpe=cmpe,
+            use_probabilistic_circuits=use_probabilistic_circuits,
         )
         print("Corr+Imbalance #", len(correct_lab.bucket_list))
 
@@ -710,6 +762,9 @@ def arguments(
             norm_exponent=norm_exponent,
             multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
             cincer=cincer,
+            gate=gate,
+            cmpe=cmpe,
+            use_probabilistic_circuits=use_probabilistic_circuits,
         )
         print("NotCorr+Imbalance #", len(wrong_lab.bucket_list))
 
@@ -732,6 +787,9 @@ def arguments(
             norm_exponent=norm_exponent,
             multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
             cincer=cincer,
+            gate=gate,
+            cmpe=cmpe,
+            use_probabilistic_circuits=use_probabilistic_circuits,
         )
         print("NotCorr+Conf+Imbalance #", len(wrong_lab_img.bucket_list))
 
@@ -753,6 +811,9 @@ def arguments(
             norm_exponent=norm_exponent,
             multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
             cincer=cincer,
+            gate=gate,
+            cmpe=cmpe,
+            use_probabilistic_circuits=use_probabilistic_circuits,
         )
         print("Corr+Conf+Imbalance #", len(corr_lab_img.bucket_list))
 
@@ -2525,6 +2586,9 @@ def arguments_step(
     norm_exponent: int,
     multiply_by_probability_for_label_gradient: bool,
     cincer: bool,
+    use_probabilistic_circuits,
+    gate: DenseGatingFunction,
+    cmpe: CircuitMPE,
 ) -> ArgumentsStepArgs:
     """Arguments step
     Args:
@@ -2604,6 +2668,9 @@ def arguments_step(
         test=dataloaders["test"],
         confounded=confounded_samples_only,
         phase="test",
+        use_probabilistic_circuits=use_probabilistic_circuits,
+        gate=gate,
+        cmpe=cmpe,
     )
 
     # loop over the samples
@@ -2624,6 +2691,9 @@ def arguments_step(
             use_softmax,
             multiply_by_probability_for_label_gradient,
             cincer,
+            use_probabilistic_circuits,
+            gate,
+            cmpe,
         )
 
         # ig lists
@@ -3240,6 +3310,9 @@ def get_samples_for_arguments(
     test: dotdict,
     confounded: bool,
     phase: str,
+    use_probabilistic_circuits: bool = False,
+    cmpe: CircuitMPE = None,
+    gate: DenseGatingFunction = None,
 ) -> List[Tuple[torch.Tensor, List[int], List[int]]]:
     """
     Retrieve some samples from the dataloaders for a specific class according to whether
@@ -3305,7 +3378,13 @@ def get_samples_for_arguments(
             # forward pass
             logits = net(single_el.float())
             # predicted value
-            if force_prediction:
+            if use_probabilistic_circuits:
+                # thetas
+                thetas = gate(logits.float())
+                # negative log likelihood and map
+                cmpe.set_params(thetas)
+                predicted_1_0 = (cmpe.get_mpe_inst(single_el.shape[0]) > 0).long()
+            elif force_prediction:
                 predicted_1_0 = force_prediction_from_batch(
                     logits.data.cpu(),
                     prediction_treshold,
@@ -3450,6 +3529,32 @@ def main(args: Namespace) -> None:
     net = net.to(args.device)
     net.R = net.R.to(args.device)
     net.eval()
+
+    # use the probabilistic circuit
+    cmpe: CircuitMPE = None
+    gate: DenseGatingFunction = None
+
+    if args.use_probabilistic_circuits:
+        print("Using probabilistic circuits...")
+        #  cmpe, gate = prepare_probabilistic_circuit(
+        #      dataloaders['train_set'].get_A(),
+        #      args.constraint_folder,
+        #      args.dataset,
+        #      args.device,
+        #      args.gates,
+        #      args.num_reps,
+        #      output_classes,
+        #      args.S,
+        #  )
+        cmpe, gate = prepare_empty_probabilistic_circuit(
+            dataloaders['train_set'].get_A(),
+            args.device,
+            output_classes,
+        )
+
+        gate.eval()
+
+
     # summary
     summary(net, (img_depth, img_size, img_size))
 
@@ -3460,4 +3565,4 @@ def main(args: Namespace) -> None:
     print("-----------------------------------------------------")
 
     print("#> Arguments...")
-    arguments(net=net, dataloaders=dataloaders, **vars(args))
+    arguments(net=net, dataloaders=dataloaders, cmpe=cmpe, gate=gate, **vars(args))

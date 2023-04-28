@@ -483,6 +483,10 @@ def test_circuit(
             # thetas
             thetas = gate(outputs.float())
 
+            #  print("Likelihood", gate.get_likelihood(outputs.float()))
+            #  print("Y", targets)
+            #  print("Likelihood shape", gate.get_likelihood(outputs.float()).shape)
+
             # negative log likelihood and map
             cmpe.set_params(thetas)
             predicted = (cmpe.get_mpe_inst(inputs.shape[0]) > 0).long()

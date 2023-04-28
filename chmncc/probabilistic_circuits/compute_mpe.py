@@ -29,11 +29,6 @@ class CircuitMPE:
         # Storing psdd
         self.beta = self.pmanager.copy_and_normalize_sdd(self.alpha, self.vtree)
 
-        # plotting the circuit
-        #  self.plot_circuit(self.beta, "constraints", "beta")
-        #  self.plot_circuit(self.alpha, "constraints", "alpha")
-        #  exit(0)
-
     def overparameterize(self, S=2):
         self.beta = self.beta.overparameterize(S)
 
@@ -41,7 +36,6 @@ class CircuitMPE:
         self.beta.rand_parameters()
 
     def set_params(self, thetas, log_space=True):
-
         # self.beta.mixing = thetas[-1].log_softmax(dim=1) if log_space else thetas[-1].softmax(dim=1)
         self.beta.mixing = (
             thetas[-2].log_softmax(dim=1) if log_space else thetas[-2].softmax(dim=1)
@@ -65,7 +59,6 @@ class CircuitMPE:
 
             assert len(theta) == len(grouping[1])
             for param, node in zip(theta, grouping[1]):
-
                 # shape: (batch_size x num_children, K)
                 node.theta = param
 

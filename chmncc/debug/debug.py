@@ -11,7 +11,9 @@ from chmncc.optimizers.adam import get_adam_optimizer_with_gate
 from chmncc.utils.utils import (
     force_prediction_from_batch,
     load_last_weights,
+    load_last_weights_gate,
     load_best_weights,
+    load_best_weights_gate,
     grouped_boxplot,
     plot_confusion_matrix_statistics,
     plot_global_multiLabel_confusion_matrix,
@@ -1305,6 +1307,19 @@ def debug(
                     ),
                 ),
             )
+            if use_probabilistic_circuits:
+                torch.save(
+                    gate.state_dict(),
+                    os.path.join(
+                        model_folder,
+                        "debug_gate_{}_{}.pth".format(
+                            network,
+                            "integrated_gradients"
+                            if integrated_gradients
+                            else "input_gradients",
+                        ),
+                    ),
+                )
 
         print("Done with debug for iteration number: {}".format(iterations))
 
@@ -1803,6 +1818,8 @@ def main(args: Namespace) -> None:
 
     # Test on best weights (of the confounded model)
     load_best_weights(net, args.weights_path_folder, args.device)
+    if args.use_probabilistic_circuits:
+        load_best_weights_gate(gate, args.weights_path_folder, args.device)
 
     # dataloaders
     test_loader = dataloaders["test_loader"]
@@ -2300,6 +2317,19 @@ def main(args: Namespace) -> None:
                 else "input_gradients",
             ),
         ),
+    )
+    if args.use_probabilistic_circuits:
+        torch.save(
+            gate.state_dict(),
+            os.path.join(
+                args.model_folder,
+                "after_training_debug_gate_{}_{}.pth".format(
+                    args.network,
+                    "integrated_gradients"
+                    if args.integrated_gradients
+                    else "input_gradients",
+                ),
+            ),
     )
 
     # close wandb

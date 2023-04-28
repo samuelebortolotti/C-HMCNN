@@ -6,6 +6,9 @@ from typing import Dict, List, Tuple
 from chmncc.explanations import output_gradients
 from chmncc.utils import get_constr_indexes, force_prediction_from_batch
 
+from chmncc.probabilistic_circuits.GatingFunction import DenseGatingFunction
+from chmncc.probabilistic_circuits.compute_mpe import CircuitMPE
+
 
 class ArgumentBucket:
     """ArgumentBucket class"""
@@ -35,6 +38,9 @@ class ArgumentBucket:
         use_softmax: bool = False,
         multiply_by_probability_for_label_gradient: bool = False,
         cincer_approach: bool = False,
+        use_probabilistic_circuits: bool = False,
+        gate: DenseGatingFunction = None,
+        cmpe: CircuitMPE = None,
     ) -> None:
         """Initialization method
         Args:
@@ -68,8 +74,18 @@ class ArgumentBucket:
             cincer_approach,
         )
         # compute predictions
-        prediction = net(self.sample.float())[:, to_eval]
-        if force_prediction:
+        prediction_not_const = net(self.sample.float())
+        prediction = prediction_not_const[:, to_eval]
+
+        if use_probabilistic_circuits:
+            # thetas
+            thetas = gate(prediction_not_const.float())
+
+            # negative log likelihood and map
+            cmpe.set_params(thetas)
+            self.prediction = (cmpe.get_mpe_inst(self.sample.shape[0]) > 0).long()
+            print(self.prediction)
+        elif force_prediction:
             self.prediction = force_prediction_from_batch(
                 prediction.cpu().data, prediction_treshold, use_softmax
             )
@@ -77,7 +93,6 @@ class ArgumentBucket:
             self.prediction = prediction.cpu().data > prediction_treshold
 
         self.prediction = self.prediction.squeeze()
-        #  print("Prediction", self.prediction)
 
     def _compute_input_gradients(
         self, net: nn.Module, to_eval: torch.Tensor, norm_exponent: int

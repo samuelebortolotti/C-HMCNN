@@ -129,6 +129,27 @@ def load_best_weights(net: nn.Module, exp_name: str, device: str) -> None:
         print("## Not Resumed ##")
 
 
+def load_best_weights_gate(
+    gate: DenseGatingFunction, exp_name: str, device: str
+) -> None:
+    r"""
+    Function which loads the best weights of the gating function, basically it
+    looks for the `{exp_name}/best_gate.pth` and loads it
+
+    Args:
+        gate [DenseGatingFunction]: gate function
+        exp_name [str]: folder name
+        device [str]: device name
+    """
+    best_file = os.path.join(exp_name, "best_gate.pth")
+    if os.path.isfile(best_file):
+        checkpoint = torch.load(best_file, map_location=torch.device(device))
+        print("#> Resume best gate")
+        gate.load_state_dict(checkpoint)
+    else:
+        print("## Gate Not Resumed ##")
+
+
 def load_last_weights(net: nn.Module, exp_name: str, device: str) -> None:
     r"""
     Function which loads the last weights of the network, basically it
@@ -147,6 +168,27 @@ def load_last_weights(net: nn.Module, exp_name: str, device: str) -> None:
         net.eval()
     else:
         print("## Not Resumed ##")
+
+
+def load_last_weights_gate(
+    gate: DenseGatingFunction, exp_name: str, device: str
+) -> None:
+    r"""
+    Function which loads the last weights of the gating function, basically it
+    looks for the `{exp_name}/last_gate.pth` and loads it
+
+    Args:
+        gate [DenseGatingFunction]: gate function
+        exp_name [str]: folder name
+        device [str]: device name
+    """
+    best_file = os.path.join(exp_name, "last_gate.pth")
+    if os.path.isfile(best_file):
+        checkpoint = torch.load(best_file, map_location=torch.device(device))
+        print("#> Resume last gate")
+        gate.load_state_dict(checkpoint)
+    else:
+        print("## Gate Not Resumed ##")
 
 
 def resume_training(

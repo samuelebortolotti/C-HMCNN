@@ -962,17 +962,25 @@ def c_hmcnn(
             # save best weights
             if not dry:
                 torch.save(net.state_dict(), os.path.join(model_folder, "best.pth"))
+                if use_probabilistic_circuits:
+                    torch.save(gate.state_dict(), os.path.join(model_folder, "best_gate.pth"))
         # what to save
         save_dict = {
             "state_dict": net.state_dict(),
             "optimizer": optimizer.state_dict(),
-            "gate": gate.state_dict(),
             "training_params": training_params,
             "val_params": val_params,
         }
+
+        # add what to save
+        if use_probabilistic_circuits:
+            save_dict.update({"gate": gate.state_dict()})
+
         # save current weights
         if not dry:
             torch.save(net.state_dict(), os.path.join(model_folder, "net.pth"))
+            if use_probabilistic_circuits:
+                torch.save(gate.state_dict(), os.path.join(model_folder, "net_gate.pth"))
             # save current settings
             torch.save(save_dict, os.path.join(model_folder, "ckpt.pth"))
             if e % save_every_epochs == 0:
@@ -1198,6 +1206,8 @@ def c_hmcnn(
         test_el, _ = next(iter(test_loader))
     else:
         torch.save(net.state_dict(), os.path.join(model_folder, "last.pth"))
+        if use_probabilistic_circuits:
+            torch.save(gate.state_dict(), os.path.join(model_folder, "last_gate.pth"))
 
         # load the human readable labels dataloader
         test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]

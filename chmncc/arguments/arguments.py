@@ -12,6 +12,7 @@ from chmncc.networks import ResNet18, LeNet5, LeNet7, AlexNet, MLP
 from chmncc.utils.utils import (
     force_prediction_from_batch,
     load_best_weights,
+    load_best_weights_gate,
     dotdict,
     split,
     get_confounders,
@@ -299,6 +300,12 @@ def configure_subparsers(subparsers: Subparser) -> None:
         default="./constraints",
         help="Folder for storing the constraints"
     )
+    parser.add_argument(
+        "--use-gate-output",
+        "-ugout",
+        action="store_true",
+        help="Whether to use the gate output",
+    )
 
     # set the main function to run when blob is called from the command line
     parser.set_defaults(
@@ -312,6 +319,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         simplified_dataset=False,
         multiply_by_probability_for_label_gradient=False,
         cincer=False,
+        use_gate_output=False,
     )
 
 
@@ -593,6 +601,7 @@ def arguments(
     gate: DenseGatingFunction,
     cmpe: CircuitMPE,
     use_probabilistic_circuits: bool,
+    use_gate_output: bool,
     **kwargs: Any,
 ) -> None:
     """Arguments method: it displays some functions useful in order to understand whether the score is suitable for the identification of the
@@ -645,6 +654,7 @@ def arguments(
             gate=gate,
             cmpe=cmpe,
             use_probabilistic_circuits=use_probabilistic_circuits,
+            use_gate_output=use_gate_output,
         )
         print("Corr+Conf #", len(correct_confound.bucket_list))
 
@@ -669,6 +679,7 @@ def arguments(
             gate=gate,
             cmpe=cmpe,
             use_probabilistic_circuits=use_probabilistic_circuits,
+            use_gate_output=use_gate_output,
         )
         print("Wrong+Conf #", len(wrong_confound.bucket_list))
 
@@ -693,6 +704,7 @@ def arguments(
             gate=gate,
             cmpe=cmpe,
             use_probabilistic_circuits=use_probabilistic_circuits,
+            use_gate_output=use_gate_output,
         )
         print("Corr+NotConf #", len(correct_not_confound.bucket_list))
 
@@ -717,6 +729,7 @@ def arguments(
             gate=gate,
             cmpe=cmpe,
             use_probabilistic_circuits=use_probabilistic_circuits,
+            use_gate_output=use_gate_output,
         )
         print("NotCorr+NotConf #", len(wrong_not_confound.bucket_list))
 
@@ -741,6 +754,7 @@ def arguments(
             gate=gate,
             cmpe=cmpe,
             use_probabilistic_circuits=use_probabilistic_circuits,
+            use_gate_output=use_gate_output,
         )
         print("Corr+Imbalance #", len(correct_lab.bucket_list))
 
@@ -765,6 +779,7 @@ def arguments(
             gate=gate,
             cmpe=cmpe,
             use_probabilistic_circuits=use_probabilistic_circuits,
+            use_gate_output=use_gate_output,
         )
         print("NotCorr+Imbalance #", len(wrong_lab.bucket_list))
 
@@ -790,6 +805,7 @@ def arguments(
             gate=gate,
             cmpe=cmpe,
             use_probabilistic_circuits=use_probabilistic_circuits,
+            use_gate_output=use_gate_output,
         )
         print("NotCorr+Conf+Imbalance #", len(wrong_lab_img.bucket_list))
 
@@ -814,6 +830,7 @@ def arguments(
             gate=gate,
             cmpe=cmpe,
             use_probabilistic_circuits=use_probabilistic_circuits,
+            use_gate_output=use_gate_output,
         )
         print("Corr+Conf+Imbalance #", len(corr_lab_img.bucket_list))
 
@@ -967,6 +984,7 @@ def plot_arguments(
             ],
         )
     )
+    print("Primo")
     scatter_plot_score(
         ig_list_image,
         conf_list_image,
@@ -980,6 +998,7 @@ def plot_arguments(
     )
 
     # MAX end
+    print("Secondo")
     box_plot_input_gradients(
         ig_list_image_corr_conf=[el for l in correct_confound.ig_lists for el in l[0]],
         ig_list_image_corr_not_conf=[
@@ -1011,6 +1030,7 @@ def plot_arguments(
         prefix="only_input",
     )
 
+    print("Terzo")
     box_plot_input_gradients(
         ig_list_image_corr_conf=[el for l in correct_confound.ig_lists for el in l[1]],
         ig_list_image_corr_not_conf=[
@@ -1042,6 +1062,7 @@ def plot_arguments(
         prefix="only_label",
     )
 
+    print("Quarto")
     box_plot_input_gradients(
         ig_list_image_corr_conf=[
             el for l in correct_confound.ig_lists for e in l for el in e
@@ -1123,6 +1144,7 @@ def plot_arguments(
             [False for _ in range(len(wrong_lab_img_confound.ig_lists))],
         )
     )
+    print("Quinto")
     scatter_plot_score(
         ig_list_image,
         conf_list_image,
@@ -1141,17 +1163,19 @@ def plot_arguments(
     wrongly_guesses_conf = [
         False for _ in range(len(wrong_confound.max_arguments_list))
     ]
-    input_gradient_scatter(
-        correct_guesses=correct_confound.max_arguments_list,
-        correct_guesses_conf=correct_guesses_conf,
-        wrongly_guesses=wrong_confound.max_arguments_list,
-        wrongly_guesses_conf=wrongly_guesses_conf,
-        folder=arguments_folder,
-        prefix="max_score",
-    )
+    print("Sesto")
+    #  input_gradient_scatter(
+    #      correct_guesses=correct_confound.max_arguments_list,
+    #      correct_guesses_conf=correct_guesses_conf,
+    #      wrongly_guesses=wrong_confound.max_arguments_list,
+    #      wrongly_guesses_conf=wrongly_guesses_conf,
+    #      folder=arguments_folder,
+    #      prefix="max_score",
+    #  )
 
     # ig_lists_wrt_prediction TODO passiamo qua
 
+    print("Settimo")
     box_plot_input_gradients(
         ig_list_image_corr_conf=[
             el for l in correct_confound.ig_lists_wrt_prediction for el in l[0]
@@ -1197,6 +1221,7 @@ def plot_arguments(
         prefix="wrt_prediction_only_input",
     )
 
+    print("Ottavo")
     box_plot_input_gradients(
         ig_list_image_corr_conf=[
             el for l in correct_confound.ig_lists_wrt_prediction for el in l[1]
@@ -1242,6 +1267,7 @@ def plot_arguments(
         prefix="wrt_prediction_only_label",
     )
 
+    print("Nono")
     box_plot_input_gradients(
         ig_list_image_corr_conf=[
             el for l in correct_confound.ig_lists_wrt_prediction for e in l for el in e
@@ -1350,6 +1376,8 @@ def plot_arguments(
             [False for _ in range(len(wrong_lab_img_confound.ig_lists_wrt_prediction))],
         )
     )
+
+    print("Decimo")
     scatter_plot_score(
         ig_list_image,
         conf_list_image,
@@ -1364,6 +1392,7 @@ def plot_arguments(
 
     # ig_lists_wrt_prediction TODO passiamo qua
 
+    print("Undicesimo")
     box_plot_input_gradients(
         ig_list_image_corr_conf=[
             el for l in correct_confound.suitable_gradient_full_list for el in l[0]
@@ -1417,6 +1446,7 @@ def plot_arguments(
         prefix="wrt_groundtruth_only_input",
     )
 
+    print("Dodicesimo")
     box_plot_input_gradients(
         ig_list_image_corr_conf=[
             el for l in correct_confound.suitable_gradient_full_list for el in l[1]
@@ -1470,6 +1500,7 @@ def plot_arguments(
         prefix="wrt_groundtruth_only_label",
     )
 
+    print("Tredicesimo")
     box_plot_input_gradients(
         ig_list_image_corr_conf=[
             el
@@ -1599,6 +1630,7 @@ def plot_arguments(
             ],
         )
     )
+    print("Quattordicesimo")
     scatter_plot_score(
         ig_list_image,
         conf_list_image,
@@ -1612,6 +1644,7 @@ def plot_arguments(
     )
 
     # TODO
+    print("Quindicesimo")
     score_barplot(
         correct_confound.influence_parent_counter,
         correct_confound.not_influence_parent_counter,
@@ -2589,6 +2622,7 @@ def arguments_step(
     use_probabilistic_circuits,
     gate: DenseGatingFunction,
     cmpe: CircuitMPE,
+    use_gate_output: bool,
 ) -> ArgumentsStepArgs:
     """Arguments step
     Args:
@@ -2694,6 +2728,7 @@ def arguments_step(
             use_probabilistic_circuits,
             gate,
             cmpe,
+            use_gate_output,
         )
 
         # ig lists
@@ -3536,23 +3571,16 @@ def main(args: Namespace) -> None:
 
     if args.use_probabilistic_circuits:
         print("Using probabilistic circuits...")
-        #  cmpe, gate = prepare_probabilistic_circuit(
-        #      dataloaders['train_set'].get_A(),
-        #      args.constraint_folder,
-        #      args.dataset,
-        #      args.device,
-        #      args.gates,
-        #      args.num_reps,
-        #      output_classes,
-        #      args.S,
-        #  )
-        cmpe, gate = prepare_empty_probabilistic_circuit(
+        cmpe, gate = prepare_probabilistic_circuit(
             dataloaders['train_set'].get_A(),
+            args.constraint_folder,
+            args.dataset,
             args.device,
+            args.gates,
+            args.num_reps,
             output_classes,
+            args.S,
         )
-
-        gate.eval()
 
 
     # summary
@@ -3560,6 +3588,10 @@ def main(args: Namespace) -> None:
 
     # Test on best weights (of the confounded model)
     load_best_weights(net, args.weights_path_folder, args.device)
+    load_best_weights_gate(gate, args.weights_path_folder, args.device)
+
+    if args.use_probabilistic_circuits:
+        gate.eval()
 
     print("Network resumed...")
     print("-----------------------------------------------------")

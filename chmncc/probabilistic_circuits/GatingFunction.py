@@ -90,6 +90,9 @@ class DenseGatingFunction(torch.nn.Module):
         x = self.gate(x)
         return [o(x).reshape(-1, *s) for o, s in zip(self.outputs, self.output_shapes)]
 
+    def get_output(self, x):
+        return self.gate(x)
+
     def init_weights(self, m):
         if isinstance(m, torch.nn.Linear):
             torch.nn.init.xavier_uniform_(m.weight)

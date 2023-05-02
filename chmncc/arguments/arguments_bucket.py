@@ -41,6 +41,7 @@ class ArgumentBucket:
         use_probabilistic_circuits: bool = False,
         gate: DenseGatingFunction = None,
         cmpe: CircuitMPE = None,
+        use_gate_output: bool = False,
     ) -> None:
         """Initialization method
         Args:
@@ -63,7 +64,14 @@ class ArgumentBucket:
         self.input_gradient_dict = {}
         self.label_gradient = {}
         # compute input gradients
-        self._compute_input_gradients(net, to_eval, norm_exponent)
+        self._compute_input_gradients(
+            net,
+            to_eval,
+            norm_exponent,
+            use_probabilistic_circuits,
+            use_gate_output,
+            gate,
+        )
         # compute class gradients
         self._compute_class_gradients(
             net,
@@ -84,7 +92,6 @@ class ArgumentBucket:
             # negative log likelihood and map
             cmpe.set_params(thetas)
             self.prediction = (cmpe.get_mpe_inst(self.sample.shape[0]) > 0).long()
-            print(self.prediction)
         elif force_prediction:
             self.prediction = force_prediction_from_batch(
                 prediction.cpu().data, prediction_treshold, use_softmax
@@ -95,7 +102,13 @@ class ArgumentBucket:
         self.prediction = self.prediction.squeeze()
 
     def _compute_input_gradients(
-        self, net: nn.Module, to_eval: torch.Tensor, norm_exponent: int
+        self,
+        net: nn.Module,
+        to_eval: torch.Tensor,
+        norm_exponent: int,
+        use_probabilistic_circuits: bool = False,
+        use_gate_output: bool = False,
+        gate: DenseGatingFunction = None,
     ) -> None:
         """Compute input gradients with respect to each class
         Args:
@@ -107,15 +120,22 @@ class ArgumentBucket:
             d/dx P_theta(yi|x) foreach i in {1...#classes}
         """
         # get the logits
-        logits = net(self.sample.float())[:, to_eval]
+        logits_not_cut = net(self.sample.float())
+        logits = logits_not_cut[:, to_eval]
+
+        if use_gate_output and use_probabilistic_circuits:
+            logits = gate.get_output(logits_not_cut.float())[:, to_eval]
+
         for i in range(logits.shape[1]):
             # input graadients for the ith logit
             grad = output_gradients(self.sample, logits[:, i])
             # add it to the input gradient dictionary
             self.input_gradient_dict[i] = (
                 grad,
-                torch.linalg.norm(grad.flatten(), dim=0, ord=2) ** norm_exponent,
+                torch.linalg.norm(grad.flatten(), dim=0, ord=2),  # ** norm_exponent,
             )
+            if torch.linalg.norm(grad.flatten(), dim=0, ord=2) > 1:
+                print(torch.linalg.norm(grad.flatten(), dim=0, ord=2))
 
     def _compute_class_gradients(
         self,
@@ -188,6 +208,16 @@ class ArgumentBucket:
                     z,
                     torch.linalg.norm(z.flatten(), dim=0, ord=2) ** norm_exponent,
                 )
+
+    def marginalize_probability(
+        self, prob: torch.Tensor, num_parents: int
+    ) -> Dict[int, torch.Tensor]:
+        marginalized_prob = {}
+        sum_el = torch.sum(prob)
+        for p in range(num_parents):
+            marginalized_prob[p] = sum_el - prob[p]
+            # TODO compute the gradient
+        return marginalized_prob
 
     def __repr__(self):
         """Repr"""

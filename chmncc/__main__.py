@@ -80,6 +80,7 @@ from chmncc.dataset import (
     get_named_label_predictions_with_indexes,
 )
 import chmncc.dataset.preproces_cifar as data
+import chmncc.clusters.clusters as clusters
 import chmncc.debug.debug as debug
 import chmncc.dataset.visualize_dataset as visualize_data
 from chmncc.config.old_config import lrs, epochss, hidden_dims
@@ -161,6 +162,7 @@ def get_args() -> Namespace:
     debug.configure_subparsers(subparsers)
     argum.configure_subparsers(subparsers)
     msarg.configure_subparsers(subparsers)
+    clusters.configure_subparsers(subparsers)
 
     # parse the command line arguments
     parsed_args = parser.parse_args()

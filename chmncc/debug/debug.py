@@ -803,6 +803,7 @@ def debug(
     use_probabilistic_circuits: bool,
     gate: DenseGatingFunction,
     cmpe: CircuitMPE,
+    use_gate_output: bool,
     **kwargs: Any
 ) -> None:
     """Method which performs the debug step by fine-tuning the network employing the right for the right reason loss.
@@ -934,6 +935,7 @@ def debug(
                 revive_function=reviseLoss,
                 device=device,
                 title="Train with RRR",
+                use_gate_output=use_gate_output,
             )
         else:
             (
@@ -1058,6 +1060,7 @@ def debug(
                 device=device,
                 title="Test with RRR",
                 have_to_train=False,
+                use_gate_output=use_gate_output,
             )
         else:
             (
@@ -1637,6 +1640,12 @@ def configure_subparsers(subparsers: Subparser) -> None:
         default="./constraints",
         help="Folder for storing the constraints"
     )
+    parser.add_argument(
+        "--use-gate-output",
+        "-ugo",
+        action="store_true",
+        help="Whether to use the gate output for the RRR loss"
+    )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(
         func=main,
@@ -1651,6 +1660,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         balance_subclasses=[],
         balance_weights=[],
         correct_by_duplicating_samples=False,
+        use_gate_output=False
     )
 
 

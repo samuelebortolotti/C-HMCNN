@@ -816,7 +816,6 @@ class NormalizedSddNode(SddNode):
                 continue
 
             if node.is_false():
-                #  print("Sono falso")
                 data = (
                     torch.tensor(0.0)
                     if not log_space
@@ -824,7 +823,6 @@ class NormalizedSddNode(SddNode):
                 )
 
             elif node.is_true():
-                #  print("Sono vero")
                 data = torch.where(
                     (target[:, node.vtree.var - 1] > 0).unsqueeze(-1).expand(-1, 1),
                     node.theta[:, 1],
@@ -832,25 +830,16 @@ class NormalizedSddNode(SddNode):
                 )
 
             elif node.is_literal():
-                #  print("Sono literal")
-                #  print(node.literal)
                 if node.literal > 0:
-                    #  print("Si")
                     data = (target[:, node.literal - 1] == 1).float()
                 else:
-                    #  print("No")
                     data = (target[:, -node.literal - 1] == 0).float()
-                #  print(data.shape)
-                #  print(type(data))
-                #  print(data)
 
                 if log_space:
                     data = data.log()
                 data = data.unsqueeze(-1).expand(-1, 1)
 
             elif node.is_mixing():
-                #  print("Sono mixing")
-
                 node.theta = node.theta.transpose(
                     0, 1
                 )  # Shape: (num_children x batch_size)
@@ -863,16 +852,12 @@ class NormalizedSddNode(SddNode):
                 data = logsumexp(node.theta + data, dim=0)
 
             else:  # node.is_decomposition
-                #  print("Sono altro")
-
                 node.theta = node.theta.transpose(
                     0, 1
                 )  # Shape: (num_children x batch_size)
 
                 if log_space:
                     data = None
-                    # data = torch.tensor(-float('inf'), device=DEVICE)
-                    #  print("Entro qua")
                     for i, (p, s) in enumerate(node.positive_elements):
                         if data is None:
                             data = node.theta[i] + p.data + s.data
@@ -888,16 +873,12 @@ class NormalizedSddNode(SddNode):
                         ]
                     )
 
-            #  print("Data", data)
             node.data = data
 
         if log_space:
-            #  print("logspace in ll", data)
             return data
 
-        #  print("Data in ll", data)
         data = torch.log(data)
-        #  print("Data in ll after log", data)
         return data
 
     ########################################

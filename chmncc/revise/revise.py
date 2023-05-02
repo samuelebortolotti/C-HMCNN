@@ -330,6 +330,7 @@ def revise_step_with_gates(
     title: str,
     device: str = "cuda",
     have_to_train: bool = True,
+    use_gate_output: bool = False,
 ) -> Tuple[float, float, float, float, float, float, float, float]:
     """Revise step of the network. It integrates the user feedback and revise the network by the means
     of the RRRLoss.
@@ -411,6 +412,9 @@ def revise_step_with_gates(
         train_output = (
             1 - ground_truth
         ) * constr_output.double() + ground_truth * train_output
+
+        if use_gate_output:
+            train_output = gate.get_output(outputs.float())
 
         # get the loss masking the prediction on the root -> confunder
         (loss, right_answer_loss, right_reason_loss,) = revive_function(

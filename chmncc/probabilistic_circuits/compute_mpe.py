@@ -120,14 +120,8 @@ class CircuitMPE:
         return self.beta.models(self.vtree)
 
     def cross_entropy(self, target, log_space=True):
-        #  print("Target", target)
-        #  print(type(self.beta))
-        #  print(self.beta)
         ll = self.beta.ll(target, log_space=log_space)
-        #  print("First", ll)
         ll = (ll + self.beta.mixing).logsumexp(dim=-1)
-        #  print("Second", ll)
-        #  exit(0)
         return -ll
 
     def cross_entropy_psdd(self, target):
@@ -143,7 +137,7 @@ if __name__ == "__main__":
     from torch import log
 
     torch.set_printoptions(precision=8)
-    torch.cuda.set_device(1)
+    #  torch.cuda.set_device(1)
 
     # Testing overparameterization
     import pysdd.sdd as pysdd
@@ -159,16 +153,16 @@ if __name__ == "__main__":
 
     cmpe = CircuitMPE("abc_true.vtree", "abc_true.sdd")
     nodes = cmpe.overparameterize()
-    import pdb
-
-    pdb.set_trace()
-    print(
-        cmpe.beta.weighted_model_count(
-            torch.tensor([[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]])
-        )
-    )
-    io.psdd_save_as_dot(cmpe.beta, "abc_true.dot")
-    exit()
+    #  import pdb
+    #
+    #  pdb.set_trace()
+    #  print(
+    #      cmpe.beta.weighted_model_count(
+    #          torch.tensor([[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]])
+    #      )
+    #  )
+    #  io.psdd_save_as_dot(cmpe.beta, "abc_true.dot")
+    #  exit()
 
     # Testing nll
     import pysdd.sdd as pysdd  # import Vtree, SddManager, WmcManager, Fnf
@@ -200,7 +194,7 @@ if __name__ == "__main__":
     nll = cmpe.cross_entropy(torch.tensor([[1, 1, 0, 0]]))
     assert torch.isclose(nll, torch.tensor(0.0))
     print("nll all good")
-    exit()
+    #  exit()
 
     vtree = Vtree.read("abcd_constraint.vtree")
     manager = SddManager(vtree)
@@ -261,81 +255,92 @@ if __name__ == "__main__":
     assert torch.isclose(circuit_entropy, entropy)
 
     ## Check probabilities of all the models of the formula
-    # assert(torch.isclose(c.pr_inst([-1, -2, 3, 4]), torch.tensor(0.2295), atol=1e-04))
-    # assert(torch.isclose(c.pr_inst([-1, 2, 3, 4]), torch.tensor(0.0984), atol=1e-04))
-    # assert(torch.isclose(c.pr_inst([1, -2, 3, 4]), torch.tensor(0.0574), atol=1e-04))
-    # assert(torch.isclose(c.pr_inst([1, 2, -3, -4]), torch.tensor(0.3320), atol=1e-04))
-    # assert(torch.isclose(c.pr_inst([1, 2, -3, 4]), torch.tensor(0.0369), atol=1e-04))
-    # assert(torch.isclose(c.pr_inst([1, 2, 3, -4]), torch.tensor(0.2213), atol=1e-04))
-    # assert(torch.isclose(c.pr_inst([1, 2, 3, 4]), torch.tensor(0.0246), atol=1e-04))
+    assert torch.isclose(c.pr_inst([-1, -2, 3, 4]), torch.tensor(0.2295), atol=1e-04)
+    assert torch.isclose(c.pr_inst([-1, 2, 3, 4]), torch.tensor(0.0984), atol=1e-04)
+    assert torch.isclose(c.pr_inst([1, -2, 3, 4]), torch.tensor(0.0574), atol=1e-04)
+    assert torch.isclose(c.pr_inst([1, 2, -3, -4]), torch.tensor(0.3320), atol=1e-04)
+    assert torch.isclose(c.pr_inst([1, 2, -3, 4]), torch.tensor(0.0369), atol=1e-04)
+    assert torch.isclose(c.pr_inst([1, 2, 3, -4]), torch.tensor(0.2213), atol=1e-04)
+    assert torch.isclose(c.pr_inst([1, 2, 3, 4]), torch.tensor(0.0246), atol=1e-04)
 
-    ## Test 2
-    ## An sdd for the formula true
-    # c = CircuitMPE('abcd_constraint.vtree', 'true_constraint.sdd')
+    # Test 2
+    # An sdd for the formula true
+    c = CircuitMPE("abcd_constraint.vtree", "true_constraint.sdd")
 
-    ## literal weights are of the form [[-a, a], [-b, b], [-c, c], [-d, d]]
-    # lit_weights = torch.tensor([[0.8, 0.2], [0.7, 0.3], [0.6, 0.4], [0.9, 0.1]], device=torch.cuda.current_device())
+    # literal weights are of the form [[-a, a], [-b, b], [-c, c], [-d, d]]
+    lit_weights = torch.tensor(
+        [[0.8, 0.2], [0.7, 0.3], [0.6, 0.4], [0.9, 0.1]],
+        device=torch.cuda.current_device(),
+    )
 
-    # models = [[0, 0, 0, 0],
-    #         [0, 0, 0, 1],
-    #         [0, 0, 1, 0],
-    #         [0, 0, 1, 1],
-    #         [0, 1, 0, 0],
-    #         [0, 1, 0, 1],
-    #         [0, 1, 1, 0],
-    #         [0, 1, 1, 1],
-    #         [1, 0, 0, 0],
-    #         [1, 0, 0, 1],
-    #         [1, 0, 1, 0],
-    #         [1, 0, 1, 1],
-    #         [1, 1, 0, 0],
-    #         [1, 1, 0, 1],
-    #         [1, 1, 1, 0],
-    #         [1, 1, 1, 1]]
+    models = [
+        [0, 0, 0, 0],
+        [0, 0, 0, 1],
+        [0, 0, 1, 0],
+        [0, 0, 1, 1],
+        [0, 1, 0, 0],
+        [0, 1, 0, 1],
+        [0, 1, 1, 0],
+        [0, 1, 1, 1],
+        [1, 0, 0, 0],
+        [1, 0, 0, 1],
+        [1, 0, 1, 0],
+        [1, 0, 1, 1],
+        [1, 1, 0, 0],
+        [1, 1, 0, 1],
+        [1, 1, 1, 0],
+        [1, 1, 1, 1],
+    ]
 
-    # probs = []
-    # for model in models:
-    #    prob = 1
-    #    for i, val in enumerate(model):
-    #        prob *= lit_weights[i][val]
-    #    probs += [prob]
+    probs = []
+    for model in models:
+        prob = 1
+        for i, val in enumerate(model):
+            prob *= lit_weights[i][val]
+        probs += [prob]
 
-    ## Weighted model counts of both the normalized and unnormalized circuits
-    # wmc = c.get_tf_ac(lit_weights)
-    # wmc_normalized = c.get_torch_ac(lit_weights)
+    # Weighted model counts of both the normalized and unnormalized circuits
+    wmc = c.get_tf_ac(lit_weights)
+    wmc_normalized = c.get_torch_ac(lit_weights)
 
-    # assert(wmc == wmc_normalized == 1)
+    assert wmc == wmc_normalized == 1
 
-    ## Brute force entropy
-    # entropy = -sum([p*log(p) for p in probs])
+    # Brute force entropy
+    entropy = -sum([p * log(p) for p in probs])
 
-    ## Circuit Entropy
-    # circuit_entropy = c.Shannon_entropy()
-    # assert(circuit_entropy == entropy)
+    # Circuit Entropy
+    circuit_entropy = c.Shannon_entropy()
+    assert circuit_entropy == entropy
 
-    ## Test 3
-    ## An sdd for the formula (P | L) & (-A | P) & (-K | (A | L))
-    # c = CircuitMPE('LKPA_constraint.vtree', 'LKPA_constraint.sdd')
+    # Test 3
+    # An sdd for the formula (P | L) & (-A | P) & (-K | (A | L))
+    c = CircuitMPE("LKPA_constraint.vtree", "LKPA_constraint.sdd")
 
-    ## literal weights form     [[-L,    L], [-K,    K], [-P,    P], [-A,    A]]
-    # lit_weights = torch.tensor([[0.8, 0.2], [0.7, 0.3], [0.6, 0.4], [0.9, 0.1]], device=torch.cuda.current_device())
+    # literal weights form     [[-L,    L], [-K,    K], [-P,    P], [-A,    A]]
+    lit_weights = torch.tensor(
+        [[0.8, 0.2], [0.7, 0.3], [0.6, 0.4], [0.9, 0.1]],
+        device=torch.cuda.current_device(),
+    )
 
-    ## Weighted model counts of both the normalized and unnormalized circuits
-    # wmc = c.get_tf_ac(lit_weights)
-    # wmc_normalized = c.get_torch_ac(lit_weights)
+    # Weighted model counts of both the normalized and unnormalized circuits
+    wmc = c.get_tf_ac(lit_weights)
+    wmc_normalized = c.get_torch_ac(lit_weights)
 
-    # print(c.get_tf_ac(lit_weights))
-    # print(c.get_torch_ac(lit_weights))
-    # assert(c.get_tf_ac(lit_weights) == 0.4216)
-    # assert(c.get_torch_ac(lit_weights) == 0.4216)
-    #
-    ## Entropy of the probability distribution
-    # weights = torch.tensor([0.2016, 0.0224, 0.0096, 0.0756, 0.0504, 0.0056, 0.0324, 0.0216, 0.0024], device=torch.cuda.current_device())
-    # probs = weights/wmc
-    # entropy = -sum([p*log(p) for p in probs])
+    print(c.get_tf_ac(lit_weights))
+    print(c.get_torch_ac(lit_weights))
+    assert c.get_tf_ac(lit_weights) == 0.4216
+    assert c.get_torch_ac(lit_weights) == 0.4216
 
-    ## Circuit Entropy
-    # circuit_entropy = c.Shannon_entropy()
+    # Entropy of the probability distribution
+    weights = torch.tensor(
+        [0.2016, 0.0224, 0.0096, 0.0756, 0.0504, 0.0056, 0.0324, 0.0216, 0.0024],
+        device=torch.cuda.current_device(),
+    )
+    probs = weights / wmc
+    entropy = -sum([p * log(p) for p in probs])
 
-    ## Assert the circuit's entropy and the entropy of the groundtruth distribution match
-    # assert(torch.isclose(circuit_entropy, entropy))
+    # Circuit Entropy
+    circuit_entropy = c.Shannon_entropy()
+
+    # Assert the circuit's entropy and the entropy of the groundtruth distribution match
+    assert torch.isclose(circuit_entropy, entropy)

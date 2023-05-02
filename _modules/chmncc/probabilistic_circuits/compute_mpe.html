@@ -189,14 +189,8 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">models</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vtree</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="CircuitMPE.cross_entropy"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.cross_entropy">[docs]</a>    <span class="k">def</span> <span class="nf">cross_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">log_space</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="c1">#  print(&quot;Target&quot;, target)</span>
-        <span class="c1">#  print(type(self.beta))</span>
-        <span class="c1">#  print(self.beta)</span>
         <span class="n">ll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">ll</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">log_space</span><span class="o">=</span><span class="n">log_space</span><span class="p">)</span>
-        <span class="c1">#  print(&quot;First&quot;, ll)</span>
         <span class="n">ll</span> <span class="o">=</span> <span class="p">(</span><span class="n">ll</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">mixing</span><span class="p">)</span><span class="o">.</span><span class="n">logsumexp</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c1">#  print(&quot;Second&quot;, ll)</span>
-        <span class="c1">#  exit(0)</span>
         <span class="k">return</span> <span class="o">-</span><span class="n">ll</span></div>
 
 <div class="viewcode-block" id="CircuitMPE.cross_entropy_psdd"><a class="viewcode-back" href="../../../chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.cross_entropy_psdd">[docs]</a>    <span class="k">def</span> <span class="nf">cross_entropy_psdd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
@@ -212,7 +206,7 @@
     <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">log</span>
 
     <span class="n">torch</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1">#  torch.cuda.set_device(1)</span>
 
     <span class="c1"># Testing overparameterization</span>
     <span class="kn">import</span> <span class="nn">pysdd.sdd</span> <span class="k">as</span> <span class="nn">pysdd</span>
@@ -228,16 +222,16 @@
 
     <span class="n">cmpe</span> <span class="o">=</span> <span class="n">CircuitMPE</span><span class="p">(</span><span class="s2">&quot;abc_true.vtree&quot;</span><span class="p">,</span> <span class="s2">&quot;abc_true.sdd&quot;</span><span class="p">)</span>
     <span class="n">nodes</span> <span class="o">=</span> <span class="n">cmpe</span><span class="o">.</span><span class="n">overparameterize</span><span class="p">()</span>
-    <span class="kn">import</span> <span class="nn">pdb</span>
-
-    <span class="n">pdb</span><span class="o">.</span><span class="n">set_trace</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span>
-        <span class="n">cmpe</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">weighted_model_count</span><span class="p">(</span>
-            <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]])</span>
-        <span class="p">)</span>
-    <span class="p">)</span>
-    <span class="n">io</span><span class="o">.</span><span class="n">psdd_save_as_dot</span><span class="p">(</span><span class="n">cmpe</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="s2">&quot;abc_true.dot&quot;</span><span class="p">)</span>
-    <span class="n">exit</span><span class="p">()</span>
+    <span class="c1">#  import pdb</span>
+    <span class="c1">#</span>
+    <span class="c1">#  pdb.set_trace()</span>
+    <span class="c1">#  print(</span>
+    <span class="c1">#      cmpe.beta.weighted_model_count(</span>
+    <span class="c1">#          torch.tensor([[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]])</span>
+    <span class="c1">#      )</span>
+    <span class="c1">#  )</span>
+    <span class="c1">#  io.psdd_save_as_dot(cmpe.beta, &quot;abc_true.dot&quot;)</span>
+    <span class="c1">#  exit()</span>
 
     <span class="c1"># Testing nll</span>
     <span class="kn">import</span> <span class="nn">pysdd.sdd</span> <span class="k">as</span> <span class="nn">pysdd</span>  <span class="c1"># import Vtree, SddManager, WmcManager, Fnf</span>
@@ -269,7 +263,7 @@
     <span class="n">nll</span> <span class="o">=</span> <span class="n">cmpe</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]))</span>
     <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">nll</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">))</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;nll all good&quot;</span><span class="p">)</span>
-    <span class="n">exit</span><span class="p">()</span>
+    <span class="c1">#  exit()</span>
 
     <span class="n">vtree</span> <span class="o">=</span> <span class="n">Vtree</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">&quot;abcd_constraint.vtree&quot;</span><span class="p">)</span>
     <span class="n">manager</span> <span class="o">=</span> <span class="n">SddManager</span><span class="p">(</span><span class="n">vtree</span><span class="p">)</span>
@@ -330,84 +324,95 @@
     <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">circuit_entropy</span><span class="p">,</span> <span class="n">entropy</span><span class="p">)</span>
 
     <span class="c1">## Check probabilities of all the models of the formula</span>
-    <span class="c1"># assert(torch.isclose(c.pr_inst([-1, -2, 3, 4]), torch.tensor(0.2295), atol=1e-04))</span>
-    <span class="c1"># assert(torch.isclose(c.pr_inst([-1, 2, 3, 4]), torch.tensor(0.0984), atol=1e-04))</span>
-    <span class="c1"># assert(torch.isclose(c.pr_inst([1, -2, 3, 4]), torch.tensor(0.0574), atol=1e-04))</span>
-    <span class="c1"># assert(torch.isclose(c.pr_inst([1, 2, -3, -4]), torch.tensor(0.3320), atol=1e-04))</span>
-    <span class="c1"># assert(torch.isclose(c.pr_inst([1, 2, -3, 4]), torch.tensor(0.0369), atol=1e-04))</span>
-    <span class="c1"># assert(torch.isclose(c.pr_inst([1, 2, 3, -4]), torch.tensor(0.2213), atol=1e-04))</span>
-    <span class="c1"># assert(torch.isclose(c.pr_inst([1, 2, 3, 4]), torch.tensor(0.0246), atol=1e-04))</span>
+    <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">pr_inst</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.2295</span><span class="p">),</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-04</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">pr_inst</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0984</span><span class="p">),</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-04</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">pr_inst</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0574</span><span class="p">),</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-04</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">pr_inst</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="p">]),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.3320</span><span class="p">),</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-04</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">pr_inst</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0369</span><span class="p">),</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-04</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">pr_inst</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="p">]),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.2213</span><span class="p">),</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-04</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">pr_inst</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0246</span><span class="p">),</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-04</span><span class="p">)</span>
 
-    <span class="c1">## Test 2</span>
-    <span class="c1">## An sdd for the formula true</span>
-    <span class="c1"># c = CircuitMPE(&#39;abcd_constraint.vtree&#39;, &#39;true_constraint.sdd&#39;)</span>
+    <span class="c1"># Test 2</span>
+    <span class="c1"># An sdd for the formula true</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">CircuitMPE</span><span class="p">(</span><span class="s2">&quot;abcd_constraint.vtree&quot;</span><span class="p">,</span> <span class="s2">&quot;true_constraint.sdd&quot;</span><span class="p">)</span>
 
-    <span class="c1">## literal weights are of the form [[-a, a], [-b, b], [-c, c], [-d, d]]</span>
-    <span class="c1"># lit_weights = torch.tensor([[0.8, 0.2], [0.7, 0.3], [0.6, 0.4], [0.9, 0.1]], device=torch.cuda.current_device())</span>
+    <span class="c1"># literal weights are of the form [[-a, a], [-b, b], [-c, c], [-d, d]]</span>
+    <span class="n">lit_weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+        <span class="p">[[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">]],</span>
+        <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">current_device</span><span class="p">(),</span>
+    <span class="p">)</span>
 
-    <span class="c1"># models = [[0, 0, 0, 0],</span>
-    <span class="c1">#         [0, 0, 0, 1],</span>
-    <span class="c1">#         [0, 0, 1, 0],</span>
-    <span class="c1">#         [0, 0, 1, 1],</span>
-    <span class="c1">#         [0, 1, 0, 0],</span>
-    <span class="c1">#         [0, 1, 0, 1],</span>
-    <span class="c1">#         [0, 1, 1, 0],</span>
-    <span class="c1">#         [0, 1, 1, 1],</span>
-    <span class="c1">#         [1, 0, 0, 0],</span>
-    <span class="c1">#         [1, 0, 0, 1],</span>
-    <span class="c1">#         [1, 0, 1, 0],</span>
-    <span class="c1">#         [1, 0, 1, 1],</span>
-    <span class="c1">#         [1, 1, 0, 0],</span>
-    <span class="c1">#         [1, 1, 0, 1],</span>
-    <span class="c1">#         [1, 1, 1, 0],</span>
-    <span class="c1">#         [1, 1, 1, 1]]</span>
+    <span class="n">models</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="p">]</span>
 
-    <span class="c1"># probs = []</span>
-    <span class="c1"># for model in models:</span>
-    <span class="c1">#    prob = 1</span>
-    <span class="c1">#    for i, val in enumerate(model):</span>
-    <span class="c1">#        prob *= lit_weights[i][val]</span>
-    <span class="c1">#    probs += [prob]</span>
+    <span class="n">probs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">models</span><span class="p">:</span>
+        <span class="n">prob</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+            <span class="n">prob</span> <span class="o">*=</span> <span class="n">lit_weights</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">val</span><span class="p">]</span>
+        <span class="n">probs</span> <span class="o">+=</span> <span class="p">[</span><span class="n">prob</span><span class="p">]</span>
 
-    <span class="c1">## Weighted model counts of both the normalized and unnormalized circuits</span>
-    <span class="c1"># wmc = c.get_tf_ac(lit_weights)</span>
-    <span class="c1"># wmc_normalized = c.get_torch_ac(lit_weights)</span>
+    <span class="c1"># Weighted model counts of both the normalized and unnormalized circuits</span>
+    <span class="n">wmc</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get_tf_ac</span><span class="p">(</span><span class="n">lit_weights</span><span class="p">)</span>
+    <span class="n">wmc_normalized</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get_torch_ac</span><span class="p">(</span><span class="n">lit_weights</span><span class="p">)</span>
 
-    <span class="c1"># assert(wmc == wmc_normalized == 1)</span>
+    <span class="k">assert</span> <span class="n">wmc</span> <span class="o">==</span> <span class="n">wmc_normalized</span> <span class="o">==</span> <span class="mi">1</span>
 
-    <span class="c1">## Brute force entropy</span>
-    <span class="c1"># entropy = -sum([p*log(p) for p in probs])</span>
+    <span class="c1"># Brute force entropy</span>
+    <span class="n">entropy</span> <span class="o">=</span> <span class="o">-</span><span class="nb">sum</span><span class="p">([</span><span class="n">p</span> <span class="o">*</span> <span class="n">log</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">probs</span><span class="p">])</span>
 
-    <span class="c1">## Circuit Entropy</span>
-    <span class="c1"># circuit_entropy = c.Shannon_entropy()</span>
-    <span class="c1"># assert(circuit_entropy == entropy)</span>
+    <span class="c1"># Circuit Entropy</span>
+    <span class="n">circuit_entropy</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">Shannon_entropy</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">circuit_entropy</span> <span class="o">==</span> <span class="n">entropy</span>
 
-    <span class="c1">## Test 3</span>
-    <span class="c1">## An sdd for the formula (P | L) &amp; (-A | P) &amp; (-K | (A | L))</span>
-    <span class="c1"># c = CircuitMPE(&#39;LKPA_constraint.vtree&#39;, &#39;LKPA_constraint.sdd&#39;)</span>
+    <span class="c1"># Test 3</span>
+    <span class="c1"># An sdd for the formula (P | L) &amp; (-A | P) &amp; (-K | (A | L))</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">CircuitMPE</span><span class="p">(</span><span class="s2">&quot;LKPA_constraint.vtree&quot;</span><span class="p">,</span> <span class="s2">&quot;LKPA_constraint.sdd&quot;</span><span class="p">)</span>
 
-    <span class="c1">## literal weights form     [[-L,    L], [-K,    K], [-P,    P], [-A,    A]]</span>
-    <span class="c1"># lit_weights = torch.tensor([[0.8, 0.2], [0.7, 0.3], [0.6, 0.4], [0.9, 0.1]], device=torch.cuda.current_device())</span>
+    <span class="c1"># literal weights form     [[-L,    L], [-K,    K], [-P,    P], [-A,    A]]</span>
+    <span class="n">lit_weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+        <span class="p">[[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">]],</span>
+        <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">current_device</span><span class="p">(),</span>
+    <span class="p">)</span>
 
-    <span class="c1">## Weighted model counts of both the normalized and unnormalized circuits</span>
-    <span class="c1"># wmc = c.get_tf_ac(lit_weights)</span>
-    <span class="c1"># wmc_normalized = c.get_torch_ac(lit_weights)</span>
+    <span class="c1"># Weighted model counts of both the normalized and unnormalized circuits</span>
+    <span class="n">wmc</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get_tf_ac</span><span class="p">(</span><span class="n">lit_weights</span><span class="p">)</span>
+    <span class="n">wmc_normalized</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get_torch_ac</span><span class="p">(</span><span class="n">lit_weights</span><span class="p">)</span>
 
-    <span class="c1"># print(c.get_tf_ac(lit_weights))</span>
-    <span class="c1"># print(c.get_torch_ac(lit_weights))</span>
-    <span class="c1"># assert(c.get_tf_ac(lit_weights) == 0.4216)</span>
-    <span class="c1"># assert(c.get_torch_ac(lit_weights) == 0.4216)</span>
-    <span class="c1">#</span>
-    <span class="c1">## Entropy of the probability distribution</span>
-    <span class="c1"># weights = torch.tensor([0.2016, 0.0224, 0.0096, 0.0756, 0.0504, 0.0056, 0.0324, 0.0216, 0.0024], device=torch.cuda.current_device())</span>
-    <span class="c1"># probs = weights/wmc</span>
-    <span class="c1"># entropy = -sum([p*log(p) for p in probs])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">get_tf_ac</span><span class="p">(</span><span class="n">lit_weights</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">get_torch_ac</span><span class="p">(</span><span class="n">lit_weights</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">c</span><span class="o">.</span><span class="n">get_tf_ac</span><span class="p">(</span><span class="n">lit_weights</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.4216</span>
+    <span class="k">assert</span> <span class="n">c</span><span class="o">.</span><span class="n">get_torch_ac</span><span class="p">(</span><span class="n">lit_weights</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.4216</span>
 
-    <span class="c1">## Circuit Entropy</span>
-    <span class="c1"># circuit_entropy = c.Shannon_entropy()</span>
+    <span class="c1"># Entropy of the probability distribution</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+        <span class="p">[</span><span class="mf">0.2016</span><span class="p">,</span> <span class="mf">0.0224</span><span class="p">,</span> <span class="mf">0.0096</span><span class="p">,</span> <span class="mf">0.0756</span><span class="p">,</span> <span class="mf">0.0504</span><span class="p">,</span> <span class="mf">0.0056</span><span class="p">,</span> <span class="mf">0.0324</span><span class="p">,</span> <span class="mf">0.0216</span><span class="p">,</span> <span class="mf">0.0024</span><span class="p">],</span>
+        <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">current_device</span><span class="p">(),</span>
+    <span class="p">)</span>
+    <span class="n">probs</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">/</span> <span class="n">wmc</span>
+    <span class="n">entropy</span> <span class="o">=</span> <span class="o">-</span><span class="nb">sum</span><span class="p">([</span><span class="n">p</span> <span class="o">*</span> <span class="n">log</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">probs</span><span class="p">])</span>
 
-    <span class="c1">## Assert the circuit&#39;s entropy and the entropy of the groundtruth distribution match</span>
-    <span class="c1"># assert(torch.isclose(circuit_entropy, entropy))</span>
+    <span class="c1"># Circuit Entropy</span>
+    <span class="n">circuit_entropy</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">Shannon_entropy</span><span class="p">()</span>
+
+    <span class="c1"># Assert the circuit&#39;s entropy and the entropy of the groundtruth distribution match</span>
+    <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">circuit_entropy</span><span class="p">,</span> <span class="n">entropy</span><span class="p">)</span>
 </pre></div>
 
            </div>

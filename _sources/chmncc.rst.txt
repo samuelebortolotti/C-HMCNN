@@ -8,6 +8,7 @@ Subpackages
    :maxdepth: 4
 
    chmncc.arguments
+   chmncc.clusters
    chmncc.config
    chmncc.dataset
    chmncc.debug

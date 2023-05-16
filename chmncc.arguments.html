@@ -17,7 +17,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="chmncc.config package" href="chmncc.config.html" />
+    <link rel="next" title="chmncc.clusters package" href="chmncc.clusters.html" />
     <link rel="prev" title="chmncc package" href="chmncc.html" /> 
 </head>
 
@@ -46,6 +46,7 @@
 <li class="toctree-l2 current"><a class="reference internal" href="chmncc.html">chmncc package</a><ul class="current">
 <li class="toctree-l3 current"><a class="reference internal" href="chmncc.html#subpackages">Subpackages</a><ul class="current">
 <li class="toctree-l4 current"><a class="current reference internal" href="#">chmncc.arguments package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.clusters.html">chmncc.clusters package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.config.html">chmncc.config package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.dataset.html">chmncc.dataset package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.debug.html">chmncc.debug package</a></li>
@@ -105,155 +106,8 @@
 <section id="chmncc-arguments-arguments-module">
 <h2>chmncc.arguments.arguments module<a class="headerlink" href="#chmncc-arguments-arguments-module" title="Permalink to this heading"></a></h2>
 </section>
-<section id="module-chmncc.arguments.arguments_bucket">
-<span id="chmncc-arguments-arguments-bucket-module"></span><h2>chmncc.arguments.arguments_bucket module<a class="headerlink" href="#module-chmncc.arguments.arguments_bucket" title="Permalink to this heading"></a></h2>
-<p>Module which contains the Argument Bucket class.
-The idea is that given a sample, it is possible to populate all the possible explainations or arguments</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="chmncc.arguments.arguments_bucket.ArgumentBucket">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.arguments.arguments_bucket.</span></span><span class="sig-name descname"><span class="pre">ArgumentBucket</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">net</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_eval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guess_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groundtruth_parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groundtruth_children</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm_exponent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prediction_treshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_prediction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_softmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multiply_by_probability_for_label_gradient</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cincer_approach</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_probabilistic_circuits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction" title="chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction"><span class="pre">DenseGatingFunction</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmpe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE" title="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE"><span class="pre">CircuitMPE</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_gate_output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/arguments/arguments_bucket.html#ArgumentBucket"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.arguments.arguments_bucket.ArgumentBucket" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>ArgumentBucket class</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.arguments.arguments_bucket.ArgumentBucket._compute_class_gradients">
-<span class="sig-name descname"><span class="pre">_compute_class_gradients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">net</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_eval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm_exponent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multiply_by_probability_for_label_gradient</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cincer_approach</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/chmncc/arguments/arguments_bucket.html#ArgumentBucket._compute_class_gradients"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.arguments.arguments_bucket.ArgumentBucket._compute_class_gradients" title="Permalink to this definition"></a></dt>
-<dd><p>Compute class gradients
-:param net [nn.Module]: neural network
-:param to_eval [torch.Tensor]: what to evaluate
-:param R [torch.Tensor]: adjency matrix
-:param norm_exponent [int] = 2: norm exponent for computing the score</p>
-<dl>
-<dt>Formula:</dt><dd><dl class="simple">
-<dt>d/dyi P_theta(yj|x) = d/dyi max{ P_theta(y_j | x), P_theta (y_j, x) }</dt><dd><p>= d/dyi (z P_theta (y_j | x) + (1 - z) P_theta(y_j | x) ) [z in { 0, 1 }]
-=~ d/dP_theta(yi | x) (z P_theta (y_j | x) + (1 - z) P_theta(y_j | x) ) [z in { 0, 1 }]
-= z</p>
-</dd>
-</dl>
-<p>foreach i,j in {1…#classes}</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.arguments.arguments_bucket.ArgumentBucket._compute_input_gradients">
-<span class="sig-name descname"><span class="pre">_compute_input_gradients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">net</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_eval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm_exponent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_probabilistic_circuits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_gate_output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction" title="chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction"><span class="pre">DenseGatingFunction</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/chmncc/arguments/arguments_bucket.html#ArgumentBucket._compute_input_gradients"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.arguments.arguments_bucket.ArgumentBucket._compute_input_gradients" title="Permalink to this definition"></a></dt>
-<dd><p>Compute input gradients with respect to each class
-:param net [nn.Module]: neural network
-:param to_eval [torch.Tensor]: what to evaluate
-:param norm_exponent [int] = 2: norm exponent for computing the score</p>
-<dl class="simple">
-<dt>Formula:</dt><dd><p>d/dx P_theta(yi|x) foreach i in {1…#classes}</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.arguments.arguments_bucket.ArgumentBucket.get_arguments_lists_separated_by_prediction">
-<span class="sig-name descname"><span class="pre">get_arguments_lists_separated_by_prediction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parents</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/arguments/arguments_bucket.html#ArgumentBucket.get_arguments_lists_separated_by_prediction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.arguments.arguments_bucket.ArgumentBucket.get_arguments_lists_separated_by_prediction" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.arguments.arguments_bucket.ArgumentBucket.get_gradents_list_separated">
-<span class="sig-name descname"><span class="pre">get_gradents_list_separated</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/arguments/arguments_bucket.html#ArgumentBucket.get_gradents_list_separated"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.arguments.arguments_bucket.ArgumentBucket.get_gradents_list_separated" title="Permalink to this definition"></a></dt>
-<dd><p>Method which returns the list of input gradients and label gradients in this exact order
-:returns: list of input gradients and label gradients in this exact order
-:rtype: Tuple[List[float], List[float]]</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.arguments.arguments_bucket.ArgumentBucket.get_gradents_list_separated_by_class">
-<span class="sig-name descname"><span class="pre">get_gradents_list_separated_by_class</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_lab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/arguments/arguments_bucket.html#ArgumentBucket.get_gradents_list_separated_by_class"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.arguments.arguments_bucket.ArgumentBucket.get_gradents_list_separated_by_class" title="Permalink to this definition"></a></dt>
-<dd><p>Method which returns the list of input gradients and label gradients in this exact order according to the
-specified class
-:param class_lab [int]: class label</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list of input gradients and label gradients in this exact order</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Tuple[List[float], List[float]]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.arguments.arguments_bucket.ArgumentBucket.get_gradients_by_names">
-<span class="sig-name descname"><span class="pre">get_gradients_by_names</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/arguments/arguments_bucket.html#ArgumentBucket.get_gradients_by_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.arguments.arguments_bucket.ArgumentBucket.get_gradients_by_names" title="Permalink to this definition"></a></dt>
-<dd><p>Method which returns the dictionary of gradient names and gradient score associated
-:returns: dictionary
-:rtype: Dict[str, List[float]]</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.arguments.arguments_bucket.ArgumentBucket.get_gradients_list_and_names">
-<span class="sig-name descname"><span class="pre">get_gradients_list_and_names</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/arguments/arguments_bucket.html#ArgumentBucket.get_gradients_list_and_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.arguments.arguments_bucket.ArgumentBucket.get_gradients_list_and_names" title="Permalink to this definition"></a></dt>
-<dd><p>Method which returns the list of gradients score and the list of associated gradients’ names
-:returns: gradients’ scores and their names
-:rtype: Tuple[List[float], List[str]]</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.arguments.arguments_bucket.ArgumentBucket.get_ig_groundtruth">
-<span class="sig-name descname"><span class="pre">get_ig_groundtruth</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/arguments/arguments_bucket.html#ArgumentBucket.get_ig_groundtruth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.arguments.arguments_bucket.ArgumentBucket.get_ig_groundtruth" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the Integrated Gradient of the Groundtruth label
-:returns: tuple containing class label, gradient and score
-:rtype: Tuple[int, Tuple[torch.Tensor, float]]</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.arguments.arguments_bucket.ArgumentBucket.get_maximum_ig_score">
-<span class="sig-name descname"><span class="pre">get_maximum_ig_score</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/chmncc/arguments/arguments_bucket.html#ArgumentBucket.get_maximum_ig_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.arguments.arguments_bucket.ArgumentBucket.get_maximum_ig_score" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the maximum score from the list of integrated gradients
-:returns: float
-:rtype: maximum score value</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.arguments.arguments_bucket.ArgumentBucket.get_maximum_label_score">
-<span class="sig-name descname"><span class="pre">get_maximum_label_score</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/chmncc/arguments/arguments_bucket.html#ArgumentBucket.get_maximum_label_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.arguments.arguments_bucket.ArgumentBucket.get_maximum_label_score" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the maximum score from the list of label gradients
-:returns: float
-:rtype: maximum score value</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="chmncc.arguments.arguments_bucket.ArgumentBucket.input_gradient_dict">
-<span class="sig-name descname"><span class="pre">input_gradient_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#chmncc.arguments.arguments_bucket.ArgumentBucket.input_gradient_dict" title="Permalink to this definition"></a></dt>
-<dd><p>raw gradient and associated score</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>label gradient</p>
-</dd>
-<dt class="field-even">Type<span class="colon">:</span></dt>
-<dd class="field-even"><p>(class wrt to, parent class)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="chmncc.arguments.arguments_bucket.ArgumentBucket.label_gradient">
-<span class="sig-name descname"><span class="pre">label_gradient</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#chmncc.arguments.arguments_bucket.ArgumentBucket.label_gradient" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="chmncc.arguments.arguments_bucket.ArgumentBucket.label_list">
-<span class="sig-name descname"><span class="pre">label_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#chmncc.arguments.arguments_bucket.ArgumentBucket.label_list" title="Permalink to this definition"></a></dt>
-<dd><p>given the class index, it returns the gradient in a torch tensor fashion and the associated score</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.arguments.arguments_bucket.ArgumentBucket.marginalize_probability">
-<span class="sig-name descname"><span class="pre">marginalize_probability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prob</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_parents</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/arguments/arguments_bucket.html#ArgumentBucket.marginalize_probability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.arguments.arguments_bucket.ArgumentBucket.marginalize_probability" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="chmncc.arguments.arguments_bucket.ArgumentBucket.sample">
-<span class="sig-name descname"><span class="pre">sample</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#chmncc.arguments.arguments_bucket.ArgumentBucket.sample" title="Permalink to this definition"></a></dt>
-<dd><p>label list [from integer label to string label]</p>
-</dd></dl>
-
-</dd></dl>
-
+<section id="chmncc-arguments-arguments-bucket-module">
+<h2>chmncc.arguments.arguments_bucket module<a class="headerlink" href="#chmncc-arguments-arguments-bucket-module" title="Permalink to this heading"></a></h2>
 </section>
 <section id="module-chmncc.arguments">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-chmncc.arguments" title="Permalink to this heading"></a></h2>
@@ -266,7 +120,7 @@ specified class
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="chmncc.html" class="btn btn-neutral float-left" title="chmncc package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="chmncc.config.html" class="btn btn-neutral float-right" title="chmncc.config package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="chmncc.clusters.html" class="btn btn-neutral float-right" title="chmncc.clusters package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

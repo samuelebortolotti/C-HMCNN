@@ -46,6 +46,7 @@
 <li class="toctree-l2 current"><a class="reference internal" href="chmncc.html">chmncc package</a><ul class="current">
 <li class="toctree-l3 current"><a class="reference internal" href="chmncc.html#subpackages">Subpackages</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="chmncc.arguments.html">chmncc.arguments package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.clusters.html">chmncc.clusters package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.config.html">chmncc.config package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.dataset.html">chmncc.dataset package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.debug.html">chmncc.debug package</a></li>
@@ -102,172 +103,11 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
 </section>
-<section id="module-chmncc.test.test">
-<span id="chmncc-test-test-module"></span><h2>chmncc.test.test module<a class="headerlink" href="#module-chmncc.test.test" title="Permalink to this heading"></a></h2>
-<p>Test module</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="chmncc.test.test.test_circuit">
-<span class="sig-prename descclassname"><span class="pre">chmncc.test.test.</span></span><span class="sig-name descname"><span class="pre">test_circuit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">net</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.dotdict" title="chmncc.utils.utils.dotdict"><span class="pre">dotdict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction" title="chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction"><span class="pre">DenseGatingFunction</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmpe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE" title="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE"><span class="pre">CircuitMPE</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'gpu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/test/test.html#test_circuit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.test.test.test_circuit" title="Permalink to this definition"></a></dt>
-<dd><p>Test function for the network.
-It computes the accuracy together with the area under the precision-recall-curve as a metric</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>network</strong> (<em>net</em><em> [</em><em>nn.Module</em><em>]</em>) – </p></li>
-<li><p><strong>loader</strong> (<em>test_loader</em><em> [</em><em>torch.utils.data.DataLoader</em><em>] </em><em>test data</em>) – </p></li>
-<li><p><strong>function</strong> (<em>cost_function</em><em> [</em><em>torch.nn.modules.loss.BCELoss</em><em>] </em><em>binary cross entropy</em>) – </p></li>
-<li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>title</em>) – title of the experiment</p></li>
-<li><p><strong>dictionary</strong> (<em>test</em><em> [</em><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.dotdict" title="chmncc.utils.utils.dotdict"><em>dotdict</em></a><em>] </em><em>test set</em>) – </p></li>
-<li><p><strong>&quot;gpu&quot;</strong> (<em>device</em><em> [</em><em>str</em><em>] </em><em>=</em>) – device on which to run the experiment</p></li>
-<li><p><strong>False</strong> (<em>print_me</em><em> [</em><em>bool</em><em>] </em><em>=</em>) – whether the test is done on the debug dataloader</p></li>
-<li><p><strong>False</strong> – whether to print the data or not</p></li>
-<li><p><strong>[</strong><strong>float</strong><strong>]</strong> (<em>prediction_treshold</em>) – threshold used to consider a class as predicted</p></li>
-<li><p><strong>[</strong><strong>bool</strong><strong>]</strong> (<em>use_softmax</em>) – force prediction or not</p></li>
-<li><p><strong>[</strong><strong>bool</strong><strong>]</strong> – use the softmax</p></li>
-<li><p><strong>[</strong><strong>int</strong><strong>]</strong> (<em>superclasses_number</em>) – number of superclasses</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>cumulative_loss [float] loss on the test set [not used to train!]
-cumulative_accuracy [float] accuracy on the test set in percentage
-score [float] area under the precision-recall curve raw
-score [float] area under the precision-recall curve const
-rigth_answer_parent [Optional[float]] right answer for the parent
-rigth_answer_children [Optional[float]] right answer for the children</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="chmncc.test.test.test_step">
-<span class="sig-prename descclassname"><span class="pre">chmncc.test.test.</span></span><span class="sig-name descname"><span class="pre">test_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">net</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">BCELoss</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.dotdict" title="chmncc.utils.utils.dotdict"><span class="pre">dotdict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'gpu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_me</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prediction_treshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_prediction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_softmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">superclasses_number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/test/test.html#test_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.test.test.test_step" title="Permalink to this definition"></a></dt>
-<dd><p>Test function for the network.
-It computes the accuracy together with the area under the precision-recall-curve as a metric</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>network</strong> (<em>net</em><em> [</em><em>nn.Module</em><em>]</em>) – </p></li>
-<li><p><strong>loader</strong> (<em>test_loader</em><em> [</em><em>torch.utils.data.DataLoader</em><em>] </em><em>test data</em>) – </p></li>
-<li><p><strong>function</strong> (<em>cost_function</em><em> [</em><em>torch.nn.modules.loss.BCELoss</em><em>] </em><em>binary cross entropy</em>) – </p></li>
-<li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>title</em>) – title of the experiment</p></li>
-<li><p><strong>dictionary</strong> (<em>test</em><em> [</em><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.dotdict" title="chmncc.utils.utils.dotdict"><em>dotdict</em></a><em>] </em><em>test set</em>) – </p></li>
-<li><p><strong>&quot;gpu&quot;</strong> (<em>device</em><em> [</em><em>str</em><em>] </em><em>=</em>) – device on which to run the experiment</p></li>
-<li><p><strong>False</strong> (<em>print_me</em><em> [</em><em>bool</em><em>] </em><em>=</em>) – whether the test is done on the debug dataloader</p></li>
-<li><p><strong>False</strong> – whether to print the data or not</p></li>
-<li><p><strong>[</strong><strong>float</strong><strong>]</strong> (<em>prediction_treshold</em>) – threshold used to consider a class as predicted</p></li>
-<li><p><strong>[</strong><strong>bool</strong><strong>]</strong> (<em>use_softmax</em>) – force prediction or not</p></li>
-<li><p><strong>[</strong><strong>bool</strong><strong>]</strong> – use the softmax</p></li>
-<li><p><strong>[</strong><strong>int</strong><strong>]</strong> (<em>superclasses_number</em>) – number of superclasses</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>cumulative_loss [float] loss on the test set [not used to train!]
-cumulative_accuracy [float] accuracy on the test set in percentage
-score [float] area under the precision-recall curve raw
-score [float] area under the precision-recall curve const
-rigth_answer_parent [Optional[float]] right answer for the parent
-rigth_answer_children [Optional[float]] right answer for the children</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="chmncc.test.test.test_step_with_prediction_statistics">
-<span class="sig-prename descclassname"><span class="pre">chmncc.test.test.</span></span><span class="sig-name descname"><span class="pre">test_step_with_prediction_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">net</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">BCELoss</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.dotdict" title="chmncc.utils.utils.dotdict"><span class="pre">dotdict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'gpu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prediction_treshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_prediction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_softmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">superclasses_number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/test/test.html#test_step_with_prediction_statistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.test.test.test_step_with_prediction_statistics" title="Permalink to this definition"></a></dt>
-<dd><p>Test function for the network.
-It computes the accuracy together with the area under the precision-recall-curve as a metric
-and returns the statistics of predicted and non-predicted data.
-Predicted means that the network has put at least one value positive, whereas unpredicted means that all the predictions are zeros</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>network</strong> (<em>net</em><em> [</em><em>nn.Module</em><em>]</em>) – </p></li>
-<li><p><strong>labels</strong> (<em>labels_name</em><em> [</em><em>List</em><em>[</em><em>str</em><em>]</em><em>] </em><em>name</em><em> of </em><em>the</em>) – </p></li>
-<li><p><strong>function</strong> (<em>cost_function</em><em> [</em><em>torch.nn.modules.loss.BCELoss</em><em>] </em><em>binary cross entropy</em>) – </p></li>
-<li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>title</em>) – title of the experiment</p></li>
-<li><p><strong>dictionary</strong> (<em>test</em><em> [</em><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.dotdict" title="chmncc.utils.utils.dotdict"><em>dotdict</em></a><em>] </em><em>test set</em>) – </p></li>
-<li><p><strong>labels</strong> – </p></li>
-<li><p><strong>&quot;gpu&quot;</strong> (<em>device</em><em> [</em><em>str</em><em>] </em><em>=</em>) – device on which to run the experiment</p></li>
-<li><p><strong>[</strong><strong>float</strong><strong>]</strong> (<em>prediction_treshold</em>) – threshold used to consider a class as predicted</p></li>
-<li><p><strong>[</strong><strong>bool</strong><strong>]</strong> (<em>use_softmax</em>) – force prediction</p></li>
-<li><p><strong>[</strong><strong>bool</strong><strong>]</strong> – use the softmax</p></li>
-<li><p><strong>[</strong><strong>int</strong><strong>]</strong> (<em>superclasses_number</em>) – number of superclasses</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>cumulative_loss [float] loss on the test set [not used to train!]
-cumulative_accuracy [float] accuracy on the test set in percentage
-score [float] area under the precision-recall curve raw
-score [float] area under the precision-recall curve const
-statistics [Dict[str, List[int]]]: name of the class : [not-predicted, predicted]
-statistics correct [Dict[str, List[int]]]: name of the class : [not-correct, correct]
-clf_report Dict[str, float]: confusion matrix statistics
-ground_truth ndarray: ground_truth predictions
-prediction ndarray: predictions
-rigth_answer_parent [Optional[float]] right answer for the parent
-rigth_answer_children [Optional[float]] right answer for the children</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="chmncc.test.test.test_step_with_prediction_statistics_with_gates">
-<span class="sig-prename descclassname"><span class="pre">chmncc.test.test.</span></span><span class="sig-name descname"><span class="pre">test_step_with_prediction_statistics_with_gates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">net</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction" title="chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction"><span class="pre">DenseGatingFunction</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmpe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE" title="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE"><span class="pre">CircuitMPE</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.dotdict" title="chmncc.utils.utils.dotdict"><span class="pre">dotdict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'gpu'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/chmncc/test/test.html#test_step_with_prediction_statistics_with_gates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.test.test.test_step_with_prediction_statistics_with_gates" title="Permalink to this definition"></a></dt>
-<dd><p>Test function for the network.
-It computes the accuracy together with the area under the precision-recall-curve as a metric
-and returns the statistics of predicted and non-predicted data.
-Predicted means that the network has put at least one value positive, whereas unpredicted means that all the predictions are zeros</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>network</strong> (<em>net</em><em> [</em><em>nn.Module</em><em>]</em>) – </p></li>
-<li><p><strong>labels</strong> (<em>labels_name</em><em> [</em><em>List</em><em>[</em><em>str</em><em>]</em><em>] </em><em>name</em><em> of </em><em>the</em>) – </p></li>
-<li><p><strong>function</strong> (<em>cost_function</em><em> [</em><em>torch.nn.modules.loss.BCELoss</em><em>] </em><em>binary cross entropy</em>) – </p></li>
-<li><p><strong>[</strong><strong>str</strong><strong>]</strong> (<em>title</em>) – title of the experiment</p></li>
-<li><p><strong>dictionary</strong> (<em>test</em><em> [</em><a class="reference internal" href="chmncc.utils.html#chmncc.utils.utils.dotdict" title="chmncc.utils.utils.dotdict"><em>dotdict</em></a><em>] </em><em>test set</em>) – </p></li>
-<li><p><strong>labels</strong> – </p></li>
-<li><p><strong>&quot;gpu&quot;</strong> (<em>device</em><em> [</em><em>str</em><em>] </em><em>=</em>) – device on which to run the experiment</p></li>
-<li><p><strong>[</strong><strong>float</strong><strong>]</strong> (<em>prediction_treshold</em>) – threshold used to consider a class as predicted</p></li>
-<li><p><strong>[</strong><strong>bool</strong><strong>]</strong> (<em>use_softmax</em>) – force prediction</p></li>
-<li><p><strong>[</strong><strong>bool</strong><strong>]</strong> – use the softmax</p></li>
-<li><p><strong>[</strong><strong>int</strong><strong>]</strong> (<em>superclasses_number</em>) – number of superclasses</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>cumulative_loss [float] loss on the test set [not used to train!]
-cumulative_accuracy [float] accuracy on the test set in percentage
-score [float] area under the precision-recall curve raw
-score [float] area under the precision-recall curve const
-statistics [Dict[str, List[int]]]: name of the class : [not-predicted, predicted]
-statistics correct [Dict[str, List[int]]]: name of the class : [not-correct, correct]
-clf_report Dict[str, float]: confusion matrix statistics
-ground_truth ndarray: ground_truth predictions
-prediction ndarray: predictions
-rigth_answer_parent [Optional[float]] right answer for the parent
-rigth_answer_children [Optional[float]] right answer for the children</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="chmncc.test.test.tr_image">
-<span class="sig-prename descclassname"><span class="pre">chmncc.test.test.</span></span><span class="sig-name descname"><span class="pre">tr_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/chmncc/test/test.html#tr_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.test.test.tr_image" title="Permalink to this definition"></a></dt>
-<dd><p>Function which computes the average of the image, to better visualize it
-in Tensor board</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>[</strong><strong>torch.Tensor</strong><strong>]</strong> (<em>img</em>) – image</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>image after the processing [torch.Tensor]</p>
-</dd>
-</dl>
-</dd></dl>
-
+<section id="chmncc-test-test-module">
+<h2>chmncc.test.test module<a class="headerlink" href="#chmncc-test-test-module" title="Permalink to this heading"></a></h2>
 </section>
-<section id="module-chmncc.test">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-chmncc.test" title="Permalink to this heading"></a></h2>
-<p>Test module</p>
+<section id="module-contents">
+<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
 </section>
 </section>
 

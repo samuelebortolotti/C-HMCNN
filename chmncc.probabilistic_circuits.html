@@ -46,6 +46,7 @@
 <li class="toctree-l2 current"><a class="reference internal" href="chmncc.html">chmncc package</a><ul class="current">
 <li class="toctree-l3 current"><a class="reference internal" href="chmncc.html#subpackages">Subpackages</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="chmncc.arguments.html">chmncc.arguments package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="chmncc.clusters.html">chmncc.clusters package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.config.html">chmncc.config package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.dataset.html">chmncc.dataset package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="chmncc.debug.html">chmncc.debug package</a></li>
@@ -104,6 +105,7 @@
 </section>
 <section id="module-chmncc.probabilistic_circuits.GatingFunction">
 <span id="chmncc-probabilistic-circuits-gatingfunction-module"></span><h2>chmncc.probabilistic_circuits.GatingFunction module<a class="headerlink" href="#module-chmncc.probabilistic_circuits.GatingFunction" title="Permalink to this heading"></a></h2>
+<p>Gating function</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.probabilistic_circuits.GatingFunction.</span></span><span class="sig-name descname"><span class="pre">DenseGatingFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[128,</span> <span class="pre">256,</span> <span class="pre">256]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_reps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate_dropout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/GatingFunction.html#DenseGatingFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction" title="Permalink to this definition"></a></dt>
@@ -155,107 +157,12 @@ registered hooks while the latter silently ignores them.</p>
 </dd></dl>
 
 </section>
-<section id="module-chmncc.probabilistic_circuits.compute_mpe">
-<span id="chmncc-probabilistic-circuits-compute-mpe-module"></span><h2>chmncc.probabilistic_circuits.compute_mpe module<a class="headerlink" href="#module-chmncc.probabilistic_circuits.compute_mpe" title="Permalink to this heading"></a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">chmncc.probabilistic_circuits.compute_mpe.</span></span><span class="sig-name descname"><span class="pre">CircuitMPE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vtree_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sdd_filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.Shannon_entropy">
-<span class="sig-name descname"><span class="pre">Shannon_entropy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">litleaves</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.Shannon_entropy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.Shannon_entropy" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.Shannon_entropy_stable">
-<span class="sig-name descname"><span class="pre">Shannon_entropy_stable</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.Shannon_entropy_stable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.Shannon_entropy_stable" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.compute_mpe_inst">
-<span class="sig-name descname"><span class="pre">compute_mpe_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lit_weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binary_encoding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.compute_mpe_inst"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.compute_mpe_inst" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.cross_entropy">
-<span class="sig-name descname"><span class="pre">cross_entropy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_space</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.cross_entropy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.cross_entropy" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.cross_entropy_psdd">
-<span class="sig-name descname"><span class="pre">cross_entropy_psdd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.cross_entropy_psdd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.cross_entropy_psdd" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.entropy_kld">
-<span class="sig-name descname"><span class="pre">entropy_kld</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.entropy_kld"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.entropy_kld" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.generate_torch_ac_stable">
-<span class="sig-name descname"><span class="pre">generate_torch_ac_stable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">litleaves</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.generate_torch_ac_stable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.generate_torch_ac_stable" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_models">
-<span class="sig-name descname"><span class="pre">get_models</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.get_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_models" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_mpe_inst">
-<span class="sig-name descname"><span class="pre">get_mpe_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.get_mpe_inst"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_mpe_inst" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_norm_ac">
-<span class="sig-name descname"><span class="pre">get_norm_ac</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">litleaves</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.get_norm_ac"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_norm_ac" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_tf_ac">
-<span class="sig-name descname"><span class="pre">get_tf_ac</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">litleaves</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.get_tf_ac"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_tf_ac" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_torch_ac">
-<span class="sig-name descname"><span class="pre">get_torch_ac</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">litleaves</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.get_torch_ac"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.get_torch_ac" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.overparameterize">
-<span class="sig-name descname"><span class="pre">overparameterize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">S</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.overparameterize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.overparameterize" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.plot_circuit">
-<span class="sig-name descname"><span class="pre">plot_circuit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">circuit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.plot_circuit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.plot_circuit" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.pr_inst">
-<span class="sig-name descname"><span class="pre">pr_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inst</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.pr_inst"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.pr_inst" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.rand_params">
-<span class="sig-name descname"><span class="pre">rand_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.rand_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.rand_params" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.set_params">
-<span class="sig-name descname"><span class="pre">set_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">thetas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_space</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.set_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.set_params" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.weighted_model_count">
-<span class="sig-name descname"><span class="pre">weighted_model_count</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lit_weights</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/chmncc/probabilistic_circuits/compute_mpe.html#CircuitMPE.weighted_model_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.probabilistic_circuits.compute_mpe.CircuitMPE.weighted_model_count" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
+<section id="chmncc-probabilistic-circuits-compute-mpe-module">
+<h2>chmncc.probabilistic_circuits.compute_mpe module<a class="headerlink" href="#chmncc-probabilistic-circuits-compute-mpe-module" title="Permalink to this heading"></a></h2>
 </section>
 <section id="module-chmncc.probabilistic_circuits">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-chmncc.probabilistic_circuits" title="Permalink to this heading"></a></h2>
+<p>Module concerning the probabilistic circuits</p>
 </section>
 </section>
 

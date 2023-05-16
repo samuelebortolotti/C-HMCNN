@@ -18,7 +18,7 @@ from chmncc.dataset import (
     load_dataloaders,
 )
 from chmncc.optimizers import get_adam_optimizer, get_plateau_scheduler
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Generator
 import tqdm
 import random
 import copy
@@ -220,6 +220,17 @@ def get_network(
     img_depth: int,
     img_size: int,
 ) -> nn.Module:
+    """Method which returns the network based on the name of the network (it behaves like a factory)
+    Args:
+        network [str]: network
+        dataloaders [Dict[str, Any]]: dataloaders dictionary
+        output_classes [int]: number of classes in output
+        constrained_layer [bool]: whether to add the constrained layer or not
+        img_depth [int]: number of depth channel of the images in input
+        img_size [int]: size of the image (supposed to be of squared size)
+    Returns:
+        network [nn.Module]
+    """
     # Network
     if network == "lenet":
         net = LeNet5(
@@ -249,12 +260,28 @@ def get_network(
     return net
 
 
-def split_list(a, n):
+def split_list(a: List, n: int) -> Generator:
+    """Split a list based on regular intervals
+    Args:
+        a [list]: input list
+        n [int]: regular intervals to use in order to split the original list into
+    Returns:
+        splitted list generator [Generator]
+    """
     k, m = divmod(len(a), n)
     return (a[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)] for i in range(n))
 
 
 def organize_clusters(dataset: LoadDataset, num_splits: int) -> List[LoadDataset]:
+    """Organize cluster:
+    divide the clusters of equal size in the superclass number of examples and return the list of clusters
+
+    Args:
+        dataset [LoadDataset]: dataset
+        num_splits [int]: number of clusters
+    Returns:
+        list of clusters [List[LoadDataset]]
+    """
     data_list_dict = {}
     dataloader_list = list()
 

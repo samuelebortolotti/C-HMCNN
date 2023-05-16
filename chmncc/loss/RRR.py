@@ -286,7 +286,7 @@ class IGRRRLoss(RRRLoss):
 
 class RRRLossWithGate(nn.Module):
     """
-    Right for the Right Reason loss (RRR) as proposed by Ross et. al (2017) with minor changes.
+    Right for the Right Reason loss (RRR) as proposed by Ross et. al (2017) with minor changes. Here the Gate is taken into account
     See https://arxiv.org/abs/1703.03717.
     The RRR loss calculates the Input Gradients as prediction explanation and compares it
     with the (ground-truth) user explanation.
@@ -306,8 +306,9 @@ class RRRLossWithGate(nn.Module):
         """
         Args:
             net [nn.Module]: trained neural network
+            gate [DenseGatingFunction]: gate
+            cmpe [CircuitMPE]: circuit MPE
             regularizer_rate: controls the influence of the right reason loss.
-            base_criterion: criterion to use for right answer l
             weight: if specified then weight right reason loss by classes. Tensor
                 with shape (c,) c=classes. WARNING !! Currently only working for
                 the special case that whole X in fwd has the same class (as is the
@@ -335,14 +336,13 @@ class RRRLossWithGate(nn.Module):
         """
         Returns (loss, right_answer_loss, right_reason_loss, right_answer_parent, right_answer_children)
         Args:
+            thetas: circuit parameters
             X: inputs.
             y: ground-truth labels.
             expl: explanation annotations masks (ones penalize regions) [is basically the annotation matrix]
             logits: model output logits.
             confounded: whether the sampleis confounded
-            use_softmax: use softmax for the predictions
             to_eval: evaluation
-            superclasses_number=20: superclass number
         """
 
         # use the basic criterion

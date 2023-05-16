@@ -1,8 +1,11 @@
+"""Gating function"""
 import torch
 from collections import OrderedDict, defaultdict
 
 
 class DenseGatingFunction(torch.nn.Module):
+    """DenseGatingFunction"""
+
     def __init__(
         self,
         beta,

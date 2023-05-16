@@ -17,7 +17,7 @@ from chmncc.utils.utils import (
     split,
     get_confounders,
     prepare_probabilistic_circuit,
-    prepare_empty_probabilistic_circuit
+    prepare_empty_probabilistic_circuit,
 )
 from chmncc.dataset import (
     load_dataloaders,
@@ -35,6 +35,7 @@ from chmncc.debug.debug import plot_decision_surface
 
 from chmncc.probabilistic_circuits.GatingFunction import DenseGatingFunction
 from chmncc.probabilistic_circuits.compute_mpe import CircuitMPE
+
 
 class ArgumentsStepArgs:
     """Class which serves as a bucket in order to hold all the data used so as to produce the plots"""
@@ -280,25 +281,22 @@ def configure_subparsers(subparsers: Subparser) -> None:
         "--gates",
         type=int,
         default=1,
-        help="Number of hidden layers in gating function (default: 1)"
+        help="Number of hidden layers in gating function (default: 1)",
     )
     parser.add_argument(
         "--num-reps",
         type=int,
         default=1,
-        help="Number of hidden layers in gating function (default: 1)"
+        help="Number of hidden layers in gating function (default: 1)",
     )
     parser.add_argument(
-        "--S",
-        type=int,
-        default=0,
-        help="PSDD scaling factor (default: 0)"
+        "--S", type=int, default=0, help="PSDD scaling factor (default: 0)"
     )
     parser.add_argument(
         "--constraint-folder",
         type=str,
         default="./constraints",
-        help="Folder for storing the constraints"
+        help="Folder for storing the constraints",
     )
     parser.add_argument(
         "--use-gate-output",
@@ -3572,7 +3570,7 @@ def main(args: Namespace) -> None:
     if args.use_probabilistic_circuits:
         print("Using probabilistic circuits...")
         cmpe, gate = prepare_probabilistic_circuit(
-            dataloaders['train_set'].get_A(),
+            dataloaders["train_set"].get_A(),
             args.constraint_folder,
             args.dataset,
             args.device,
@@ -3581,7 +3579,6 @@ def main(args: Namespace) -> None:
             output_classes,
             args.S,
         )
-
 
     # summary
     summary(net, (img_depth, img_size, img_size))

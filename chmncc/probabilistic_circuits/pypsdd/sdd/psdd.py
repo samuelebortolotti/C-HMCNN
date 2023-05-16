@@ -177,6 +177,7 @@ class PSddNode(NormalizedSddNode):
         Populates a field on each node:
         = node.pr_context has probability of context
         = node.pr_node has probability of node"""
+
         var_marginals = [0.0] * (2 * self.vtree.var_count + 1)
         if self.is_false_sdd:
             return var_marginals
@@ -188,6 +189,7 @@ class PSddNode(NormalizedSddNode):
 
         value = self.data
         self.pr_context = 1.0
+
         for node in self.as_positive_list(reverse=True, clear_data=clear_data):
             if node.is_true() or node.is_literal():
                 # accumulate variable marginals

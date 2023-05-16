@@ -1,3 +1,4 @@
+"""EMNIST hierarchy"""
 # EMNIST hierarchy
 mnist_hierarchy = {
     "lowercase_letter": [

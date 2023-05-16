@@ -1,3 +1,4 @@
+"""Omniglot hierarchy"""
 # OMNIGLOT dataset hierarchy
 omniglot_hierarchy = {
     "Ge_ez": [

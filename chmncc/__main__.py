@@ -193,7 +193,6 @@ def configure_subparsers(subparsers: Subparser) -> None:
         help='dataset name such as cifar or mnist. For the old approach, it must end with: "_GO", "_FUN", or "_others"',
     )
 
-    # lascio
     parser.add_argument("exp_name", type=str, help="name of the experiment")
     parser.add_argument("epochs", type=int, help="number of training epochs")
     # Other parameters
@@ -423,6 +422,11 @@ def c_hmcnn(
         use_softmax [bool] = False
         simplified_dataset [bool] = False
         imbalance_dataset [bool] = False
+        use_probabilistic_circuits [bool] = False
+        constraint_folder [str] = "./constraints"
+        gates [int] = 1, number of hidden layers in gating function (default: 1)
+        num_reps [int] = 1, number of PSDDs in the ensemble
+        S [int] = 0, PSDD scaling factor (default: 0)
 
     Args:
         exp_name [str]: name of the experiment, basically where to save the logs of the SummaryWriter
@@ -449,6 +453,11 @@ def c_hmcnn(
         use_softmax [bool] = False: whether to use softmax
         simplified_dataset [bool] = False: if possible, use the simplified version of the dataset
         imbalance_dataset [bool] = False: if possible, imbalance the dataset introducing a new way of confunding
+        use_probabilistic_circuits [bool] = False: whether to use the probabilistic circuit
+        constraint_folder [str] = "./constraints": folder where to save the .vtree
+        gates [int] = 1, number of hidden layers in gating function (default: 1)
+        num_reps [int] = 1, number of PSDDs in the ensemble
+        S [int] = 0, PSDD scaling factor (default: 0)
         \*\*kwargs [Any]: additional key-value arguments
     """
 
@@ -965,7 +974,9 @@ def c_hmcnn(
             if not dry:
                 torch.save(net.state_dict(), os.path.join(model_folder, "best.pth"))
                 if use_probabilistic_circuits:
-                    torch.save(gate.state_dict(), os.path.join(model_folder, "best_gate.pth"))
+                    torch.save(
+                        gate.state_dict(), os.path.join(model_folder, "best_gate.pth")
+                    )
         # what to save
         save_dict = {
             "state_dict": net.state_dict(),
@@ -982,7 +993,9 @@ def c_hmcnn(
         if not dry:
             torch.save(net.state_dict(), os.path.join(model_folder, "net.pth"))
             if use_probabilistic_circuits:
-                torch.save(gate.state_dict(), os.path.join(model_folder, "net_gate.pth"))
+                torch.save(
+                    gate.state_dict(), os.path.join(model_folder, "net_gate.pth")
+                )
             # save current settings
             torch.save(save_dict, os.path.join(model_folder, "ckpt.pth"))
             if e % save_every_epochs == 0:

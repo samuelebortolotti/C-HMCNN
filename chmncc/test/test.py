@@ -419,30 +419,25 @@ def test_circuit(
     device: str = "gpu",
     debug_mode: bool = False,
 ) -> Tuple[float, float, float, float, float]:
-    r"""Test function for the network.
-    It computes the accuracy together with the area under the precision-recall-curve as a metric
+    r"""Test function for the circuit.
+    It computes the accuracy together with the area under the precision-recall-curve, jaccard score and hamming score as a metric
 
     Args:
-        net [nn.Module] network
-        test_loader [torch.utils.data.DataLoader] test data loader
-        cost_function [torch.nn.modules.loss.BCELoss] binary cross entropy function
-        title [str]: title of the experiment
-        test [dotdict] test set dictionary
-        device [str] = "gpu": device on which to run the experiment
-        debug_mode [bool] = False: whether the test is done on the debug dataloader
-        print_me [bool] = False: whether to print the data or not
-        prediction_treshold [float]: threshold used to consider a class as predicted
-        force_prediction [bool]: force prediction or not
-        use_softmax [bool]: use the softmax
-        superclasses_number [int]: number of superclasses
+        net [nn.Module]: network
+        test_loader [torch.utils.data.DataLoader]: test loader
+        title [str]: title
+        test [dotdict]: test
+        gate [DenseGatingFunction]: gate
+        cmpe [CircuitMPE]: circuit MPE
+        device [str] = "gpu": device
+        debug_mode [bool] = False: whether the debug mode is set
 
     Returns:
-        cumulative_loss [float] loss on the test set [not used to train!]
-        cumulative_accuracy [float] accuracy on the test set in percentage
-        score [float] area under the precision-recall curve raw
-        score [float] area under the precision-recall curve const
-        rigth_answer_parent [Optional[float]] right answer for the parent
-        rigth_answer_children [Optional[float]] right answer for the children
+        cumulative_loss [float]: cumulative loss
+        accuracy [float]: accuracy
+        jaccard [float]: jaccard score
+        hamming [float]: hamming score
+        auprc_score [float]: area under precision and recall curve
     """
     cumulative_accuracy = 0.0
     cumulative_loss = 0.0
@@ -480,6 +475,8 @@ def test_circuit(
             targets = targets.to(device)
             # forward pass
             outputs = net(inputs.float())
+
+            print("Marg", cmpe.get_marginals())
             # thetas
             thetas = gate(outputs.float())
 
@@ -558,36 +555,32 @@ def test_step_with_prediction_statistics_with_gates(
     np.ndarray,
     float,
 ]:
-    r"""Test function for the network.
-    It computes the accuracy together with the area under the precision-recall-curve as a metric
+    r"""Test function for the network with the circuit.
+    It computes the accuracy together with the area under the precision-recall-curve, jaccard score and hamming loss as a metric
     and returns the statistics of predicted and non-predicted data.
     Predicted means that the network has put at least one value positive, whereas unpredicted means that all the predictions are zeros
 
     Args:
-        net [nn.Module] network
-        test_loader [torch.utils.data.DataLoader] test data loader with labels
-        cost_function [torch.nn.modules.loss.BCELoss] binary cross entropy function
-        title [str]: title of the experiment
-        test [dotdict] test set dictionary
-        labels_name [List[str]] name of the labels
-        device [str] = "gpu": device on which to run the experiment
-        prediction_treshold [float]: threshold used to consider a class as predicted
-        force_prediction [bool]: force prediction
-        use_softmax [bool]: use the softmax
-        superclasses_number [int]: number of superclasses
+        net [nn.Module]: network
+        test_loader [torch.utils.data.DataLoader]: test data loader with labels
+        gate [DenseGatingFunction]: gate
+        cmpe [CircuitMPE]: Circuit MPE
+        title [str]: title
+        test [dotdict]: test
+        labels_name [List[str]: labels name
+        device [str] = "gpu": device
 
     Returns:
         cumulative_loss [float] loss on the test set [not used to train!]
         cumulative_accuracy [float] accuracy on the test set in percentage
-        score [float] area under the precision-recall curve raw
-        score [float] area under the precision-recall curve const
+        jaccard score [float]
+        hamming loss [float]
         statistics [Dict[str, List[int]]]: name of the class : [not-predicted, predicted]
         statistics correct [Dict[str, List[int]]]: name of the class : [not-correct, correct]
         clf_report Dict[str, float]: confusion matrix statistics
-        ground_truth ndarray: ground_truth predictions
-        prediction ndarray: predictions
-        rigth_answer_parent [Optional[float]] right answer for the parent
-        rigth_answer_children [Optional[float]] right answer for the children
+        y_test [np.ndarray]: ground-truth for multiclass classification matrix
+        predicted_test [ndarray]: predictions
+        auprc_score [float] auprc score
     """
     cumulative_accuracy = 0.0
     cumulative_loss = 0.0

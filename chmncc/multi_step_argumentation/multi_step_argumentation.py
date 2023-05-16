@@ -37,6 +37,8 @@ from enum import Enum
 
 
 class ArgumentType(Enum):
+    """Argument type enumerator"""
+
     INPUT_GRADIENT = 1
     CLASS_GRADIENT = 2
     CLASS_ARGUMENT = 3
@@ -44,12 +46,16 @@ class ArgumentType(Enum):
 
 
 class AlgorithmOutcome(Enum):
+    """Algorithm outcome"""
+
     USER_DEFEAT = 1
     MACHINE_DEFEAT = 2
     GOING_ON = 3
 
 
 class ArgumentsCounter:
+    """Counter of the arguments"""
+
     def __init__(self) -> None:
         self.label_counter: Dict[str, int] = {}
 
@@ -242,38 +248,29 @@ def multi_step_argumentation(
     """Method which performs the debug step by fine-tuning the network employing the right for the right reason loss.
 
     Args:
-        net [nn.Module]: neural network
+        net [nn.Module]: network
         dataloaders [Dict[str, Any]]: dataloaders
-        debug_folder [str]: debug_folder
-        iterations [int]: number of the iterations
-        cost_function [torch.nn.BCELoss]: criterion for the classification loss
+        iterations [int]: number of iterations
         device [str]: device
-        set_wandb [bool]: set wandb up
-        integrated gradients [bool]: whether to use integrated gradients or input gradients
-        optimizer [torch.optim.Optimizer]: optimizer to employ
-        scheduler [torch.optim.lr_scheduler._LRScheduler]: scheduler to employ
-        batch_size [int]: size of the batch
-        test_batch_size [int]: size of the batch in the test settings
-        reviseLoss: Union[RRRLoss, IGRRRLoss]: loss for feeding the network some feedbacks
-        model_folder [str]: folder where to fetch the models weights
-        network [str]: name of the network
-        gradient_analysis [bool]: whether to analyze the gradient behavior
-        num_workers [int]: number of workers for dataloaders
+        test_batch_size [int]: test batch size
+        num_workers [int]: number of workers
         prediction_treshold [float]: prediction threshold
-        force_prediction [bool]: force prediction
-        use_softmax [bool]: use softmax
-        dataset [str]: which dataset is used
-        balance_subclasses List[str]: which subclasses to rebalance
-        balance_weights: List[float]: which weights are associated to which subclasses
+        force_prediction [bool]: whether to force the prediction
+        use_softmax [bool]: whether to use the softmax activation
+        labels_names [List[str]]: list of labelled names
+        max_rounds_per_iterations [int]: max rounds per iterations
+        dataset_type [str]: name of the dataset
+        tau [float]: tau
+        norm_exponent [int]: norm exponent
         **kwargs [Any]: kwargs
     """
+
     print(
         "Have to run for the multi-step argumentation procedure for {} iterations...".format(
             iterations
         )
     )
 
-    ## ==================================================================
     # Load debug datasets: for training the data -> it has labels and confounders position information
     test_set = LoadDebugDataset(
         dataloaders["test_dataset_with_labels_and_confunders_position"],
@@ -377,7 +374,32 @@ def process_samples(
     force_prediction: bool = False,
     use_softmax: bool = False,
 ) -> Tuple[List[Tuple[np.ndarray, str, str]], ArgumentsCounter]:
+    """User machine interaction -> single example
 
+    Args:
+        inputs [torch.Tensor]: inputs
+        hierarchical_labels [torch.Tensor]: hierarchical label
+        confounder_masks [torch.Tensor]: confounder masks
+        confounded_list [List[bool]]: confounded list
+        superclass_list [List[str]]: superclass list
+        subclass_list [List[str]], subclass list
+        predicted_1_0 [torch.Tensor]: predicted 1/0
+        test_set [LoadDataset]: test set
+        test_set_R [torch.Tensor]: test set R
+        net [nn.Module]: network
+        labels_names [List[str]]: label names
+        max_rounds_per_iterations [int]: max number per iterations
+        dataset [str]: dataset name,
+        tau [float]: tau,
+        norm_exponent [int]: norm exponent
+        prediction_treshold [float]: prediction threshold
+        force_prediction [bool]: force prediction
+        use_softmax [bool]: use softmax
+        **kwargs [Any]: kwargs
+
+    Returns:
+        Tuple[List[Tuple[np.ndarray, str, str]], ArgumentsCounter]: data list used to update the model and argument counter
+    """
     new_data_list: List[Tuple[np.ndarray, str, str]] = list()
     argument_counter: ArgumentsCounter = ArgumentsCounter()
 
@@ -484,6 +506,12 @@ def process_samples(
 
 
 def ask_defeat() -> bool:
+    """Method which simply ask the user whether she wants to declare defeats
+
+    Returns:
+        True when the user gives up
+        False when the user does not want to give up
+    """
     user_input = ""
 
     user_input = input("Do you want to give up? yes/no: ")
@@ -509,6 +537,21 @@ def remove_maximum_argument(
         Dict[Tuple[int, int], Tuple[float, torch.Tensor]],
     ],
 ]:
+    """Remove maximum arguments from arguments list
+    It is used during the iteractions in order to do not chose the same arguments multiple times
+
+    Args:
+        arguments_list [Tuple[
+            Dict[int, Tuple[float, torch.Tensor]],
+            Dict[Tuple[int, int], Tuple[float, torch.Tensor]],
+        ]]: list of arguments
+
+    Returns:
+        arguments_list [Tuple[
+            Dict[int, Tuple[float, torch.Tensor]],
+            Dict[Tuple[int, int], Tuple[float, torch.Tensor]],
+        ]]: list of arguments where the maximum scoring one is removed
+    """
     max_key: Union[Tuple[int, int], int] = -1
     max_score: float = -float("inf")
     max_grad: torch.Tensor = torch.zeros((1, 28, 28))
@@ -542,8 +585,13 @@ def remove_maximum_argument(
 def display_input_gradient_argument(
     image: np.ndarray, gradient: torch.Tensor, title: str
 ):
-    print(np.max(gradient.detach().numpy().flatten()))
-    print(gradient.detach().numpy().flatten().shape)
+    """Display the image with the input gradient overlay
+
+    Args:
+        image [np.ndarray]: image
+        gradient [np.ndarray]: gradient
+        title [str]: title
+    """
     norm = matplotlib.colors.Normalize(
         vmin=0, vmax=np.max(gradient.detach().numpy().flatten())
     )
@@ -567,6 +615,19 @@ def arguments_loop(
     tau: float,
     labels_names: List[str],
 ) -> Tuple[AlgorithmOutcome, ArgumentsCounter]:
+    """Arguments loop, chooses for the single example the most suitable arguments
+
+    Args:
+        max_rounds [int]: maximum round
+        named_prediction [List[str]]: list containing the prediction in string target
+        arguments_bucket [ArgumentBucket]: argument bucket
+        parents [List[str]]: parents
+        tau [float]: tau
+        labels_names [List[str]]: list of labelled groundtruth image
+
+    Returns:
+        Tuple[AlgorithmOutcome, ArgumentsCounter]: tuple of outcome and counter
+    """
     argument_counter: ArgumentsCounter = ArgumentsCounter()
     outcome: AlgorithmOutcome = AlgorithmOutcome.GOING_ON
     arguments_list: List[
@@ -838,34 +899,34 @@ def main(args: Namespace) -> None:
     )
 
     # lancia il debug loop
-    debug(
-        net,
-        dataloaders,
-        debug_folder,
-        iterations,
-        cost_function,
-        device,
-        set_wandb,
-        integrated_gradients,
-        optimizer,
-        scheduler,
-        debug_test_loader,
-        batch_size,
-        test_batch_size,
-        reviseLoss,
-        model_folder,
-        network,
-        gradient_analysis,
-        num_workers,
-        prediction_treshold,
-        force_prediction,
-        use_softmax,
-        dataset,
-        balance_subclasses,
-        balance_weights,
-        correct_by_duplicating_samples,
-        to_correct_dataloader,
-    )
+    #  debug(
+    #      net,
+    #      dataloaders,
+    #      debug_folder,
+    #      iterations,
+    #      cost_function,
+    #      device,
+    #      set_wandb,
+    #      integrated_gradients,
+    #      optimizer,
+    #      scheduler,
+    #      debug_test_loader,
+    #      batch_size,
+    #      test_batch_size,
+    #      reviseLoss,
+    #      model_folder,
+    #      network,
+    #      gradient_analysis,
+    #      num_workers,
+    #      prediction_treshold,
+    #      force_prediction,
+    #      use_softmax,
+    #      dataset,
+    #      balance_subclasses,
+    #      balance_weights,
+    #      correct_by_duplicating_samples,
+    #      to_correct_dataloader,
+    #  )
 
     exit(0)
 

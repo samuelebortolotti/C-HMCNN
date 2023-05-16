@@ -1,13 +1,31 @@
+"""Compute MPE module"""
 import sys
 import os
+import locale  # for printing numbers with commas
+
+locale.setlocale(locale.LC_ALL, "en_US.UTF8")
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "pypsdd"))
 
 import graphviz
 import torch
 import torch.nn.functional as F
-from pypsdd import Vtree, SddManager, PSddManager, SddNode, Inst, io
-from pypsdd import UniformSmoothing, Prior
+from pypsdd import (
+    Vtree,
+    SddManager,
+    PSddManager,
+    SddNode,
+    Inst,
+    io,
+    InstMap,
+    Timer,
+    DataSet,
+    Inst,
+    InstMap,
+    Prior,
+    DirichletPrior,
+    UniformSmoothing,
+)
 
 """ This is the main way in which SDDs should be used to compute semantic loss.
 Construct an instance from a given SDD and vtree file, and then use the available
@@ -16,21 +34,57 @@ constructing a tensorflow circuit for integrating semantic loss into a project.
 """
 
 
+def fmt(number: int) -> str:
+    """Method to print a number
+
+    Args:
+        number [int]: numbero
+
+    Returns:
+        str [str]
+    """
+    return locale.format("%d", number, grouping=True)
+
+
 class CircuitMPE:
+    """Circuit MPE"""
+
     def __init__(self, vtree_filename, sdd_filename):
         # Load the Sdd
-        self.vtree = Vtree.read(vtree_filename)
+        self.vtree_filename = vtree_filename
+        self.sdd_filename = sdd_filename
+        self.vtree = Vtree.read(self.vtree_filename)
         self.manager = SddManager(self.vtree)
-        self.alpha = io.sdd_read(sdd_filename, self.manager)
+        self.alpha = io.sdd_read(self.sdd_filename, self.manager)
+        #  self.alpha = io.psdd_jason_read(sdd_filename, self.manager)
 
         # Convert to psdd
         self.pmanager = PSddManager(self.vtree)
 
         # Storing psdd
         self.beta = self.pmanager.copy_and_normalize_sdd(self.alpha, self.vtree)
+        self.fill_train()
 
     def overparameterize(self, S=2):
         self.beta = self.beta.overparameterize(S)
+
+    def fill_train(self):
+        N = 1024
+        seed = 0
+
+        with Timer("simulating datasets"):
+            prior = UniformSmoothing(1024.0)
+            prior.initialize_psdd(self.beta)
+            training = DataSet.simulate(self.beta, N, seed=seed)
+            testing = DataSet.simulate(self.beta, N, seed=(seed + 1))
+
+        # LEARN A PSDD
+        with Timer("learning complete data"):
+            self.beta.learn(training, prior)
+
+        with Timer("evaluate log likelihood"):
+            train_ll = self.beta.log_likelihood(training) / training.N
+            test_ll = self.beta.log_likelihood(testing) / testing.N
 
     def rand_params(self):
         self.beta.rand_parameters()
@@ -131,6 +185,25 @@ class CircuitMPE:
         io.psdd_save_as_dot(circuit, f"{folder}/{name}.dot")
         graphviz.render("dot", "svg", f"{folder}/{name}.dot")
 
+    def print_stats(self):
+        print("================================")
+        print(" sdd model count: %s" % fmt(self.alpha.model_count(self.vtree)))
+        print("       sdd count: %s" % fmt(self.alpha.count()))
+        print("        sdd size: %s" % fmt(self.alpha.size()))
+        print("================================")
+        print("psdd model count: %s" % fmt(self.beta.model_count()))
+        print("      psdd count: %s" % fmt(self.beta.count()))
+        print("       psdd size: %s" % fmt(self.beta.size()))
+        print("================================")
+
+    def get_marginals(self):
+        """Get marginals without evidence"""
+
+        inst = InstMap()
+        inst[1] = 1
+        inst[self.pmanager.var_count] = 0
+        print(self.beta.marginals(evidence=inst))
+
 
 if __name__ == "__main__":
     import torch
@@ -153,6 +226,7 @@ if __name__ == "__main__":
 
     cmpe = CircuitMPE("abc_true.vtree", "abc_true.sdd")
     nodes = cmpe.overparameterize()
+
     #  import pdb
     #
     #  pdb.set_trace()

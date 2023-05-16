@@ -65,6 +65,7 @@ def show_gradient_behavior(
     Credits: @RoshanRane
 
     Args:
+        named_parameters: named parameters list
         folder_where_to_save [str]: where to save the plots
         prefix [str]: image name prefix
     """
@@ -332,26 +333,22 @@ def revise_step_with_gates(
     have_to_train: bool = True,
     use_gate_output: bool = False,
 ) -> Tuple[float, float, float, float, float, float, float, float]:
-    """Revise step of the network. It integrates the user feedback and revise the network by the means
-    of the RRRLoss.
+    """Revise step of the network with gates.
+    It integrates the user feedback and revise the network by the means of the RRRLoss.
 
     Args:
-        epoch_number [int]: epoch number
-        net [nn.Module] network on device
-        debug_loader [torch.utils.data.DataLoader]: debug loader
-        train [dotdict]: training set dictionary
-        R [torch.Tensor]: adjency matrix
-        optimizer [torch.optim.Optimizer]: optimizer
-        revive_function [Union[IGRRRLoss, RRRLoss]]: revive function (RRR loss)
-        title [str]: title for tqdm
-        folder_where_to_save [str]: where to save the data
-        device [str]: on which device to run the experiment [default: cuda]
-        have_to_train [bool]: whether to train or not the model
-        gradient_analysis [bool]: whether to analyze the gradients by means of plots
-        prediction_treshold [float]: threshold used to consider a class as predicted
-        force_prediction [bool]: force prediction
-        use_softmax [bool] = False: whether to use softmax
-        superclasses_number [int] = 20: superclass number
+        net [nn.Module]
+        gate [DenseGatingFunction]
+        cmpe [CircuitMPE]
+        debug_loader [torch.utils.data.DataLoader]
+        train [dotdict]
+        R [torch.Tensor],
+        optimizer [torch.optim.Optimizer
+        revive_function [RRRLossWithGate
+        title [str]
+        device [str] = "cuda"
+        have_to_train [bool] = True
+        use_gate_output [bool] = False
 
     Returns:
         loss [float]

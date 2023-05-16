@@ -54,6 +54,15 @@ class ArgumentBucket:
             groundtruth_parent [int]: groundtruth parent label
             groundtruth_children [int]: groundtruth children label
             norm_exponent [int] = 2: norm exponent
+            prediction_treshold [float] = 0.5: prediction threshold
+            force_prediction [bool] = False: whether to force prediction or not
+            use_softmax [bool] = False: whether to use softmax or not
+            multiply_by_probability_for_label_gradient: bool = False,
+            cincer_approach [bool] = False: whether to use cincer approach
+            use_probabilistic_circuits [bool] = False: use probabilistic circuits or not
+            gate [DenseGatingFunction] = None: gate
+            cmpe [CircuitMPE] = None: circuit MPE
+            use_gate_output [bool] = False: whether to use the gate output or not
         """
         self.groundtruth_parent = groundtruth_parent
         self.groundtruth_children = groundtruth_children
@@ -115,6 +124,9 @@ class ArgumentBucket:
             net [nn.Module]: neural network
             to_eval [torch.Tensor]: what to evaluate
             norm_exponent [int] = 2: norm exponent for computing the score
+            use_probabilistic_circuits [bool] = False: whether to use probabilistic circuits or not
+            use_gate_output [bool] = False: gate output
+            gate [DenseGatingFunction] = None: gate
 
         Formula:
             d/dx P_theta(yi|x) foreach i in {1...#classes}
@@ -127,7 +139,7 @@ class ArgumentBucket:
             logits = gate.get_output(logits_not_cut.float())[:, to_eval]
 
         for i in range(logits.shape[1]):
-            # input graadients for the ith logit
+            # input gradients for the ith logit
             grad = output_gradients(self.sample, logits[:, i])
             # add it to the input gradient dictionary
             self.input_gradient_dict[i] = (
@@ -152,6 +164,8 @@ class ArgumentBucket:
             to_eval [torch.Tensor]: what to evaluate
             R [torch.Tensor]: adjency matrix
             norm_exponent [int] = 2: norm exponent for computing the score
+            multiply_by_probability_for_label_gradient [bool]: whether to multiply the outcome label gradient by the probability term
+            cincer_approach [bool]: whether to use the cincer approach
 
         Formula:
             d/dyi P_theta(yj|x) = d/dyi max{ P_theta(y_j | x), P_theta (y_j, x) }
@@ -212,6 +226,15 @@ class ArgumentBucket:
     def marginalize_probability(
         self, prob: torch.Tensor, num_parents: int
     ) -> Dict[int, torch.Tensor]:
+        """Method employ to marginalize the probability, still under development
+
+        Args:
+            prob [torch.Tensor]: probability
+            num_parents [int]: num_parents
+
+        Returns:
+            Dict[int, torch.Tensor]: normalized probability
+        """
         marginalized_prob = {}
         sum_el = torch.sum(prob)
         for p in range(num_parents):
@@ -223,8 +246,11 @@ class ArgumentBucket:
         """Repr"""
         print("Label gradient", self.label_gradient)
 
-    def __str__(self):
-        """Str"""
+    def __str__(self) -> str:
+        """Str
+        Returns:
+            str [str]: string representation of the object
+        """
         return "{}".format(self.label_gradient)
 
     def get_gradients_list_and_names(self) -> Tuple[List[float], List[str]]:
@@ -317,6 +343,15 @@ class ArgumentBucket:
         Dict[int, Tuple[float, torch.Tensor]],
         Dict[Tuple[int, int], Tuple[float, torch.Tensor]],
     ]:
+        """Returns a two dictionaries which contains the arguments wrt the prediction the machine has performed
+
+        Args:
+            parents [List[str]]: list of parents
+
+        Returns:
+            Dict[int, Tuple[float, torch.Tensor]]: input gradient dictionary wrt prediction
+            Dict[Tuple[int, int], Tuple[float, torch.Tensor]]: label dictionary wrt prediction
+        """
         ig_dict: Dict[int, Tuple[float, torch.Tensor]] = dict()
         label_dict: Dict[Tuple[int, int], Tuple[float, torch.Tensor]] = dict()
         performed_predictions = (self.prediction == True).nonzero().flatten().tolist()

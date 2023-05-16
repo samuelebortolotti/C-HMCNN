@@ -1,3 +1,4 @@
+"""Fashion hierarchy"""
 fashion_hierarchy = {
     "shoe": ["Sandal", "Sneaker", "Ankle boot"],
     "dress": [

@@ -279,6 +279,9 @@ def show_masked_gradient(
         integrated_gradients [bool]: whether to use integrated gradiends
         correct_guess [bool]: whether the sample has been guessed correctly
         prefix [str]: prefix of the image name to be saved
+
+    Returns:
+        gradient_to_show, np.max(gradient_to_show_absolute_values) [Tuple[np.ndarray, float]], gradient and gradient max value
     """
 
     # get the gradient
@@ -389,6 +392,9 @@ def show_gradient(
         correct_guess [bool]: whether the sample has been guessed correctly
         integrated_gradients [bool]: whether to use integrated gradiends
         prefix [str]: prefix to save the pictures with
+
+    Returns:
+        gradient_to_show, np.max(gradient_to_show_absolute_values) [Tuple[np.ndarray, float]], gradient and gradient max value
     """
     # get the gradient
     gradient_to_show = gradient.clone().cpu().data.numpy()
@@ -832,6 +838,11 @@ def debug(
         dataset [str]: which dataset is used
         balance_subclasses List[str]: which subclasses to rebalance
         balance_weights: List[float]: which weights are associated to which subclasses
+        correct_by_duplicating_samples [bool]: whether to correct the confounded network by duplicating the samples or by balancing the weights
+        use_probabilistic_circuits [bool]: whether to use probabilistic circuits
+        gate [DenseGatingFunction]: gate
+        cmpe [CircuitMPE]: circuit MPE
+        use_gate_output [bool]: whether to use the circuit output for computing the RRR loss
         **kwargs [Any]: kwargs
     """
     print("Have to run for {} debug iterations...".format(iterations))

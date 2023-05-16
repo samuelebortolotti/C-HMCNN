@@ -2,7 +2,10 @@
 
 from os import path
 import locale  # for printing numbers with commas
+import sys, os
+import functools
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "pypsdd"))
 locale.setlocale(locale.LC_ALL, "en_US.UTF8")
 from pypsdd import Vtree, SddManager, PSddManager, SddNode
 from pypsdd import Timer, DataSet, Inst, InstMap
@@ -71,7 +74,7 @@ def run_test(
         print("      testing ll: %.8f" % test_ll)
 
         print("================================")
-        print(training)
+    #  print(training)
 
     value = beta.value()
     print("================================")
@@ -88,6 +91,7 @@ def run_test(
         print("     probability: %.8f" % beta.probability(evidence=e_inst))
 
     var_marginals = beta.marginals()
+    print("Var marginal", var_marginals, len(var_marginals), pmanager.var_count)
     value = var_marginals[0]
     check = True
     for var in range(1, pmanager.var_count + 1):
@@ -122,7 +126,9 @@ def run_test(
 
 def run_test_basename(basename, test_learning=True):
     print("######## " + basename)
-    dirname = path.join(path.dirname(__file__), "examples")
+    dirname = path.join(
+        path.dirname(__file__), "..", "..", "..", "..", "..", "constraints"
+    )
     vtree_filename = path.join(dirname, basename + ".vtree")
     sdd_filename = path.join(dirname, basename + ".sdd")
     alpha, pmanager = run_test(
@@ -133,12 +139,13 @@ def run_test_basename(basename, test_learning=True):
 
 
 if __name__ == "__main__":
-    alpha, pmanager = run_test_basename("ranking-3")
-    alpha, pmanager = run_test_basename("example")
-    run_test_basename("true")
-    run_test_basename("literal")
-    run_test_basename("false", test_learning=False)
-    run_test_basename("xor-16")
-    run_test_basename("xor-32")
-    run_test_basename("alarm")
-    run_test_basename("c432")
+    #  alpha, pmanager = run_test_basename("ranking-3")
+    #  alpha, pmanager = run_test_basename("example")
+    #  run_test_basename("true")
+    #  run_test_basename("literal")
+    #  run_test_basename("false", test_learning=False)
+    #  run_test_basename("xor-16")
+    #  run_test_basename("xor-32")
+    #  run_test_basename("alarm")
+    #  run_test_basename("c432")
+    run_test_basename("mnist")

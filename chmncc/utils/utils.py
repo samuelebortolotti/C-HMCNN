@@ -645,6 +645,17 @@ def prepare_dict_label_predictions_from_raw_predictions(
     dataset_name: str,
     skip_parents: bool,
 ) -> Tuple[Dict[str, Dict[str, int]], Dict[str, int]]:
+    """Prepare dictionary label prediction
+
+    Args:
+        predictions [np.ndarray]: machine predictions
+        groundtruth [np.ndarray]: groundtruth
+        label_names [List[str]]: label names
+        dataset_name [str]: dataset name
+        skip_parents [bool]: skip the parents
+    Returns:
+        Tuple[Dict[str, Dict[str, int]], Dict[str, int]]
+    """
     dictionary: Dict[str, Dict[str, int]] = {}
     counter: Dict[str, int] = {}
     _, _, parents = get_confounders_and_hierarchy(dataset_name)
@@ -682,7 +693,8 @@ def plot_confounded_labels_predictions(
         predictions [Dict[str, Dict[str, int]]]: for each class to be predicted, which is the prediction
         and how many saples have been predicted
         folder [str]: folder
-        prefix: str
+        prefix [str]: prefix
+        dataset_name [str]: dtaset
 
     Returns:
         confounders and hierarchy values and hierarchy keys
@@ -711,6 +723,8 @@ def plot_confounded_labels_predictions(
 
 
 ###### Prepare probabilistic circuit #############
+
+
 def prepare_probabilistic_circuit(
     A: torch.Tensor,
     constraint_folder: str,
@@ -721,6 +735,22 @@ def prepare_probabilistic_circuit(
     output_classes: int,
     S: int = 0,
 ) -> Tuple[CircuitMPE, DenseGatingFunction]:
+    """Method which prepares an effective probabilistic circuit
+
+    Args:
+        A [torch.Tensor]: Adjency matrix
+        constraint_folder [str]: constraint folder
+        output_classes [int]: output classes
+        dataset_name [str]: dataset name
+        device [str]: device
+        gates [int]: gates
+        num_reps [int]: num reps
+        output_classes [int]: output classes
+        S [int] = 0: S
+
+    Returns:
+        Tuple[CircuitMPE, DenseGatingFunction]: circuit and gate
+    """
 
     # Compute matrix of ancestors R
     # Given n classes, R is an (n x n) matrix where R_ij = 1 if class i is ancestor of class j
@@ -810,6 +840,16 @@ def prepare_empty_probabilistic_circuit(
     device: str,
     output_classes: int,
 ) -> Tuple[CircuitMPE, DenseGatingFunction]:
+    """Method which prepares an empty probabilistic circuit
+
+    Args:
+        A [torch.Tensor]: Adjency matrix
+        device [str]: device
+        output_classes [int]: output classes
+
+    Returns:
+        Tuple[CircuitMPE, DenseGatingFunction]: circuit and gate
+    """
 
     print("Preparing empty circuit...")
     # Use fully-factorized sdd

@@ -204,6 +204,25 @@ def training_step_with_gate(
     title: str,
     device: str = "cuda",
 ) -> Tuple[float, float, float, float, float]:
+    """Training step of the network with gate.
+
+    Args:
+        net [nn.Module] network on device
+        gate [DenseGatingFunction]: gate
+        cmpe [CircuitMPE]: gate MPE
+        train_loader [torch.utils.data.DataLoader]: train loader
+        optimizer [torch.optim.Optimizer]: optimizer
+        train [dotdict]: train
+        title [str]: title
+        device [str] = "cuda": device
+
+    Returns:
+        cumulative loss [float]
+        accuracy [float] in percentange
+        jaccard score [float]
+        hamming loss [float]
+        au precision and recall curve [float]
+    """
     net.train()
     gate.train()
 
@@ -226,12 +245,16 @@ def training_step_with_gate(
         # MCLoss
         output = net(inputs.float())
         thetas = gate(output)
-        cmpe.set_params(thetas)
+        #  exit(0)
 
+        cmpe.set_params(thetas)
         loss = cmpe.cross_entropy(labels, log_space=True).mean()
         # predicted
         cmpe.set_params(thetas)
         predicted = (cmpe.get_mpe_inst(inputs.shape[0]) > 0).long()
+        #  print("1", predicted)
+
+        print("2", cmpe.get_marginals())
 
         # fetch prediction and loss value
         total_train += labels.shape[0] * labels.shape[1]

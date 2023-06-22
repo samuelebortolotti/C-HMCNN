@@ -476,7 +476,6 @@ def test_circuit(
             # forward pass
             outputs = net(inputs.float())
 
-            print("Marg", cmpe.get_marginals())
             # thetas
             thetas = gate(outputs.float())
 
@@ -487,6 +486,8 @@ def test_circuit(
             # negative log likelihood and map
             cmpe.set_params(thetas)
             predicted = (cmpe.get_mpe_inst(inputs.shape[0]) > 0).long()
+            cmpe.set_params(thetas)
+            print("Marg", cmpe.get_marginals_without_evidence()[:, 1])
 
             # compute the loss
             cmpe.set_params(thetas)

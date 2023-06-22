@@ -19,9 +19,14 @@ from sklearn.metrics import (
     jaccard_score,
 )
 import itertools
+import sys, os
 
 from chmncc.probabilistic_circuits.GatingFunction import DenseGatingFunction
 from chmncc.probabilistic_circuits.compute_mpe import CircuitMPE
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "pypsdd"))
+
+from pypsdd import io
 
 
 def training_step(
@@ -245,16 +250,18 @@ def training_step_with_gate(
         # MCLoss
         output = net(inputs.float())
         thetas = gate(output)
-        #  exit(0)
 
+        #  lmao = cmpe.marginals_2()
+        #  print("1", lmao, type(lmao), len(lmao))
         cmpe.set_params(thetas)
+        #  io.psdd_jason_save(cmpe.beta, "constraints/mnist.pysdd")
         loss = cmpe.cross_entropy(labels, log_space=True).mean()
         # predicted
         cmpe.set_params(thetas)
         predicted = (cmpe.get_mpe_inst(inputs.shape[0]) > 0).long()
-        #  print("1", predicted)
-
-        print("2", cmpe.get_marginals())
+        # Marginals
+        cmpe.set_params(thetas)
+        print("Marg", cmpe.get_marginals_without_evidence())
 
         # fetch prediction and loss value
         total_train += labels.shape[0] * labels.shape[1]

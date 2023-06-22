@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "pypsdd"))
 import graphviz
 import torch
 import torch.nn.functional as F
+from torch.distributions.categorical import Categorical
 from pypsdd import (
     Vtree,
     SddManager,
@@ -56,17 +57,12 @@ class CircuitMPE:
         self.vtree = Vtree.read(self.vtree_filename)
         self.manager = SddManager(self.vtree)
         self.alpha = io.sdd_read(self.sdd_filename, self.manager)
-        #  self.alpha = io.psdd_jason_read(sdd_filename, self.manager)
-
         # Convert to psdd
         self.pmanager = PSddManager(self.vtree)
-
         # Storing psdd
         self.beta = self.pmanager.copy_and_normalize_sdd(self.alpha, self.vtree)
-        self.fill_train()
-
-    def overparameterize(self, S=2):
-        self.beta = self.beta.overparameterize(S)
+        self.beta.vtree = self.vtree
+        #  self.fill_train()
 
     def fill_train(self):
         N = 1024
@@ -85,6 +81,10 @@ class CircuitMPE:
         with Timer("evaluate log likelihood"):
             train_ll = self.beta.log_likelihood(training) / training.N
             test_ll = self.beta.log_likelihood(testing) / testing.N
+
+    def overparameterize(self, S=2):
+        self.beta = self.beta.overparameterize(S)
+        self.beta.vtree = self.vtree
 
     def rand_params(self):
         self.beta.rand_parameters()
@@ -129,6 +129,17 @@ class CircuitMPE:
         mpe_inst = self.beta.get_mpe(batch_size)
         argmax = self.beta.mixing.argmax(dim=-1)
         return mpe_inst[torch.arange(batch_size), :, argmax]
+
+    def get_sample(self, batch_size):
+        mpe_inst = self.beta.sample(batch_size)
+        sample = Categorical(probs=self.beta.mixing.exp()).sample()
+        return mpe_inst[torch.arange(batch_size), :, sample]
+
+    def get_marginals(self):
+        return self.beta.mars()
+
+    def get_marginals_without_evidence(self):
+        return self.beta.mars()[1 : self.vtree.var_count + 1]
 
     def weighted_model_count(self, lit_weights):
         return self.beta.weighted_model_count(lit_weights)
@@ -196,13 +207,17 @@ class CircuitMPE:
         print("       psdd size: %s" % fmt(self.beta.size()))
         print("================================")
 
-    def get_marginals(self):
-        """Get marginals without evidence"""
+    def marginals_2(self):
+        return self.beta.marginals()
 
-        inst = InstMap()
-        inst[1] = 1
-        inst[self.pmanager.var_count] = 0
-        print(self.beta.marginals(evidence=inst))
+    #  def get_marginals(self):
+    #      """Get marginals without evidence"""
+    #      # get a new pmanager
+    #      #  gamma = self.pmanager.copy_and_normalize_sdd(self.alpha, self.vtree)
+    #      #  prior = UniformSmoothing(1)
+    #      #  prior.initialize_psdd(gamma)
+    #      #  return gamma.marginals(evidence=InstMap())[1 : self.pmanager.var_count]
+    #      return self.beta.marginals(evidence=InstMap())[1 : self.pmanager.var_count]
 
 
 if __name__ == "__main__":

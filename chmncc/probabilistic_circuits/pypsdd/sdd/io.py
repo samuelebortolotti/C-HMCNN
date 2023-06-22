@@ -300,6 +300,7 @@ def psdd_yitao_read(filename, pmanager):
     var_to_vtree = pmanager.vtree.var_to_vtree()
     f = open(filename, "r")
     for line in f:
+        print(f)
         node = None
         if line.startswith("c"):
             continue

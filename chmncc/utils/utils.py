@@ -1,7 +1,7 @@
 """Utils module"""
 import torch
 import torch.nn as nn
-import os
+import os, sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -23,7 +23,15 @@ from chmncc.config import (
 )
 from chmncc.probabilistic_circuits.GatingFunction import DenseGatingFunction
 from chmncc.probabilistic_circuits.compute_mpe import CircuitMPE
+
+#  from pysdd.sdd import SddManager, Vtree
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "pypsdd"))
+
+from pypsdd import io
+
+#  from pypsdd import SddManager, Vtree
 from pysdd.sdd import SddManager, Vtree
+
 import networkx as nx
 
 
@@ -754,11 +762,11 @@ def prepare_probabilistic_circuit(
 
     # Compute matrix of ancestors R
     # Given n classes, R is an (n x n) matrix where R_ij = 1 if class i is ancestor of class j
-    print("Sono qui")
-    if not os.path.isfile(
-        constraint_folder + "/" + dataset_name + ".sdd"
-    ) or not os.path.isfile(constraint_folder + "/" + dataset_name + ".vtree"):
-        print("Non sono qui")
+    if (
+        not os.path.isfile(constraint_folder + "/" + dataset_name + ".sdd")
+        or not os.path.isfile(constraint_folder + "/" + dataset_name + ".vtree")
+        or True
+    ):
         # Compute matrix of ancestors R
         # Given n classes, R is an (n x n) matrix where R_ij = 1 if class i is ancestor of class j
         R = np.zeros(A.shape)
@@ -818,6 +826,11 @@ def prepare_probabilistic_circuit(
         constraint_folder + "/" + dataset_name + ".vtree",
         constraint_folder + "/" + dataset_name + ".sdd",
     )
+
+    # salvo qui come jason
+    #  cmpe.rand_params()
+    #  io.psdd_jason_save(cmpe.beta, constraint_folder + "/" + dataset_name + ".pysdd")
+    #  exit(0)
 
     # overparameterization
     if S > 0:

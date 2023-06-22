@@ -881,6 +881,109 @@ class NormalizedSddNode(SddNode):
         data = torch.log(data)
         return data
 
+    def sample(self, batch_size, clear_data=True):
+        """Compute the MPE instation given weights associated with literals.
+
+        Assumes the SDD is normalized.
+        """
+        from torch.distributions.categorical import Categorical
+        for node in self.as_positive_list(clear_data=clear_data):
+
+            if node.data is not None:
+                data = node.data
+                continue
+
+            if node.is_false():
+                # No configuration on false
+                data = torch.tensor([])
+
+            elif node.is_true():
+                sampled_branch = Categorical(probs = node.theta.permute(2, 0, 1)
+                        .exp()).sample().permute(1, 0) #Shape: (batch_size x k)
+                assert(sampled_branch.shape[0] == batch_size)
+
+                data = torch.where(sampled_branch > 0, torch.tensor(node.vtree.var, device=DEVICE), torch.tensor(-node.vtree.var, device=DEVICE))
+                data = data.unsqueeze(dim=-2)
+                assert(len(data.shape) == 3 and data.shape[0] == len(node.theta) and data.shape[1] == 1)
+
+            elif node.is_literal():
+                data = torch.full((batch_size, 1, self.num_reps), node.literal, device=DEVICE)
+
+            elif node.is_mixing():
+                sampled_branch = Categorical(probs = node.theta.permute(2, 0, 1)
+                        .exp()).sample().permute(1, 0) #Shape: (batch_size x k)
+                assert(sampled_branch.shape[0] == batch_size)
+
+                data = torch.tensor([], device=DEVICE)
+                for element in node.elements:
+                    data = torch.cat((data, element.data.unsqueeze(0)), dim=0)
+
+                sampled_branch = sampled_branch.unsqueeze(dim=-2).expand((1, *data.shape[1:]))
+                data = torch.gather(data, 0, sampled_branch).squeeze(dim=0)
+                assert(len(data.shape) == 3)
+
+            else: # node is_decomposition()
+
+                sampled_branch = Categorical(probs = node.theta.permute(2, 0, 1)
+                        .exp()).sample().permute(1, 0) #Shape: (batch_size x k)
+                assert(sampled_branch.shape[0] == batch_size)
+
+                data = torch.tensor([], device=DEVICE)
+                for p, s in node.positive_elements:
+                    a = torch.cat((p.data, s.data), dim=-2).unsqueeze(dim=0)
+                    data = torch.cat((data, a), dim=0)
+
+                sampled_branch = sampled_branch.unsqueeze(dim=-2).expand((1, *data.shape[1:]))
+                data = torch.gather(data, 0, sampled_branch).squeeze(dim=0)
+                assert(len(data.shape) == 3)
+
+            node.data = data
+
+        # Need to put the literals in ascending order,
+        # sorting by the absolute value of the literal
+        indices = data.abs().argsort(dim=-2)
+        return data.gather(1, indices)
+
+    def mars(self, clear_data=True,do_bottom_up=True):
+        """Evaluate a PSDD top-down for its marginals."""
+
+        var_marginals = torch.full(((2*self.vtree.var_count+1), *self.theta.transpose(0,1).shape[1:]), -float('inf'), device=DEVICE)#[ 0.0 ] * (2*self.vtree.var_count+1)
+        if self.is_false_sdd: return var_marginals
+
+        for node in self.as_positive_list(clear_data=False): # init field
+            node.pr_context = torch.tensor(-float('inf'), device=DEVICE)#0.0
+
+        self.pr_context = torch.tensor(0.0, device=DEVICE)
+        for node in self.as_positive_list(reverse=True,clear_data=clear_data):
+
+            if node.is_literal():
+                var = node.vtree.var
+                var_marginals[ var] = logaddexp(var_marginals[var], torch.tensor(0.0, device=DEVICE) + node.pr_context)
+                var_marginals[-var] = logaddexp(var_marginals[-var], torch.tensor(-float('inf'), device=DEVICE) + node.pr_context)
+
+            elif node.is_true():
+                node.theta = node.theta.transpose(0, 1) #(children x batch_size x k)
+
+                var = node.vtree.var
+                var_marginals[ var] = logaddexp(var_marginals[var], node.theta[1] + node.pr_context)
+                var_marginals[-var] = logaddexp(var_marginals[-var], node.theta[0] + node.pr_context)
+
+            elif node.is_mixing():
+                node.theta = node.theta.transpose(0, 1)
+
+                for i, d in enumerate(node.elements):
+                    d.pr_context = node.theta[i]
+
+            else: # node.is_decomposition()
+                node.theta = node.theta.transpose(0, 1) #(children x batch_size x k)
+                for i, (p,s) in enumerate(node.positive_elements):
+                    theta = node.theta[i]
+                    p.pr_context = logaddexp(p.pr_context, theta + node.pr_context)
+                    s.pr_context = logaddexp(s.pr_context, theta + node.pr_context)
+            node.pr_node = node.pr_context
+
+        return (self.mixing + var_marginals).logsumexp(-1)
+
     ########################################
     # End Determinstic and SD PCs
     ########################################

@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 
 from os import path
+import os
+import sys
 import locale  # for printing numbers with commas
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "pypsdd"))
 locale.setlocale(locale.LC_ALL, "en_US.UTF8")
 from pypsdd import Vtree, SddManager, PSddManager, SddNode
 from pypsdd import Timer, DataSet, Inst, InstMap
@@ -71,7 +74,7 @@ def run_test(
         print("      testing ll: %.8f" % test_ll)
 
         print("================================")
-        print(training)
+        #  print(training)
 
     value = beta.value()
     print("================================")
@@ -117,12 +120,21 @@ def run_test(
     assert check
     print(" marginals check: %s" % ("ok" if check else "NOT OK"))
 
+    print("Marginals", beta.marginals())
+    print("Marginals shape", len(beta.marginals()))
+
     return beta, pmanager
 
 
 def run_test_basename(basename, test_learning=True):
     print("######## " + basename)
     dirname = path.join(path.dirname(__file__), "examples")
+    print("Dirname", dirname)
+    dirname = path.join(
+        path.dirname(__file__), "..", "..", "..", "..", "..", "constraints"
+    )
+    print("Dirname", dirname)
+    print("Path", path.join(dirname, basename + ".vtree"))
     vtree_filename = path.join(dirname, basename + ".vtree")
     sdd_filename = path.join(dirname, basename + ".sdd")
     alpha, pmanager = run_test(
@@ -133,12 +145,12 @@ def run_test_basename(basename, test_learning=True):
 
 
 if __name__ == "__main__":
-    alpha, pmanager = run_test_basename("ranking-3")
-    alpha, pmanager = run_test_basename("example")
-    run_test_basename("true")
-    run_test_basename("literal")
-    run_test_basename("false", test_learning=False)
-    run_test_basename("xor-16")
-    run_test_basename("xor-32")
-    run_test_basename("alarm")
-    run_test_basename("c432")
+    alpha, pmanager = run_test_basename("mnist")
+    #  alpha, pmanager = run_test_basename("example")
+    #  run_test_basename("true")
+    #  run_test_basename("literal")
+    #  run_test_basename("false", test_learning=False)
+    #  run_test_basename("xor-16")
+    #  run_test_basename("xor-32")
+    #  run_test_basename("alarm")
+    #  run_test_basename("c432")

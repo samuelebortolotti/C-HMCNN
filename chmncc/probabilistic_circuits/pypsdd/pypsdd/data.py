@@ -2,6 +2,7 @@ import math
 import random
 
 from collections import defaultdict
+from functools import cmp_to_key
 
 # AC: TODO: empty Inst?  Inst.from_list([],var_count)?
 
@@ -37,9 +38,18 @@ class DataSet:
         return iter(self.data.items())
 
     def __repr__(self, limit=10):
+        def cmp(a, b):
+            return (a > b) - (a < b)
+
         cmpf = lambda x, y: -cmp(x[1], y[1])
-        items = sorted(list(self.data.items()), cmp=cmpf)
+        items = sorted(list(self.data.items()), key=cmp_to_key(cmpf))
         fmt = " %%%dd %%s" % len(str(items[0][1]))
+
+        print("Data", self.data)
+        print("Items", list(self.data.items()), len(list(self.data.items())))
+        for inst, count in items[:limit]:
+            print("Count", count, "Inst", inst, "Limit", limit)
+
         st = [fmt % (count, inst) for inst, count in items[:limit]]
         if len(items) > limit:
             st.append(" ...")

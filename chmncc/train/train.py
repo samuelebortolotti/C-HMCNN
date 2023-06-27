@@ -251,21 +251,18 @@ def training_step_with_gate(
         output = net(inputs.float())
         thetas = gate(output)
 
-        #  lmao = cmpe.marginals_2()
-        #  print("1", lmao, type(lmao), len(lmao))
-        cmpe.set_params(thetas)
-        #  io.psdd_jason_save(cmpe.beta, "constraints/mnist.pysdd")
-        loss = cmpe.cross_entropy(labels, log_space=True).mean()
         # predicted
         cmpe.set_params(thetas)
         predicted = (cmpe.get_mpe_inst(inputs.shape[0]) > 0).long()
         # Marginals
         cmpe.set_params(thetas)
-        print("Marg", cmpe.get_marginals_without_evidence())
+        print("Marg", cmpe.get_marginals_without_evidence()[:, 1])
+        # loss
+        cmpe.set_params(thetas)
+        loss = cmpe.cross_entropy(labels, log_space=True).mean()
 
         # fetch prediction and loss value
         total_train += labels.shape[0] * labels.shape[1]
-
         # compute training accuracy
         tot_accuracy += (predicted == labels.byte()).sum().item()
 

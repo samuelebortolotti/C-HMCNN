@@ -15,6 +15,7 @@ from chmncc.utils.utils import (
     load_best_weights,
     load_best_weights_gate,
     grouped_boxplot,
+    prediction_statistics_boxplot,
     plot_confusion_matrix_statistics,
     plot_global_multiLabel_confusion_matrix,
     get_lr,
@@ -810,6 +811,7 @@ def debug(
     gate: DenseGatingFunction,
     cmpe: CircuitMPE,
     use_gate_output: bool,
+    montecarlo: bool,
     **kwargs: Any
 ) -> None:
     """Method which performs the debug step by fine-tuning the network employing the right for the right reason loss.
@@ -843,6 +845,7 @@ def debug(
         gate [DenseGatingFunction]: gate
         cmpe [CircuitMPE]: circuit MPE
         use_gate_output [bool]: whether to use the circuit output for computing the RRR loss
+        montecarlo [bool]: whether to use a Montecarlo approach during testing
         **kwargs [Any]: kwargs
     """
     print("Have to run for {} debug iterations...".format(iterations))
@@ -1021,6 +1024,7 @@ def debug(
                 title="Validation",
                 test=dataloaders["train"],
                 device=device,
+                montecarlo=montecarlo,
             )
         else:
             val_loss, val_accuracy, val_score_raw, val_score_const, val_loss_parent, val_loss_children = test_step(
@@ -1033,6 +1037,7 @@ def debug(
                 prediction_treshold=prediction_treshold,
                 force_prediction=force_prediction,
                 superclasses_number=dataloaders["train_set"].n_superclasses,
+                montecarlo=montecarlo,
             )
 
         if use_probabilistic_circuits:
@@ -1142,6 +1147,7 @@ def debug(
                 title="Validation",
                 test=dataloaders["train"],
                 device=device,
+                montecarlo=montecarlo,
             )
 
             print(
@@ -1162,6 +1168,7 @@ def debug(
                 prediction_treshold=prediction_treshold,
                 force_prediction=force_prediction,
                 superclasses_number=dataloaders["train_set"].n_superclasses,
+                montecarlo=montecarlo,
             )
 
             print(
@@ -1186,6 +1193,7 @@ def debug(
                 test=dataloaders["test"],
                 device=device,
                 debug_mode=True,
+                montecarlo=montecarlo,
             )
 
             print(
@@ -1206,6 +1214,7 @@ def debug(
                 prediction_treshold=prediction_treshold,
                 force_prediction=force_prediction,
                 superclasses_number=dataloaders["train_set"].n_superclasses,
+                montecarlo=montecarlo,
             )
 
             print(
@@ -1230,6 +1239,7 @@ def debug(
                 test=dataloaders["test"],
                 device=device,
                 debug_mode=True,
+                montecarlo=montecarlo,
             )
 
             print(
@@ -1250,6 +1260,7 @@ def debug(
                 prediction_treshold=prediction_treshold,
                 force_prediction=force_prediction,
                 superclasses_number=dataloaders["train_set"].n_superclasses,
+                montecarlo=montecarlo,
             )
 
             print(
@@ -1276,6 +1287,7 @@ def debug(
                     title="Test",
                     test=dataloaders["test"],
                     device=device,
+                    montecarlo=montecarlo,
                 )
 
                 print(
@@ -1295,6 +1307,7 @@ def debug(
                     prediction_treshold=prediction_treshold,
                     force_prediction=force_prediction,
                     superclasses_number=dataloaders["train_set"].n_superclasses,
+                    montecarlo=montecarlo,
                 )
 
                 print(
@@ -1657,6 +1670,12 @@ def configure_subparsers(subparsers: Subparser) -> None:
         action="store_true",
         help="Whether to use the gate output for the RRR loss"
     )
+    parser.add_argument(
+        "--montecarlo",
+        "-mnt",
+        action="store_true",
+        help="Use a montecarlo approach for the predictions"
+    )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(
         func=main,
@@ -1671,7 +1690,8 @@ def configure_subparsers(subparsers: Subparser) -> None:
         balance_subclasses=[],
         balance_weights=[],
         correct_by_duplicating_samples=False,
-        use_gate_output=False
+        use_gate_output=False,
+        montecarlo=False
     )
 
 
@@ -1883,6 +1903,7 @@ def main(args: Namespace) -> None:
             title="Test",
             test=dataloaders["test"],
             device=args.device,
+            montecarlo=args.montecarlo,
         )
     else:
         test_loss, test_accuracy, test_score_raw, test_score_const, _, _ = test_step(
@@ -1895,6 +1916,7 @@ def main(args: Namespace) -> None:
             prediction_treshold=args.prediction_treshold,
             force_prediction=args.force_prediction,
             superclasses_number=dataloaders["train_set"].n_superclasses,
+            montecarlo=args.montecarlo,
         )
 
     # load the human readable labels dataloader
@@ -1920,11 +1942,13 @@ def main(args: Namespace) -> None:
             net=net,
             gate=gate,
             cmpe=cmpe,
+            nodes=dataloaders["test_set"].get_nodes(),
             test_loader=iter(test_loader_with_label_names),
             title="Collect Statistics",
             test=dataloaders["test"],
             device=args.device,
             labels_name=labels_name,
+            montecarlo=args.montecarlo,
         )
     else:
         (
@@ -1942,6 +1966,7 @@ def main(args: Namespace) -> None:
         ) = test_step_with_prediction_statistics(
             net=net,
             test_loader=iter(test_loader_with_label_names),
+            nodes=dataloaders["test_set"].get_nodes(),
             cost_function=cost_function,
             title="Collect Statistics",
             test=dataloaders["test"],
@@ -1950,6 +1975,7 @@ def main(args: Namespace) -> None:
             prediction_treshold=args.prediction_treshold,
             force_prediction=args.force_prediction,
             superclasses_number=dataloaders["train_set"].n_superclasses,
+            montecarlo=args.montecarlo,
         )
 
     # confusion matrix before debug
@@ -2057,6 +2083,7 @@ def main(args: Namespace) -> None:
             title="Test",
             test=dataloaders["test"],
             device=args.device,
+            montecarlo=args.montecarlo,
         )
     else:
         test_loss, test_accuracy, test_score_raw, test_score_const, _, _ = test_step(
@@ -2069,7 +2096,7 @@ def main(args: Namespace) -> None:
             prediction_treshold=args.prediction_treshold,
             force_prediction=args.force_prediction,
             superclasses_number=dataloaders["train_set"].n_superclasses,
-
+            montecarlo=args.montecarlo,
         )
 
     if args.use_probabilistic_circuits:
@@ -2104,11 +2131,13 @@ def main(args: Namespace) -> None:
             net=net,
             gate=gate,
             cmpe=cmpe,
+            nodes=dataloaders["test_set"].get_nodes(),
             test_loader=iter(training_loader_with_labels_names),
             title="Collect Statistics [TRAIN]",
             test=dataloaders["train"],
             device=args.device,
             labels_name=labels_name,
+            montecarlo=args.montecarlo,
         )
     else:
         (
@@ -2126,6 +2155,7 @@ def main(args: Namespace) -> None:
         ) = test_step_with_prediction_statistics(
             net=net,
             test_loader=iter(training_loader_with_labels_names),
+            nodes=dataloaders["test_set"].get_nodes(),
             cost_function=cost_function,
             title="Collect Statistics [TRAIN]",
             test=dataloaders["train"],
@@ -2134,6 +2164,7 @@ def main(args: Namespace) -> None:
             prediction_treshold=args.prediction_treshold,
             force_prediction=args.force_prediction,
             superclasses_number=dataloaders["train_set"].n_superclasses,
+            montecarlo=args.montecarlo,
         )
 
     ## ! Confusion matrix !
@@ -2195,10 +2226,12 @@ def main(args: Namespace) -> None:
             gate=gate,
             cmpe=cmpe,
             test_loader=iter(test_loader_with_label_names),
+            nodes=dataloaders["test_set"].get_nodes(),
             title="Collect Statistics [TEST]",
             test=dataloaders["test"],
             device=args.device,
             labels_name=labels_name,
+            montecarlo=args.montecarlo,
         )
     else:
         (
@@ -2216,6 +2249,7 @@ def main(args: Namespace) -> None:
         ) = test_step_with_prediction_statistics(
             net=net,
             test_loader=iter(test_loader_with_label_names),
+            nodes=dataloaders["test_set"].get_nodes(),
             cost_function=cost_function,
             title="Collect Statistics [TEST]",
             test=dataloaders["test"],
@@ -2224,6 +2258,7 @@ def main(args: Namespace) -> None:
             prediction_treshold=args.prediction_treshold,
             force_prediction=args.force_prediction,
             superclasses_number=dataloaders["train_set"].n_superclasses,
+            montecarlo=args.montecarlo,
         )
 
     ## confusion matrix after debug
@@ -2267,6 +2302,13 @@ def main(args: Namespace) -> None:
         "Wrong prediction",
         "test_accuracy",
     )
+    prediction_statistics_boxplot(
+        statistics_predicted,
+        statistics_correct,
+        args.debug_folder,
+        "Overpredicted",
+        "Overpredicted or not"
+    )
 
     if args.use_probabilistic_circuits:
         (
@@ -2285,10 +2327,12 @@ def main(args: Namespace) -> None:
             gate=gate,
             cmpe=cmpe,
             test_loader=iter(dataloaders["test_loader_only_label_confounders_with_labels_names"]),
+            nodes=dataloaders["test_set"].get_nodes(),
             title="Computing statistics in label confoundings",
             test=dataloaders["train"],
             device=args.device,
             labels_name=labels_name,
+            montecarlo=args.montecarlo,
         )
     else:
         (
@@ -2308,6 +2352,7 @@ def main(args: Namespace) -> None:
             test_loader=iter(dataloaders["test_loader_only_label_confounders_with_labels_names"]),
             cost_function=cost_function,
             title="Computing statistics in label confoundings",
+            nodes=dataloaders["test_set"].get_nodes(),
             test=dataloaders["train"],
             device=args.device,
             labels_name=labels_name,
@@ -2315,6 +2360,7 @@ def main(args: Namespace) -> None:
             force_prediction=args.force_prediction,
             use_softmax=args.use_softmax,
             superclasses_number=dataloaders["train_set"].n_superclasses,
+            montecarlo=args.montecarlo,
         )
 
     labels_predictions_dict, counter_dict = prepare_dict_label_predictions_from_raw_predictions(y_pred, y_test, labels_name, args.dataset, True)

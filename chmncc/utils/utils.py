@@ -322,6 +322,42 @@ def average_image_contributions_tensor(image: torch.Tensor) -> torch.Tensor:
     return torch.mean(image, dim=0)
 
 
+def prediction_statistics_boxplot(
+    statistics: Dict[str, List[int]],
+    correct: Dict[str, List[int]],
+    image_folder: str,
+    statistics_name: str,
+    title: str,
+) -> None:
+    """Grouped Boxplot
+    print the grouped boxplot for the statistics
+
+    Args:
+      statistics [Dict[List[int]]]: set of statistics
+      correct: Dict[str, List[int]]: set of correct and incorrect sample
+      image_folder [str]: image folder
+      statistics_name [str]: name of the statistics
+      title [str]: title
+    """
+    predicted_perc = {}
+    # create the statistics
+    for key, item in statistics.items():
+        if key != "total":
+            predicted_perc[key] = float(statistics[key][1]) / (
+                correct[key][0] + correct[key][1]
+            )
+
+    fig = plt.figure(figsize=(16, 8))
+    plt.bar(range(len(predicted_perc)), list(predicted_perc.values()), align="center")
+    plt.xticks(range(len(predicted_perc)), list(predicted_perc.keys()))
+    plt.xticks(rotation="vertical")
+    plt.tight_layout()
+    plt.title("{}".format(title))
+    print("{}/statistics_{}_total.png".format(image_folder, statistics_name))
+    print("{}".format(predicted_perc))
+    plt.close(fig)
+
+
 def grouped_boxplot(
     statistics: Dict[str, List[int]],
     image_folder: str,
@@ -879,3 +915,9 @@ def prepare_empty_probabilistic_circuit(
         cmpe.beta, gate_layers=[output_classes], device=device
     ).to(device)
     return (cmpe, gate)
+
+
+def activate_dropout(model: nn.Module):
+    for m in model.modules():
+        if m.__class__.__name__.startswith("Dropout"):
+            m.train()

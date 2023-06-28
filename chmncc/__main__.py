@@ -46,6 +46,7 @@ from chmncc.utils.utils import (
     load_best_weights,
     load_last_weights,
     grouped_boxplot,
+    prediction_statistics_boxplot,
     plot_global_multiLabel_confusion_matrix,
     plot_confusion_matrix_statistics,
     get_confounders_and_hierarchy,
@@ -349,6 +350,12 @@ def configure_subparsers(subparsers: Subparser) -> None:
     parser.add_argument(
         "--S", type=int, default=0, help="PSDD scaling factor (default: 0)"
     )
+    parser.add_argument(
+        "--montecarlo",
+        "-mnt",
+        action="store_true",
+        help="Use a montecarlo approach for the predictions"
+    )
     # set the main function to run when blob is called from the command line
     parser.set_defaults(
         func=experiment,
@@ -360,6 +367,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
         simplified_dataset=False,
         imbalance_dataset=False,
         use_probabilistic_circuits=False,
+        montecarlo=False,
     )
 
 
@@ -393,6 +401,7 @@ def c_hmcnn(
     gates: int = 1,  # Number of hidden layers in gating function (default: 1)
     num_reps: int = 1,  # Number of PSDDs in the ensemble
     S: int = 0,  # PSDD scaling factor (default: 0)
+    montecarlo: bool = False, # use a montecarlo approach
     **kwargs: Any,
 ) -> None:
     r"""
@@ -427,6 +436,7 @@ def c_hmcnn(
         gates [int] = 1, number of hidden layers in gating function (default: 1)
         num_reps [int] = 1, number of PSDDs in the ensemble
         S [int] = 0, PSDD scaling factor (default: 0)
+        montecarlo [bool] = False, do not use a montecarlo approach in the predictions
 
     Args:
         exp_name [str]: name of the experiment, basically where to save the logs of the SummaryWriter
@@ -458,6 +468,7 @@ def c_hmcnn(
         gates [int] = 1, number of hidden layers in gating function (default: 1)
         num_reps [int] = 1, number of PSDDs in the ensemble
         S [int] = 0, PSDD scaling factor (default: 0)
+        montecarlo [bool], use a montecarlo approach in the predictions
         \*\*kwargs [Any]: additional key-value arguments
     """
 
@@ -617,6 +628,10 @@ def c_hmcnn(
 
     summary(net, (img_depth, img_size, img_size))
 
+    training_loader_with_labels_names = dataloaders[
+        "training_loader_with_labels_names"
+    ]
+
     # print the statistics
     print("Train dataset statistics:")
     dataloaders["train_set"].print_stats()
@@ -659,6 +674,9 @@ def c_hmcnn(
     # instantiate the optimizer
     #  optimizer = get_adam_optimizer(net, learning_rate, weight_decay=weight_decay)
     optimizer = get_adam_optimizer(net, learning_rate, weight_decay)
+
+    # gate
+    gate = None
 
     if use_probabilistic_circuits:
         print("Get Adam optimizer...")
@@ -823,6 +841,7 @@ def c_hmcnn(
                 net=net,
                 gate=gate,
                 cmpe=cmpe,
+                montecarlo=montecarlo,
                 test_loader=iter(val_loader),
                 title="Validation",
                 test=dataloaders["val"],
@@ -839,6 +858,7 @@ def c_hmcnn(
             ) = test_step(
                 net=net,
                 test_loader=iter(val_loader),
+                montecarlo=montecarlo,
                 cost_function=cost_function,
                 title="Validation",
                 test=dataloaders["val"],
@@ -868,6 +888,7 @@ def c_hmcnn(
                 net=net,
                 gate=gate,
                 cmpe=cmpe,
+                montecarlo=montecarlo,
                 test_loader=iter(test_loader),
                 title="Test",
                 test=dataloaders["test"],
@@ -883,6 +904,7 @@ def c_hmcnn(
                 test_loss_children,
             ) = test_step(
                 net=net,
+                montecarlo=montecarlo,
                 test_loader=iter(test_loader),
                 cost_function=cost_function,
                 title="Test",
@@ -1176,6 +1198,7 @@ def c_hmcnn(
             gate=gate,
             cmpe=cmpe,
             test_loader=iter(test_loader),
+            montecarlo=montecarlo,
             title="Test",
             test=dataloaders["test"],
             device=device,
@@ -1192,6 +1215,7 @@ def c_hmcnn(
         test_loss, test_accuracy, test_score_raw, test_score_const, _, _ = test_step(
             net=net,
             test_loader=iter(test_loader),
+            montecarlo=montecarlo,
             cost_function=cost_function,
             title="Test",
             test=dataloaders["test"],
@@ -1252,7 +1276,9 @@ def c_hmcnn(
                 net=net,
                 cmpe=cmpe,
                 gate=gate,
+                montecarlo=montecarlo,
                 test_loader=iter(training_loader_with_labels_names),
+                nodes=dataloaders["test_set"].get_nodes(),
                 title="Collect Statistics [TRAIN]",
                 test=dataloaders["train"],
                 device=device,
@@ -1273,7 +1299,9 @@ def c_hmcnn(
                 _,
             ) = test_step_with_prediction_statistics(
                 net=net,
+                montecarlo=montecarlo,
                 test_loader=iter(training_loader_with_labels_names),
+                nodes=dataloaders["test_set"].get_nodes(),
                 cost_function=cost_function,
                 title="Collect Statistics [TRAIN]",
                 test=dataloaders["train"],
@@ -1342,9 +1370,11 @@ def c_hmcnn(
                 _,
             ) = test_step_with_prediction_statistics_with_gates(
                 net=net,
+                montecarlo=montecarlo,
                 cmpe=cmpe,
                 gate=gate,
                 test_loader=iter(test_loader_with_label_names),
+                nodes=dataloaders["test_set"].get_nodes(),
                 title="Collect Statistics [TEST]",
                 test=dataloaders["test"],
                 device=device,
@@ -1365,7 +1395,9 @@ def c_hmcnn(
                 _,
             ) = test_step_with_prediction_statistics(
                 net=net,
+                montecarlo=montecarlo,
                 test_loader=iter(test_loader_with_label_names),
+                nodes=dataloaders["test_set"].get_nodes(),
                 cost_function=cost_function,
                 title="Collect Statistics [TEST]",
                 test=dataloaders["test"],
@@ -1418,6 +1450,14 @@ def c_hmcnn(
             "test_accuracy",
         )
 
+        prediction_statistics_boxplot(
+            statistics_predicted,
+            statistics_correct,
+            os.environ["IMAGE_FOLDER"],
+            "Overpredicted",
+            "Overpredicted or not"
+        )
+
         if use_probabilistic_circuits:
             (
                 _,
@@ -1432,11 +1472,13 @@ def c_hmcnn(
                 _,
             ) = test_step_with_prediction_statistics_with_gates(
                 net=net,
+                montecarlo=montecarlo,
                 cmpe=cmpe,
                 gate=gate,
                 test_loader=iter(
                     dataloaders["test_loader_only_label_confounders_with_labels_names"]
                 ),
+                nodes=dataloaders["test_set"].get_nodes(),
                 title="Computing statistics in label confoundings",
                 test=dataloaders["train"],
                 device=device,
@@ -1457,9 +1499,11 @@ def c_hmcnn(
                 _,
             ) = test_step_with_prediction_statistics(
                 net=net,
+                montecarlo=montecarlo,
                 test_loader=iter(
                     dataloaders["test_loader_only_label_confounders_with_labels_names"]
                 ),
+                nodes=dataloaders["test_set"].get_nodes(),
                 cost_function=cost_function,
                 title="Computing statistics in label confoundings",
                 test=dataloaders["train"],

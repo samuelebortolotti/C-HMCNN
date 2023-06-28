@@ -12,5 +12,6 @@ from .utils import (
     plot_confounded_labels_predictions,
     prepare_probabilistic_circuit,
     prepare_empty_probabilistic_circuit,
+    activate_dropout,
 )
 from .cifar_helper import read_meta, unpickle

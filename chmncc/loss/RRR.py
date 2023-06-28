@@ -363,13 +363,25 @@ class RRRLossWithGate(nn.Module):
         # if the example is not confunded from the beginning,
         # then I can simply avoid computing the right reason loss!
         if ((confounded.byte() == 1).sum()).item():
-            gradXes = torch.autograd.grad(
-                log_prob_ys,
-                X,
-                torch.ones_like(log_prob_ys),
-                create_graph=True,
-                allow_unused=True,
-            )[0]
+            #  print("I am ok")
+            try:
+                gradXes = torch.autograd.grad(
+                    (log_prob_ys + 1),
+                    X,
+                    torch.ones_like(log_prob_ys),
+                    create_graph=True,
+                    allow_unused=True,
+                )[0]
+            except RuntimeError as e:
+                print("Error:", e)
+                print("Intermediate values:")
+                print("Output:", log_prob_ys)
+                print("Input data:", X)
+                print(sum(torch.isnan(X)))
+                print(sum(torch.isnan(log_prob_ys)))
+                print(sum(torch.isinf(X)))
+                print(sum(torch.isinf(log_prob_ys)))
+            #  print("I am not ok")
         else:
             gradXes = torch.zeros_like(X)
 

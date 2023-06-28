@@ -7,6 +7,7 @@ from chmncc.utils import (
     dotdict,
     force_prediction_from_batch,
     cross_entropy_from_softmax,
+    activate_dropout,
 )
 from sklearn.metrics import (
     average_precision_score,
@@ -15,6 +16,9 @@ from sklearn.metrics import (
     hamming_loss,
     jaccard_score,
 )
+
+from chmncc.dataset import get_named_label_predictions
+
 import numpy as np
 import itertools
 
@@ -49,6 +53,7 @@ def test_step(
     force_prediction: bool = False,
     use_softmax: bool = False,
     superclasses_number: int = 20,
+    montecarlo: bool = False,
 ) -> Tuple[float, float, float, float, Optional[float], Optional[float]]:
     r"""Test function for the network.
     It computes the accuracy together with the area under the precision-recall-curve as a metric
@@ -66,6 +71,7 @@ def test_step(
         force_prediction [bool]: force prediction or not
         use_softmax [bool]: use the softmax
         superclasses_number [int]: number of superclasses
+        montecarlo: bool = False: montecarlo evaluation
 
     Returns:
         cumulative_loss [float] loss on the test set [not used to train!]
@@ -161,6 +167,33 @@ def test_step(
                 loss.item()
             )  # Note: the .item() is needed to extract scalars from tensors
 
+            # if montecarlo
+            predictions = []
+            if montecarlo:
+                activate_dropout(net)
+                n_samples = 20  # number of montecarlo runs
+                # number of montecarlo runs
+                for _ in range(n_samples):
+                    outputs = net(inputs.float())
+                    # predicted
+                    if force_prediction:
+                        predicted = force_prediction_from_batch(
+                            outputs.data,
+                            prediction_treshold,
+                            use_softmax,
+                            superclasses_number,
+                        )
+                    else:
+                        predicted = outputs.data > prediction_treshold  # 0.5
+                    predictions.append(predicted.float())
+
+                # Aggregate the predictions
+                predictions = torch.stack(predictions)
+                mean_predictions = predictions.mean(dim=0)
+                final_predictions = (mean_predictions >= 0.5).float()
+                # rename the prediction
+                predicted = final_predictions
+
             # compute the au(prc)
             predicted = predicted.to("cpu")
             cpu_constrained_output = outputs.to("cpu")
@@ -209,6 +242,7 @@ def test_step_with_prediction_statistics(
     net: nn.Module,
     test_loader: torch.utils.data.DataLoader,
     cost_function: torch.nn.modules.loss.BCELoss,
+    nodes: List[str],
     title: str,
     test: dotdict,
     labels_name: List[str],
@@ -217,6 +251,7 @@ def test_step_with_prediction_statistics(
     force_prediction: bool = False,
     use_softmax: bool = False,
     superclasses_number: int = 20,
+    montecarlo: bool = False,
 ) -> Tuple[
     float,
     float,
@@ -247,6 +282,7 @@ def test_step_with_prediction_statistics(
         force_prediction [bool]: force prediction
         use_softmax [bool]: use the softmax
         superclasses_number [int]: number of superclasses
+        montecarlo: bool = False: montecarlo evaluation
 
     Returns:
         cumulative_loss [float] loss on the test set [not used to train!]
@@ -323,6 +359,33 @@ def test_step_with_prediction_statistics(
                 loss.item()
             )  # Note: the .item() is needed to extract scalars from tensors
 
+            # if montecarlo
+            predictions = []
+            if montecarlo:
+                activate_dropout(net)
+                n_samples = 20  # number of montecarlo runs
+                # number of montecarlo runs
+                for _ in range(n_samples):
+                    outputs = net(inputs.float())
+                    # predicted
+                    if force_prediction:
+                        predicted = force_prediction_from_batch(
+                            outputs.data,
+                            prediction_treshold,
+                            use_softmax,
+                            superclasses_number,
+                        )
+                    else:
+                        predicted = outputs.data > prediction_treshold  # 0.5
+                    predictions.append(predicted.float())
+
+                # Aggregate the predictions
+                predictions = torch.stack(predictions)
+                mean_predictions = predictions.mean(dim=0)
+                final_predictions = (mean_predictions >= 0.5).float()
+                # rename the prediction
+                predicted = final_predictions
+
             # compute the au(prc)
             predicted = predicted.to("cpu")
             cpu_constrained_output = outputs.to("cpu")
@@ -337,9 +400,24 @@ def test_step_with_prediction_statistics(
                 constr_test = torch.cat((constr_test, cpu_constrained_output), dim=0)
                 y_test = torch.cat((y_test, targets), dim=0)
 
-            # create the statistics - predicted
+            # stats
             for i in range(inputs.shape[0]):
-                predicted_idx = 0 if not any(predicted[i]) else 1
+                # adding the predictions
+                named_pred = get_named_label_predictions(predicted[i], nodes)
+                predicted_idx = 1
+                for pred in named_pred:
+                    if not pred in stats_predicted:
+                        stats_predicted[pred] = [0, 0]
+                    stats_predicted[pred][predicted_idx] += 1
+                stats_predicted["total"][predicted_idx] += 1
+
+                # adding the not predicted
+                predicted_idx = 0
+
+                # already predicted
+                if subclass[i] in named_pred and superclass[i] in named_pred:
+                    continue
+                # adding not predicted
                 if not subclass[i] in stats_predicted:
                     stats_predicted[subclass[i]] = [0, 0]
                 if not superclass[i] in stats_predicted:
@@ -356,6 +434,7 @@ def test_step_with_prediction_statistics(
                     == len(predicted[i])
                     else 1
                 )
+
                 if not subclass[i] in stats_correct:
                     stats_correct[subclass[i]] = [0, 0]
                 if not superclass[i] in stats_correct:
@@ -418,6 +497,7 @@ def test_circuit(
     cmpe: CircuitMPE,
     device: str = "gpu",
     debug_mode: bool = False,
+    montecarlo: bool = False,
 ) -> Tuple[float, float, float, float, float]:
     r"""Test function for the circuit.
     It computes the accuracy together with the area under the precision-recall-curve, jaccard score and hamming score as a metric
@@ -431,6 +511,7 @@ def test_circuit(
         cmpe [CircuitMPE]: circuit MPE
         device [str] = "gpu": device
         debug_mode [bool] = False: whether the debug mode is set
+        montecarlo: bool = False: montecarlo evaluation
 
     Returns:
         cumulative_loss [float]: cumulative loss
@@ -473,6 +554,7 @@ def test_circuit(
             # load data into device
             inputs = inputs.to(device)
             targets = targets.to(device)
+
             # forward pass
             outputs = net(inputs.float())
 
@@ -482,14 +564,31 @@ def test_circuit(
             # negative log likelihood and map
             cmpe.set_params(thetas)
             predicted = (cmpe.get_mpe_inst(inputs.shape[0]) > 0).long()
-            cmpe.set_params(thetas)
-            print("Marg", cmpe.get_marginals_without_evidence()[:, 1])
 
             # compute the loss
             cmpe.set_params(thetas)
             loss = cmpe.cross_entropy(
                 targets, log_space=True
             ).mean()  # set them to None
+
+            # if montecarlo
+            predictions = []
+            if montecarlo:
+                activate_dropout(net)
+                n_samples = 20  # number of montecarlo runs
+                # number of montecarlo runs
+                for _ in range(n_samples):
+                    outputs = net(inputs.float())
+                    thetas = gate(outputs.float())
+                    cmpe.set_params(thetas)
+                    predicted = (cmpe.get_mpe_inst(inputs.shape[0]) > 0).long()
+                    predictions.append(predicted.float())
+                # Aggregate the predictions
+                predictions = torch.stack(predictions)
+                mean_predictions = predictions.mean(dim=0)
+                final_predictions = (mean_predictions >= 0.5).float()
+                # rename the prediction
+                predicted = final_predictions
 
             total_train += targets.shape[0] * targets.shape[1]
             num_correct = (predicted == targets.byte()).sum().item()
@@ -534,12 +633,14 @@ def test_circuit(
 def test_step_with_prediction_statistics_with_gates(
     net: nn.Module,
     test_loader: torch.utils.data.DataLoader,
+    nodes: List[str],
     gate: DenseGatingFunction,
     cmpe: CircuitMPE,
     title: str,
     test: dotdict,
     labels_name: List[str],
     device: str = "gpu",
+    montecarlo: bool = False,
 ) -> Tuple[
     float,
     float,
@@ -566,6 +667,7 @@ def test_step_with_prediction_statistics_with_gates(
         test [dotdict]: test
         labels_name [List[str]: labels name
         device [str] = "gpu": device
+        montecarlo [bool] = False: montecarlo approccio
 
     Returns:
         cumulative_loss [float] loss on the test set [not used to train!]
@@ -617,6 +719,25 @@ def test_step_with_prediction_statistics_with_gates(
                 targets, log_space=True
             ).mean()  # set them to None
 
+            # if montecarlo
+            predictions = []
+            if montecarlo:
+                activate_dropout(net)
+                n_samples = 20  # number of montecarlo runs
+                # number of montecarlo runs
+                for _ in range(n_samples):
+                    outputs = net(inputs.float())
+                    thetas = gate(outputs.float())
+                    cmpe.set_params(thetas)
+                    predicted = (cmpe.get_mpe_inst(inputs.shape[0]) > 0).long()
+                    predictions.append(predicted.float())
+                # Aggregate the predictions
+                predictions = torch.stack(predictions)
+                mean_predictions = predictions.mean(dim=0)
+                final_predictions = (mean_predictions >= 0.5).float()
+                # rename the prediction
+                predicted = final_predictions
+
             total_train += targets.shape[0] * targets.shape[1]
             num_correct = (predicted == targets.byte()).sum().item()
 
@@ -636,9 +757,24 @@ def test_step_with_prediction_statistics_with_gates(
                 predicted_test = torch.cat((predicted_test, predicted), dim=0)
                 y_test = torch.cat((y_test, targets), dim=0)
 
-            # create the statistics - predicted
+            # stats
             for i in range(inputs.shape[0]):
-                predicted_idx = 0 if not any(predicted[i]) else 1
+                # adding the predictions
+                named_pred = get_named_label_predictions(predicted[i], nodes)
+                predicted_idx = 1
+                for pred in named_pred:
+                    if not pred in stats_predicted:
+                        stats_predicted[pred] = [0, 0]
+                    stats_predicted[pred][predicted_idx] += 1
+                stats_predicted["total"][predicted_idx] += 1
+
+                # adding the not predicted
+                predicted_idx = 0
+
+                # already predicted
+                if subclass[i] in named_pred and superclass[i] in named_pred:
+                    continue
+                # adding not predicted
                 if not subclass[i] in stats_predicted:
                     stats_predicted[subclass[i]] = [0, 0]
                 if not superclass[i] in stats_predicted:
@@ -655,6 +791,7 @@ def test_step_with_prediction_statistics_with_gates(
                     == len(predicted[i])
                     else 1
                 )
+
                 if not subclass[i] in stats_correct:
                     stats_correct[subclass[i]] = [0, 0]
                 if not superclass[i] in stats_correct:

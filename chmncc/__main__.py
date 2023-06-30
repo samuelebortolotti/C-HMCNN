@@ -620,6 +620,8 @@ def c_hmcnn(
             output_classes,
             S,
         )
+    else:
+        gate = None
 
     # move the network
     net = net.to(device)
@@ -674,9 +676,6 @@ def c_hmcnn(
     # instantiate the optimizer
     #  optimizer = get_adam_optimizer(net, learning_rate, weight_decay=weight_decay)
     optimizer = get_adam_optimizer(net, learning_rate, weight_decay)
-
-    # gate
-    gate = None
 
     if use_probabilistic_circuits:
         print("Get Adam optimizer...")

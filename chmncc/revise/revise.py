@@ -414,13 +414,11 @@ def revise_step_with_gates(
             train_output = gate.get_output(outputs.float())
         else:
             # TODO, gives problems in the computation of IG
-            if False:
-                cmpe.set_params(thetas)
-                train_output = torch.transpose(
-                    cmpe.get_marginals_without_evidence(), 0, 1
-                )
+            #  if False:
+            cmpe.set_params(thetas)
+            train_output = torch.transpose(cmpe.get_marginals_without_evidence(), 0, 1)
 
-        #  torch.autograd.set_detect_anomaly(True)
+        torch.autograd.set_detect_anomaly(True)
         # get the loss masking the prediction on the root -> confunder
         (loss, right_answer_loss, right_reason_loss,) = revive_function(
             thetas=thetas,

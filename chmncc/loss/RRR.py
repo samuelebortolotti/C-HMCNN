@@ -346,7 +346,7 @@ class RRRLossWithGate(nn.Module):
         """
 
         # use the basic criterion
-        logits = logits[:, to_eval]
+        #  logits = logits[:, to_eval]
         # the normal training loss
         self.cmpe.set_params(thetas)
         right_answer_loss = self.cmpe.cross_entropy(y, log_space=True).mean()
@@ -354,7 +354,7 @@ class RRRLossWithGate(nn.Module):
         y = y[:, to_eval]
 
         # get gradients w.r.t. to the input
-        log_prob_ys = F.log_softmax(logits, dim=1)
+        log_prob_ys = logits  # F.log_softmax(logits, dim=1)
         log_prob_ys.retain_grad()
 
         # integrated gradients
@@ -364,23 +364,23 @@ class RRRLossWithGate(nn.Module):
         # then I can simply avoid computing the right reason loss!
         if ((confounded.byte() == 1).sum()).item():
             #  print("I am ok")
-            try:
-                gradXes = torch.autograd.grad(
-                    (log_prob_ys + 1),
-                    X,
-                    torch.ones_like(log_prob_ys),
-                    create_graph=True,
-                    allow_unused=True,
-                )[0]
-            except RuntimeError as e:
-                print("Error:", e)
-                print("Intermediate values:")
-                print("Output:", log_prob_ys)
-                print("Input data:", X)
-                print(sum(torch.isnan(X)))
-                print(sum(torch.isnan(log_prob_ys)))
-                print(sum(torch.isinf(X)))
-                print(sum(torch.isinf(log_prob_ys)))
+            #  try:
+            gradXes = torch.autograd.grad(
+                log_prob_ys,
+                X,
+                torch.ones_like(log_prob_ys),
+                create_graph=True,
+                allow_unused=True,
+            )[0]
+            #  except RuntimeError as e:
+            #      print("Error:", e)
+            #      print("Intermediate values:")
+            #      print("Output:", log_prob_ys)
+            #      print("Input data:", X)
+            #      print(sum(torch.isnan(X)))
+            #      print(sum(torch.isnan(log_prob_ys)))
+            #      print(sum(torch.isinf(X)))
+            #      print(sum(torch.isinf(log_prob_ys)))
             #  print("I am not ok")
         else:
             gradXes = torch.zeros_like(X)

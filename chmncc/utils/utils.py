@@ -353,9 +353,11 @@ def prediction_statistics_boxplot(
     plt.xticks(rotation="vertical")
     plt.tight_layout()
     plt.title("{}".format(title))
+    fig.savefig("{}/statistics_{}_total.png".format(image_folder, statistics_name))
+    plt.close(fig)
     print("{}/statistics_{}_total.png".format(image_folder, statistics_name))
     print("{}".format(predicted_perc))
-    plt.close(fig)
+
 
 
 def grouped_boxplot(

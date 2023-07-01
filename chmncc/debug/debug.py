@@ -2001,6 +2001,13 @@ def main(args: Namespace) -> None:
             args.debug_folder
         ),
     )
+    prediction_statistics_boxplot(
+        statistics_predicted,
+        statistics_correct,
+        args.debug_folder,
+        "Before_Overpredicted",
+        "Overpredicted or not"
+    )
 
     print("Network resumed, performances:")
 
@@ -2306,7 +2313,7 @@ def main(args: Namespace) -> None:
         statistics_predicted,
         statistics_correct,
         args.debug_folder,
-        "Overpredicted",
+        "After_Overpredicted",
         "Overpredicted or not"
     )
 

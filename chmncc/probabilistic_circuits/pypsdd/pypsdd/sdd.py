@@ -50,96 +50,24 @@ def logsumexp(tensor: Tensor, dim: int, keepdim: bool = False) -> Tensor:
 #        return grad_input
 
 
-#  class SafeLogAddExp(torch.autograd.Function):
-#      """Implements a torch function that is exactly like logaddexp,
-#      but is willing to zero out nans on the backward pass."""
-#
-#      @staticmethod
-#      def forward(ctx, input, other):
-#          with torch.enable_grad():
-#              output = torch.logaddexp(input, other)  # internal copy of output
-#          ctx.save_for_backward(input, other, output)
-#          return output.clone()
-#
-#      @staticmethod
-#      def backward(ctx, grad_output):
-#          input, other, output = ctx.saved_tensors
-#          grad_input, grad_other = torch.autograd.grad(
-#              output, (input, other), grad_output, only_inputs=True
-#          )
-#          mask = torch.isinf(input).logical_and(input == other)
-#          grad_input[mask] = 0
-#          grad_other[mask] = 0
-#          return grad_input, grad_other
-
-def mylogaddexp(x, y, epsilon=1e-8):
-    MY_INF = 1e9
-
-    max_val = torch.max(x, y)
-    diff = torch.abs(x - y)
-
-    if torch.any(torch.isinf(x)):
-        x = torch.sign(x) * MY_INF #sys.float_info.max
-    elif torch.any(torch.isnan(x)):
-        raise ValueError("Invalid input: NaN values found in x")
-
-    if torch.any(torch.isinf(y)):
-        y = torch.sign(y) * MY_INF # sys.float_info.max
-    elif torch.any(torch.isnan(y)):
-        raise ValueError("Invalid input: NaN values found in y")
-
-    diff = torch.abs(x - y)
-
-    if torch.any(torch.isnan(max_val)):
-        raise ValueError("Invalid input: NaN values found in max_val")
-    elif torch.any(torch.isinf(max_val)):
-        max_val = torch.sign(max_val) * MY_INF # sys.float_info.max
-
-    if torch.any(torch.isnan(diff)):
-        raise ValueError("Invalid input: NaN values found in diff")
-    elif torch.any(torch.isinf(diff)):
-        raise ValueError("Invalid input: Inf values found in diff")
-
-    result = max_val + torch.log1p(torch.exp(-diff) + epsilon)
-
-    if torch.any(torch.isnan(result)):
-        raise ValueError("Invalid output: NaN values found in result")
-    elif torch.any(torch.isinf(result)):
-        torch.set_printoptions(threshold=torch.inf)
-        raise ValueError("Invalid output: Inf values found in result")
-
-    return result
-
-
 class SafeLogAddExp(torch.autograd.Function):
     """Implements a torch function that is exactly like logaddexp,
     but is willing to zero out nans on the backward pass."""
 
     @staticmethod
     def forward(ctx, input, other):
-        MY_INF = 1e9
         with torch.enable_grad():
-            if torch.any(torch.isinf(input)):
-                input = torch.sign(input) * MY_INF #sys.float_info.max
-            if torch.any(torch.isinf(other)):
-                other = torch.sign(other) * MY_INF #sys.float_info.max
-
-            output = torch.logaddexp(input, other)  # internal copy of output
-            #  output = mylogaddexp(input, other)
+            output = torch.logaddexp(input, other) # internal copy of output
         ctx.save_for_backward(input, other, output)
         return output.clone()
-
     @staticmethod
     def backward(ctx, grad_output):
         input, other, output = ctx.saved_tensors
-        grad_input, grad_other = torch.autograd.grad(
-            output, (input, other), grad_output, only_inputs=True
-        )
+        grad_input, grad_other = torch.autograd.grad(output, (input, other), grad_output, only_inputs=True)
         mask = torch.isinf(input).logical_and(input == other)
         grad_input[mask] = 0
         grad_other[mask] = 0
         return grad_input, grad_other
-
 
 logaddexp = SafeLogAddExp.apply
 
@@ -1016,33 +944,29 @@ class NormalizedSddNode(SddNode):
     def mars(self, clear_data=True,do_bottom_up=True):
         """Evaluate a PSDD top-down for its marginals."""
 
-        #  var_marginals = torch.full(((2*self.vtree.var_count+1), *self.theta.transpose(0,1).shape[1:]), -float('inf'), device=DEVICE)#[ 0.0 ] * (2*self.vtree.var_count+1)
-        import numpy as np
-        #  var_marginals = np.full(((2 * self.vtree.var_count + 1), *self.theta.transpose(0, 1).shape[1:]), -float('inf'), dtype=np.float32)
-        var_marginals = np.full(((2 * self.vtree.var_count + 1), *self.theta.transpose(0, 1).shape[1:]), -float('inf'), dtype=np.float32)
-        var_marginals = torch.tensor(var_marginals, device=DEVICE)
+        var_marginals = [None] * (2 * self.vtree.var_count + 1)
+        for i in range(0, 2*self.vtree.var_count + 1):
+            var_marginals[i] = torch.full((self.theta.transpose(0,1).shape[1:]), -float(300), device=DEVICE, requires_grad=True)
 
         if self.is_false_sdd: return var_marginals
 
         for node in self.as_positive_list(clear_data=False): # init field
-            #  node.pr_context = torch.tensor(-float('inf'), device=DEVICE)#0.0
-            node.pr_context = torch.tensor(-float('inf'), device=DEVICE)#0.0
+            node.pr_context = torch.tensor(-float(300), device=DEVICE)
 
         self.pr_context = torch.tensor(0.0, device=DEVICE)
         for node in self.as_positive_list(reverse=True,clear_data=clear_data):
 
             if node.is_literal():
                 var = node.vtree.var
-                var_marginals[ var] = logaddexp(var_marginals[var], torch.tensor(0.0, device=DEVICE) + node.pr_context)
-                #  var_marginals[-var] = logaddexp(var_marginals[-var], torch.tensor(-float('inf'), device=DEVICE) + node.pr_context)
-                var_marginals[-var] = logaddexp(var_marginals[-var], torch.tensor(-float('inf'), device=DEVICE) + node.pr_context)
+                var_marginals[ var] = torch.logaddexp(var_marginals[var], torch.tensor(0.0, device=DEVICE) + node.pr_context)
+                var_marginals[-var] = torch.logaddexp(var_marginals[-var], torch.tensor(-float(300), device=DEVICE) + node.pr_context)
 
             elif node.is_true():
                 node.theta = node.theta.transpose(0, 1) #(children x batch_size x k)
 
                 var = node.vtree.var
-                var_marginals[ var] = logaddexp(var_marginals[var], node.theta[1] + node.pr_context)
-                var_marginals[-var] = logaddexp(var_marginals[-var], node.theta[0] + node.pr_context)
+                var_marginals[ var] = torch.logaddexp(var_marginals[var], node.theta[1] + node.pr_context)
+                var_marginals[-var] = torch.logaddexp(var_marginals[-var], node.theta[0] + node.pr_context)
 
             elif node.is_mixing():
                 node.theta = node.theta.transpose(0, 1)
@@ -1054,12 +978,11 @@ class NormalizedSddNode(SddNode):
                 node.theta = node.theta.transpose(0, 1) #(children x batch_size x k)
                 for i, (p,s) in enumerate(node.positive_elements):
                     theta = node.theta[i]
-                    p.pr_context = logaddexp(p.pr_context, theta + node.pr_context)
-                    s.pr_context = logaddexp(s.pr_context, theta + node.pr_context)
+                    p.pr_context = torch.logaddexp(p.pr_context, theta + node.pr_context)
+                    s.pr_context = torch.logaddexp(s.pr_context, theta + node.pr_context)
             node.pr_node = node.pr_context
 
-        return logsumexp(self.mixing + var_marginals, dim=-1)
-        #  return (self.mixing + var_marginals).logsumexp(-1)
+        return torch.logsumexp(self.mixing + torch.stack(var_marginals), dim=-1)
 
     ########################################
     # End Determinstic and SD PCs

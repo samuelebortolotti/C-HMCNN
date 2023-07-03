@@ -254,9 +254,7 @@ def training_step_with_gate(
         # predicted
         cmpe.set_params(thetas)
         predicted = (cmpe.get_mpe_inst(inputs.shape[0]) > 0).long()
-        # Marginals
-        #  cmpe.set_params(thetas)
-        #  print("Marg", cmpe.get_marginals_without_evidence()[:, 1])
+
         # loss
         cmpe.set_params(thetas)
         loss = cmpe.cross_entropy(labels, log_space=True).mean()

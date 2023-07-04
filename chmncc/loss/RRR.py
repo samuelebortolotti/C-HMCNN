@@ -347,14 +347,16 @@ class RRRLossWithGate(nn.Module):
 
         # use the basic criterion
         logits = logits[:, to_eval]
+
         # the normal training loss
         self.cmpe.set_params(thetas)
         right_answer_loss = self.cmpe.cross_entropy(y, log_space=True).mean()
+
         # change the part of the evaluation
         y = y[:, to_eval]
 
         # get gradients w.r.t. to the input
-        log_prob_ys = F.log_softmax(logits, dim=1)
+        log_prob_ys = logits
         log_prob_ys.retain_grad()
 
         # integrated gradients

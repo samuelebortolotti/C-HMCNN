@@ -15,9 +15,31 @@ def change_sdd_device(device):
     global DEVICE
     DEVICE = device
 
+def safe_logsumexp(input, dim=None, keepdim=False):
+    max_val, _ = input.max(dim=dim, keepdim=True)
+    safe_input = input - max_val
+    exp_input = torch.exp(safe_input)
+    sum_exp = exp_input.sum(dim=dim, keepdim=keepdim)
+    log_sum_exp = torch.log(sum_exp) + max_val.squeeze(dim)
+    return log_sum_exp
+
+def safe_logaddexp(input1, input2):
+    max_val = torch.max(input1, input2)
+    safe_input1 = input1 - max_val
+    safe_input2 = input2 - max_val
+    log_sum_exp = max_val + torch.log(torch.exp(safe_input1) + torch.exp(safe_input2))
+    return log_sum_exp
 
 from torch import Tensor
 
+def safe_exp(x, clamp_value=300):
+    # Clamp the input values to avoid extremely large or small values
+    clamped_x = torch.clamp(x, -clamp_value, clamp_value)
+
+    # Apply the exponential function to the clamped input
+    result = torch.exp(clamped_x)
+
+    return result
 
 def logsumexp(tensor: Tensor, dim: int, keepdim: bool = False) -> Tensor:
 
@@ -28,6 +50,7 @@ def logsumexp(tensor: Tensor, dim: int, keepdim: bool = False) -> Tensor:
     z = (tensor - m).exp_().sum(dim=dim, keepdim=True)
     mask = z == 0
     z = z.masked_fill_(mask, 1.0).log_().add_(m)
+    #  z = z.masked_fill_(mask, -float(300))
     z = z.masked_fill_(mask, -float("inf"))
 
     if not keepdim:
@@ -60,6 +83,7 @@ class SafeLogAddExp(torch.autograd.Function):
             output = torch.logaddexp(input, other) # internal copy of output
         ctx.save_for_backward(input, other, output)
         return output.clone()
+
     @staticmethod
     def backward(ctx, grad_output):
         input, other, output = ctx.saved_tensors
@@ -817,6 +841,7 @@ class NormalizedSddNode(SddNode):
                     torch.tensor(0.0)
                     if not log_space
                     else torch.tensor(-float("inf"), device=DEVICE)
+                    #  else torch.tensor(-float(300), device=DEVICE)
                 )
 
             elif node.is_true():
@@ -859,9 +884,8 @@ class NormalizedSddNode(SddNode):
                         if data is None:
                             data = node.theta[i] + p.data + s.data
                         else:
-                            #  print("Before", data)
+                            #  print("->", node.theta[i], p.data, s.data, data)
                             data = logaddexp(node.theta[i] + p.data + s.data, data)
-                            #  print("After", data)
                 else:
                     data = sum(
                         [
@@ -958,15 +982,19 @@ class NormalizedSddNode(SddNode):
 
             if node.is_literal():
                 var = node.vtree.var
-                var_marginals[ var] = torch.logaddexp(var_marginals[var], torch.tensor(0.0, device=DEVICE) + node.pr_context)
-                var_marginals[-var] = torch.logaddexp(var_marginals[-var], torch.tensor(-float(300), device=DEVICE) + node.pr_context)
+                #  var_marginals[ var] = torch.logaddexp(var_marginals[var], torch.tensor(0.0, device=DEVICE) + node.pr_context)
+                #  var_marginals[-var] = torch.logaddexp(var_marginals[-var], torch.tensor(-float(300), device=DEVICE) + node.pr_context)
+                var_marginals[ var] = safe_logaddexp(var_marginals[var], torch.tensor(0.0, device=DEVICE) + node.pr_context)
+                var_marginals[-var] = safe_logaddexp(var_marginals[-var], torch.tensor(-float(300), device=DEVICE) + node.pr_context)
 
             elif node.is_true():
                 node.theta = node.theta.transpose(0, 1) #(children x batch_size x k)
 
                 var = node.vtree.var
-                var_marginals[ var] = torch.logaddexp(var_marginals[var], node.theta[1] + node.pr_context)
-                var_marginals[-var] = torch.logaddexp(var_marginals[-var], node.theta[0] + node.pr_context)
+                #  var_marginals[ var] = torch.logaddexp(var_marginals[var], node.theta[1] + node.pr_context)
+                #  var_marginals[-var] = torch.logaddexp(var_marginals[-var], node.theta[0] + node.pr_context)
+                var_marginals[ var] = safe_logaddexp(var_marginals[var], node.theta[1] + node.pr_context)
+                var_marginals[-var] = safe_logaddexp(var_marginals[-var], node.theta[0] + node.pr_context)
 
             elif node.is_mixing():
                 node.theta = node.theta.transpose(0, 1)
@@ -978,11 +1006,14 @@ class NormalizedSddNode(SddNode):
                 node.theta = node.theta.transpose(0, 1) #(children x batch_size x k)
                 for i, (p,s) in enumerate(node.positive_elements):
                     theta = node.theta[i]
-                    p.pr_context = torch.logaddexp(p.pr_context, theta + node.pr_context)
-                    s.pr_context = torch.logaddexp(s.pr_context, theta + node.pr_context)
+                    #  p.pr_context = torch.logaddexp(p.pr_context, theta + node.pr_context)
+                    #  s.pr_context = torch.logaddexp(s.pr_context, theta + node.pr_context)
+                    p.pr_context = safe_logaddexp(p.pr_context, theta + node.pr_context)
+                    s.pr_context = safe_logaddexp(s.pr_context, theta + node.pr_context)
             node.pr_node = node.pr_context
 
-        return torch.logsumexp(self.mixing + torch.stack(var_marginals), dim=-1)
+        return safe_logsumexp(self.mixing + torch.stack(var_marginals), dim=-1)
+        #  return torch.logsumexp(self.mixing + torch.stack(var_marginals), dim=-1)
 
     ########################################
     # End Determinstic and SD PCs

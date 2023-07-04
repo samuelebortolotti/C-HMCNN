@@ -136,10 +136,10 @@ class CircuitMPE:
         return mpe_inst[torch.arange(batch_size), :, sample]
 
     def get_marginals(self):
-        return torch.exp(self.beta.mars())
+        return self.beta.mars()
 
     def get_marginals_only_positive_part(self):
-        return torch.exp(self.beta.mars()[1 : self.vtree.var_count + 1])
+        return self.beta.mars()[1 : self.vtree.var_count + 1]
 
     def weighted_model_count(self, lit_weights):
         return self.beta.weighted_model_count(lit_weights)

@@ -37,7 +37,7 @@ from chmncc.test import test_step, test_step_with_prediction_statistics, test_ci
 from chmncc.explanations import compute_integrated_gradient, output_gradients
 from chmncc.loss import RRRLoss, IGRRRLoss, RRRLossWithGate
 from chmncc.revise import revise_step, revise_step_with_gates
-from chmncc.optimizers import get_adam_optimizer, get_plateau_scheduler
+from chmncc.optimizers import get_adam_optimizer, get_plateau_scheduler, get_sdg_optimizer_with_gate
 from typing import Dict, Any, Tuple, Union, List
 import tqdm
 import matplotlib.pyplot as plt
@@ -1852,7 +1852,8 @@ def main(args: Namespace) -> None:
         net, args.learning_rate, weight_decay=args.weight_decay
     )
     if args.use_probabilistic_circuits:
-        optimizer = get_adam_optimizer_with_gate(net, gate, args.learning_rate, weight_decay=args.weight_decay)
+        optimizer = get_sdg_optimizer_with_gate(net, gate, args.learning_rate, weight_decay=args.weight_decay)
+        #  optimizer = get_adam_optimizer_with_gate(net, gate, args.learning_rate, weight_decay=args.weight_decay)
 
     # scheduler
     scheduler = get_plateau_scheduler(optimizer=optimizer, patience=args.patience)
@@ -2017,7 +2018,6 @@ def main(args: Namespace) -> None:
                 test_loss, test_accuracy, test_jaccard, test_hamming, test_score
             )
         )
-
     else:
         print(
             "\n\t [TEST SET]: Test loss {:.5f}, Test accuracy {:.2f}%, Test Area under Precision-Recall Curve raw {:.3f}, Test Area under Precision-Recall Curve const {:.3f}".format(

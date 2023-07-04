@@ -366,7 +366,7 @@ def revise_step_with_gates(
     cumulative_right_answer_loss = 0.0
     cumulative_right_reason_loss = 0.0
     confounded_samples = 0.0
-    total_train = 0
+    total_train = 0.0
 
     # set the network to training mode
     if have_to_train:
@@ -379,81 +379,68 @@ def revise_step_with_gates(
     for batch_idx, inputs in tqdm.tqdm(
         enumerate(itertools.islice(debug_loader, 1, 5000)), desc=title
     ):
-        (sample, ground_truth, confounder_mask, confounded, superc, subc) = inputs
+        (inputs, labels, confounder_mask, confounded, superc, subc) = inputs
 
-        # load data into device
-        sample = sample.to(device)
-        sample.requires_grad = True
-        # ground_truth element
-        ground_truth = ground_truth.to(device)
-        # confounder mask
+        # load to device
+        inputs = inputs.to(device)
+        inputs.requires_grad_(True)
+        labels = labels.to(device)
         confounder_mask = confounder_mask.to(device)
-        # confounded
         confounded = confounded.to(device)
 
-        # gradients reset
+        # Clear gradients w.r.t. parameters
         if have_to_train:
             optimizer.zero_grad()
 
-        # output
-        outputs = net(sample.float())
-        thetas = gate(outputs.float())
-        cmpe.set_params(thetas)
-        predicted = (cmpe.get_mpe_inst(sample.shape[0]) > 0).long()
+        # MCLoss
+        output = net(inputs.float())
+        thetas = gate(output.float())
 
-        # general prediction loss computation
-        # MCLoss (their loss)
-        constr_output = get_constr_out(outputs, R)
-        train_output = ground_truth * outputs.double()
-        train_output = get_constr_out(train_output, R)
-        train_output = (
-            1 - ground_truth
-        ) * constr_output.double() + ground_truth * train_output
+        # predicted
+        cmpe.set_params(thetas)
+        predicted = (cmpe.get_mpe_inst(inputs.shape[0]) > 0).long()
+
+        cmpe.set_params(thetas)
+        train_output = torch.transpose(cmpe.get_marginals_only_positive_part(), 0, 1)
 
         if use_gate_output:
-            train_output = gate.get_output(outputs.float())
-        else:
-            cmpe.set_params(thetas)
-            train_output = torch.transpose(
-                cmpe.get_marginals_only_positive_part(), 0, 1
-            )
+            train_output = gate.get_output(output.float())
 
-        #  torch.autograd.set_detect_anomaly(True)
         # get the loss masking the prediction on the root -> confunder
         (loss, right_answer_loss, right_reason_loss,) = revive_function(
             thetas=thetas,
-            X=sample,
-            y=ground_truth,
+            X=inputs,
+            y=labels,
             expl=confounder_mask,
             logits=train_output,
             confounded=confounded,
             to_eval=train.to_eval,
         )
 
+        # have to train
+        if have_to_train:
+            loss.backward()
+            optimizer.step()
+
         # compute the amount of confounded samples
         confounded_samples += confounded.sum().item()
 
         # fetch prediction and loss value
-        total_train += ground_truth.shape[0] * ground_truth.shape[1]
+        total_train += labels.shape[0] * labels.shape[1]
 
         # compute training accuracy
-        cumulative_accuracy += (predicted == ground_truth.byte()).sum().item()
+        cumulative_accuracy += (predicted == labels.byte()).sum().item()
 
         # for calculating loss, acc per epoch
         comulative_loss += loss.item()
         cumulative_right_answer_loss += right_answer_loss.item()
         cumulative_right_reason_loss += right_reason_loss.item()
 
-        if have_to_train:
-            # backward pass
-            loss.backward()
-            # optimizer
-            optimizer.step()
-
         # compute the au(prc)
         predicted = predicted.to("cpu")
-        ground_truth = ground_truth.to("cpu")
+        ground_truth = labels.to("cpu")
 
+        # stack stuff
         if batch_idx == 0:
             predicted_train = predicted
             y_test = ground_truth
@@ -481,6 +468,8 @@ def revise_step_with_gates(
     if confounded_samples == 0:
         confounded_samples = 1
 
+    print("Lmao", cumulative_right_reason_loss, confounded_samples)
+    exit(0)
     return (
         comulative_loss / (batch_idx + 1),
         cumulative_right_answer_loss / (batch_idx + 1),

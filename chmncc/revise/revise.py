@@ -468,8 +468,6 @@ def revise_step_with_gates(
     if confounded_samples == 0:
         confounded_samples = 1
 
-    print("Lmao", cumulative_right_reason_loss, confounded_samples)
-    exit(0)
     return (
         comulative_loss / (batch_idx + 1),
         cumulative_right_answer_loss / (batch_idx + 1),

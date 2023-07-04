@@ -191,6 +191,24 @@
 <span id="chmncc-optimizers-sgd-module"></span><h2>chmncc.optimizers.sgd module<a class="headerlink" href="#module-chmncc.optimizers.sgd" title="Permalink to this heading"></a></h2>
 <p>Stochastic gradient descend scheduler</p>
 <dl class="py function">
+<dt class="sig sig-object py" id="chmncc.optimizers.sgd.get_sdg_optimizer_with_gate">
+<span class="sig-prename descclassname"><span class="pre">chmncc.optimizers.sgd.</span></span><span class="sig-name descname"><span class="pre">get_sdg_optimizer_with_gate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">net</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chmncc.probabilistic_circuits.html#chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction" title="chmncc.probabilistic_circuits.GatingFunction.DenseGatingFunction"><span class="pre">DenseGatingFunction</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_decay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optimizer</span></span></span><a class="reference internal" href="_modules/chmncc/optimizers/sgd.html#get_sdg_optimizer_with_gate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.optimizers.sgd.get_sdg_optimizer_with_gate" title="Permalink to this definition"></a></dt>
+<dd><p>ADAM optimizer</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>[</strong><strong>nn.Module</strong><strong>]</strong> (<em>net</em>) – network architecture</p></li>
+<li><p><strong>[</strong><strong>float</strong><strong>]</strong> (<em>weight_decay</em>) – learning rate</p></li>
+<li><p><strong>[</strong><strong>float</strong><strong>]</strong> – weight_decay</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>optimizer [nn.Optimizer]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="chmncc.optimizers.sgd.get_sgd_optimizer">
 <span class="sig-prename descclassname"><span class="pre">chmncc.optimizers.sgd.</span></span><span class="sig-name descname"><span class="pre">get_sgd_optimizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">net</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">momentum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.9</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optimizer</span></span></span><a class="reference internal" href="_modules/chmncc/optimizers/sgd.html#get_sgd_optimizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chmncc.optimizers.sgd.get_sgd_optimizer" title="Permalink to this definition"></a></dt>
 <dd><p>SGD optimizer</p>

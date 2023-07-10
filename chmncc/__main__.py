@@ -40,6 +40,7 @@ os.environ["IMAGE_FOLDER"] = "./plots"
 from chmncc.utils.utils import (
     force_prediction_from_batch,
     log_values,
+    log_value,
     resume_training,
     get_lr,
     average_image_contributions,
@@ -484,6 +485,7 @@ def c_hmcnn(
     old_method = kwargs.pop("giunchiglia")
 
     # create a logger for the experiment
+    print("Creating writer in {}".format(log_directory))
     writer = SummaryWriter(log_dir=log_directory)
 
     # create folder for the experiment
@@ -1028,11 +1030,7 @@ def c_hmcnn(
         del save_dict
 
         # logs to TensorBoard
-        log_values(writer, e, test_loss, test_accuracy, "Test")
-        log_values(writer, e, train_loss, train_accuracy, "Train")
-        log_values(writer, e, val_loss, val_accuracy, "Validation")
         print("Learning rate:", get_lr(optimizer))
-        writer.add_scalar("Learning rate", get_lr(optimizer), e)
 
         # test value
         print("\nEpoch: {:d}".format(e + 1))
@@ -1166,6 +1164,10 @@ def c_hmcnn(
         if set_wandb:
             wandb.log(logs)
 
+        # log it in tensorboard
+        for key, value in logs.items():
+            log_value(writer, e, value, key)
+
         print("-----------------------------------------------------")
 
         # update scheduler
@@ -1232,7 +1234,7 @@ def c_hmcnn(
         )
 
     # log values
-    log_values(writer, epochs, test_loss, test_accuracy, "Test")
+    #  log_values(writer, epochs, test_loss, test_accuracy, "Test")
 
     print("-----------------------------------------------------")
 

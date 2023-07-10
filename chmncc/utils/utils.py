@@ -115,6 +115,25 @@ def log_values(
     writer.add_scalar(f"{prefix}/accuracy", accuracy, step)
 
 
+def log_value(
+    writer: tensorboard.SummaryWriter,
+    step: int,
+    value: float,
+    string: str,
+) -> None:
+    r"""
+    Function which writes the loss and the accuracy of a model by the means of
+    a SummaryWriter
+
+    Args:
+        writer [tensorboard.SummaryWriter]: summary writer
+        step [int]: current step
+        value [float]: value
+        string [str]: log string
+    """
+    writer.add_scalar(f"{string}/loss", value, step)
+
+
 ################### Resume the network ###################
 
 
@@ -357,7 +376,6 @@ def prediction_statistics_boxplot(
     plt.close(fig)
     print("{}/statistics_{}_total.png".format(image_folder, statistics_name))
     print("{}".format(predicted_perc))
-
 
 
 def grouped_boxplot(

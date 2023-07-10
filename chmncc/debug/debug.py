@@ -12,6 +12,7 @@ from chmncc.utils.utils import (
     force_prediction_from_batch,
     load_last_weights,
     load_last_weights_gate,
+    log_value,
     load_best_weights,
     load_best_weights_gate,
     grouped_boxplot,
@@ -38,6 +39,7 @@ from chmncc.explanations import compute_integrated_gradient, output_gradients
 from chmncc.loss import RRRLoss, IGRRRLoss, RRRLossWithGate
 from chmncc.revise import revise_step, revise_step_with_gates
 from chmncc.optimizers import get_adam_optimizer, get_plateau_scheduler, get_sdg_optimizer_with_gate
+from torch.utils.tensorboard import SummaryWriter
 from typing import Dict, Any, Tuple, Union, List
 import tqdm
 import matplotlib.pyplot as plt
@@ -850,6 +852,8 @@ def debug(
     cmpe: CircuitMPE,
     use_gate_output: bool,
     montecarlo: bool,
+    writer: SummaryWriter,
+    exp_name: str,
     **kwargs: Any
 ) -> None:
     """Method which performs the debug step by fine-tuning the network employing the right for the right reason loss.
@@ -884,6 +888,8 @@ def debug(
         cmpe [CircuitMPE]: circuit MPE
         use_gate_output [bool]: whether to use the circuit output for computing the RRR loss
         montecarlo [bool]: whether to use a Montecarlo approach during testing
+        writer [SummaryWriter]: summary writer
+        exp_name [str]: name of the experiment for Tensorboard
         **kwargs [Any]: kwargs
     """
     print("Have to run for {} debug iterations...".format(iterations))
@@ -1466,6 +1472,10 @@ def debug(
                 logs
             )
 
+        # log on tensorboard
+        for key, value in logs.items():
+            log_value(writer, it, value, key)
+
         # scheduler step
         scheduler.step(val_loss)
 
@@ -1508,6 +1518,7 @@ def configure_subparsers(subparsers: Subparser) -> None:
       subparser (Subparser): argument parser
     """
     parser = subparsers.add_parser("debug", help="Debug network subparser")
+    parser.add_argument("exp_name", type=str, help="name of the experiment")
     parser.add_argument(
         "--network",
         "-n",
@@ -1861,6 +1872,13 @@ def main(args: Namespace) -> None:
     # summary
     summary(net, (img_depth, img_size, img_size))
 
+    # set up tensorboard
+    log_directory = "runs/exp_{}".format(args.exp_name)
+
+    # create a logger for the experiment
+    print("Creating writer in {}".format(log_directory))
+    writer = SummaryWriter(log_dir=log_directory)
+
     # set wandb if needed
     if args.wandb:
         # Log in to your W&B account
@@ -2113,6 +2131,7 @@ def main(args: Namespace) -> None:
         superclasses_number=dataloaders["train_set"].n_superclasses,
         gate=gate,
         cmpe=cmpe,
+        writer=writer,
         **vars(args) # additional variables
     )
 
@@ -2454,3 +2473,5 @@ def main(args: Namespace) -> None:
     if args.wandb:
         # finish the log
         wandb.finish()
+    # close writer
+    writer.close()

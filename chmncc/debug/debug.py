@@ -66,6 +66,9 @@ def save_sample(
     prediction_treshold: float,
     force_prediction: bool,
     use_softmax: bool,
+    use_circuits: bool,
+    gate: DenseGatingFunction = None,
+    cmpe: CircuitMPE = None,
 ) -> Tuple[bool, np.ndarray]:
     """Save the test sample.
     Then it returns whether the sample contains a confunder or if the sample has been
@@ -85,6 +88,9 @@ def save_sample(
         prediction_treshold [float] prediction threshold
         force_prediction [bool]: force prediction
         use_softmax [bool]: use softmax
+        use_circuits [bool]: use probabilistic circuits
+        gate [DenseGatingFunction]: gating function
+        cmpe [CircuitMPE]: circuit = None
 
     Returns:
         correct_guess [bool]: whether the model has guessed correctly
@@ -99,10 +105,14 @@ def save_sample(
     single_el_show = single_el_show / np.max(single_el_show)
 
     # get the prediction
-    if force_prediction:
-        predicted_1_0 = force_prediction_from_batch(prediction.cpu().data, prediction_treshold, use_softmax)
+    if not use_circuits:
+        if force_prediction:
+            predicted_1_0 = force_prediction_from_batch(prediction.cpu().data, prediction_treshold, use_softmax)
+        else:
+            predicted_1_0 = prediction.cpu().data > prediction_treshold
     else:
-        predicted_1_0 = prediction.cpu().data > prediction_treshold
+        # prediction out of the circuit
+        predicted_1_0 = prediction.cpu()
 
     predicted_1_0 = predicted_1_0.to(torch.float)[0]
     # get the named prediction
@@ -180,6 +190,9 @@ def visualize_sample(
     prediction_treshold: float,
     force_prediction: bool,
     use_softmax: bool,
+    use_circuits: bool,
+    gate: DenseGatingFunction = None,
+    cmpe: CircuitMPE = None,
 ) -> None:
     """Save the samples information, including the sample itself, the gradients and the masked gradients
 
@@ -198,9 +211,14 @@ def visualize_sample(
         prediction_treshold [float]: prediction treshold
         force_prediction [bool]: force prediction
         use_softmax [bool]: use softmax
+        use_circuits [bool]: use probabilistic circuits
+        gate [DenseGatingFunction]: gating function
+        cmpe [CircuitMPE]: circuit = None
     """
     # set the network to eval mode
     net.eval()
+    if use_circuits and gate is not None:
+        gate.eval()
 
     # unsqueeze the element
     single_el = torch.unsqueeze(single_el, 0)
@@ -212,7 +230,13 @@ def visualize_sample(
     single_el = single_el.to(device)
 
     # get the predictions
-    preds = net(single_el.float())
+    output = net(single_el.float())
+    if use_circuits and gate is not None:
+        thetas = gate(output.float())
+        cmpe.set_params(thetas)
+        preds = (cmpe.get_mpe_inst(single_el.shape[0]) > 0).long()
+    else:
+        preds = output
 
     # save the sample and whether the sample has been correctly guessed
     correct_guess, sample_to_save = save_sample(
@@ -229,6 +253,9 @@ def visualize_sample(
         prediction_treshold=prediction_treshold,
         force_prediction=force_prediction,
         use_softmax=use_softmax,
+        use_circuits=use_circuits,
+        gate=gate,
+        cmpe=cmpe,
     )
 
     # compute the gradient, whether input or integrated
@@ -478,6 +505,9 @@ def save_some_confounded_samples(
     prediction_treshold: float,
     force_prediction: bool,
     use_softmax: bool,
+    use_circuits: bool,
+    gate: DenseGatingFunction = None,
+    cmpe: CircuitMPE = None,
 ) -> None:
     """Save some confounded examples according to the dataloader and the number of examples the user specifies
 
@@ -495,9 +525,14 @@ def save_some_confounded_samples(
         prediction_treshold [float] prediction treshold
         force_prediction [bool] force prediction
         use_softmax [bool] use softmax
+        use_circuits [bool]: use circuits for evaluation
+        gate [DenseGatingFunction] = None: gating function for the circuit
+        cmpe [CircuitMPE] = None: circuit
     """
     # set the networ to evaluation mode
     net.eval()
+    if use_circuits and gate is not None:
+        gate.eval()
 
     # set the counter
     counter = start_from
@@ -528,6 +563,9 @@ def save_some_confounded_samples(
                     prediction_treshold,
                     force_prediction,
                     use_softmax,
+                    use_circuits,
+                    gate,
+                    cmpe
                 )
                 # increase the counter
                 counter += 1
@@ -911,6 +949,9 @@ def debug(
         prediction_treshold=prediction_treshold,
         force_prediction=force_prediction,
         use_softmax=use_softmax,
+        use_circuits=use_probabilistic_circuits,
+        gate=gate,
+        cmpe=cmpe
     )
 
     # compute graident confounded correlation
@@ -1444,6 +1485,9 @@ def debug(
         prediction_treshold=prediction_treshold,
         force_prediction=force_prediction,
         use_softmax=use_softmax,
+        use_circuits=use_probabilistic_circuits,
+        gate=gate,
+        cmpe=cmpe
     )
 
     # give the correlation

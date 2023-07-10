@@ -419,7 +419,6 @@ def revise_step_with_gates(
 
         # have to train
         if have_to_train:
-            print("Loss", loss)
             loss.backward()
             optimizer.step()
 

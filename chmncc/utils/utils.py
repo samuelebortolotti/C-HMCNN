@@ -148,6 +148,7 @@ def load_best_weights(net: nn.Module, exp_name: str, device: str) -> None:
         device [str]: device name
     """
     best_file = os.path.join(exp_name, "best.pth")
+    print(best_file)
     if os.path.isfile(best_file):
         checkpoint = torch.load(best_file, map_location=torch.device(device))
         print("#> Resume best")

@@ -80,6 +80,7 @@ class ArgumentBucket:
             use_probabilistic_circuits,
             use_gate_output,
             gate,
+            cmpe,
         )
         # compute class gradients
         self._compute_class_gradients(
@@ -118,6 +119,7 @@ class ArgumentBucket:
         use_probabilistic_circuits: bool = False,
         use_gate_output: bool = False,
         gate: DenseGatingFunction = None,
+        cmpe: CircuitMPE = None,
     ) -> None:
         """Compute input gradients with respect to each class
         Args:
@@ -135,8 +137,15 @@ class ArgumentBucket:
         logits_not_cut = net(self.sample.float())
         logits = logits_not_cut[:, to_eval]
 
-        if use_gate_output and use_probabilistic_circuits:
+        if use_gate_output:
             logits = gate.get_output(logits_not_cut.float())[:, to_eval]
+
+        if use_probabilistic_circuits:
+            thetas = gate(logits_not_cut.float())
+            cmpe.set_params(thetas)
+            logits = torch.transpose(cmpe.get_marginals_only_positive_part(), 0, 1)[
+                :, to_eval
+            ]
 
         for i in range(logits.shape[1]):
             # input gradients for the ith logit
@@ -157,6 +166,9 @@ class ArgumentBucket:
         norm_exponent: int,
         multiply_by_probability_for_label_gradient: bool,
         cincer_approach: bool,
+        use_probabilistic_circuits: bool = False,
+        gate: DenseGatingFunction = None,
+        cmpe: CircuitMPE = None,
     ) -> None:
         """Compute class gradients
         Args:
@@ -174,12 +186,13 @@ class ArgumentBucket:
                                 = z
             foreach i,j in {1...#classes}
         """
-        if cincer_approach:
-            pass
-            #  print("Uso cincer")
         # out
         out = net(self.sample.float())
-        # disable constrained layer
+        if use_probabilistic_circuits:
+            thetas = gate(out.float())
+            cmpe.set_params(thetas)
+            out = torch.transpose(cmpe.get_marginals_only_positive_part(), 0, 1)
+
         net.constrained_layer = False
         # get unconstrained_ouput
         unconstrained_ouput = net(self.sample.float())

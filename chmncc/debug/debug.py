@@ -1474,7 +1474,7 @@ def debug(
 
         # log on tensorboard
         for key, value in logs.items():
-            log_value(writer, it, value, key)
+            log_value(writer, it + 1, value, key)
 
         # scheduler step
         scheduler.step(val_loss)
@@ -2088,6 +2088,23 @@ def main(args: Namespace) -> None:
         )
 
     print("-----------------------------------------------------")
+
+    # log values in the first position, dopo mettere apposto con il debug
+    logs = {
+        "test/test_loss": test_loss,
+        "test/test_accuracy": test_accuracy,
+    }
+
+    if args.use_probabilistic_circuits:
+        logs.update({"test/test_jaccard": test_jaccard})
+        logs.update({"test/test_hamming_loss": test_hamming})
+        logs.update({"test/test_auprc_raw": test_score})
+    else:
+        logs.update({"test/test_auprc_raw": test_score_raw})
+        logs.update({"test/test_auprc_const": test_score_const})
+
+    for key, value in logs.items():
+        log_value(writer, 0, value, key)
 
     print("#> Debug...")
 

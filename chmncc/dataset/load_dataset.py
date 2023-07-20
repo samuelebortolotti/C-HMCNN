@@ -309,9 +309,9 @@ class LoadDataset(Dataset):
         for idx in range(len(self.data_list)):
             _, superclass, subclass = self.data_list[idx]
             if superclass.strip() not in self.class_count_statistics:
-                self.class_count_statistics[superclass] = 0
+                self.class_count_statistics[superclass.strip()] = 0
             if subclass.strip() not in self.class_count_statistics:
-                self.class_count_statistics[subclass] = 0
+                self.class_count_statistics[subclass.strip()] = 0
             self.class_count_statistics[subclass.strip()] += 1
             self.class_count_statistics[superclass.strip()] += 1
 

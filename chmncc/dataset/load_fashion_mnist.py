@@ -111,11 +111,11 @@ class LoadFashionMnist(LoadDataset):
 
         # filter the data according to the confounders
         if only_confounders:
-            self.data_list = self._confounders_only(
+            self.data_list = self._image_confounders_only(
                 self.data_list, "train" if self.train else "test"
             )
         elif no_confounders:
-            self.data_list = self._no_confounders(
+            self.data_list = self._no_image_confounders(
                 self.data_list, "train" if self.train else "test"
             )
 

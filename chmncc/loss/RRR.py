@@ -115,6 +115,8 @@ class RRRLoss(nn.Module):
 
         # sum each axes contribution
         right_reason_loss = torch.sum(A_gradX)
+        right_reason_loss_to_return = right_reason_loss.clone()
+
         right_reason_loss *= self.regularizer_rate
 
         if self.weight is not None:
@@ -131,7 +133,7 @@ class RRRLoss(nn.Module):
         return (
             res,
             right_answer_loss,
-            right_reason_loss,
+            right_reason_loss_to_return,
             right_answer_loss_parent,
             right_answer_loss_children,
         )
@@ -262,6 +264,8 @@ class IGRRRLoss(RRRLoss):
         A_gradX = torch.mul(expl, gradXes) ** 2
 
         right_reason_loss = torch.sum(A_gradX)
+        right_reason_loss_to_return = right_reason_loss.clone()
+
         right_reason_loss *= self.regularizer_rate
 
         if self.weight is not None:
@@ -278,7 +282,7 @@ class IGRRRLoss(RRRLoss):
         return (
             res,
             right_answer_loss,
-            right_reason_loss,
+            right_reason_loss_to_return,
             right_answer_loss_parent,
             right_answer_loss_children,
         )
@@ -380,6 +384,8 @@ class RRRLossWithGate(nn.Module):
 
         # sum each axes contribution
         right_reason_loss = torch.sum(A_gradX)
+        right_reason_loss_to_return = right_reason_loss.clone()
+
         right_reason_loss *= self.regularizer_rate
 
         if self.weight is not None:
@@ -396,5 +402,5 @@ class RRRLossWithGate(nn.Module):
         return (
             res,
             right_answer_loss,
-            right_reason_loss,
+            right_reason_loss_to_return,
         )

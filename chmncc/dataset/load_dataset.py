@@ -344,6 +344,7 @@ class LoadDataset(Dataset):
                     conf_subclasses_number_to_keep[subclass] = int(
                         self.class_count_statistics[subclass] * weight
                     )
+                    print("Tenere", subclass, conf_subclasses_number_to_keep[subclass])
                 else:
                     conf_subclasses_number_to_keep[subclass] = 0
 

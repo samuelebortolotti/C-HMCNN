@@ -1,6 +1,7 @@
 """Module which contains the Argument Bucket class.
 The idea is that given a sample, it is possible to populate all the possible explainations or arguments"""
 import torch.nn as nn
+import numpy as np
 import torch
 from typing import Dict, List, Tuple
 from chmncc.explanations import output_gradients
@@ -8,6 +9,8 @@ from chmncc.utils import get_constr_indexes, force_prediction_from_batch
 
 from chmncc.probabilistic_circuits.GatingFunction import DenseGatingFunction
 from chmncc.probabilistic_circuits.compute_mpe import CircuitMPE
+
+from chmncc.utils import activate_dropout
 
 
 class ArgumentBucket:
@@ -111,6 +114,24 @@ class ArgumentBucket:
 
         self.prediction = self.prediction.squeeze()
 
+        # dropout thing
+        (
+            self.label_entropy,
+            self.predicted_label_entropy,
+        ) = self.get_montecarlo_dropout_entropy_for_labels(net, to_eval, R, label_list)
+
+        #  self.ig_entropy = self.get_montecarlo_dropout_entropy_for_ig(
+        #      net,
+        #      to_eval,
+        #      R,
+        #  )
+
+        self.ig_entropy = self.get_joint_entropy_ig_montecarlo_dropout(
+            net,
+            to_eval,
+            R,
+        )
+
     def _compute_input_gradients(
         self,
         net: nn.Module,
@@ -155,8 +176,8 @@ class ArgumentBucket:
                 grad,
                 torch.linalg.norm(grad.flatten(), dim=0, ord=2),  # ** norm_exponent,
             )
-            if torch.linalg.norm(grad.flatten(), dim=0, ord=2) > 1:
-                print(torch.linalg.norm(grad.flatten(), dim=0, ord=2))
+            #  if torch.linalg.norm(grad.flatten(), dim=0, ord=2) > 1:
+            #      print(torch.linalg.norm(grad.flatten(), dim=0, ord=2))
 
     def _compute_class_gradients(
         self,
@@ -233,8 +254,9 @@ class ArgumentBucket:
                 # register the gradient
                 self.label_gradient[(child, parent)] = (
                     z,
-                    torch.linalg.norm(z.flatten(), dim=0, ord=2) ** norm_exponent,
+                    torch.linalg.norm(z.flatten(), dim=0, ord=norm_exponent),
                 )
+                #  print(z, torch.linalg.norm(z.flatten(), dim=0, ord=norm_exponent))
 
     def marginalize_probability(
         self, prob: torch.Tensor, num_parents: int
@@ -377,3 +399,184 @@ class ArgumentBucket:
                 if key[0] == pred_el:
                     label_dict[key] = float(el[1]), el[0]
         return (ig_dict, label_dict)
+
+    def find_array_modes(self, arr: np.array):
+        from scipy import stats
+
+        mode_result = stats.mode(arr)
+        return mode_result.mode.tolist()
+
+    def get_montecarlo_dropout_entropy_for_labels(
+        self,
+        net: nn.Module,
+        to_eval: torch.Tensor,
+        R: torch.Tensor,
+        label_list: str,
+        num_mc_samples: int = 5,
+        use_probabilistic_circuits: bool = False,
+        gate: DenseGatingFunction = None,
+        cmpe: CircuitMPE = None,
+    ):
+        net.eval()
+
+        logits = net(self.sample)
+        logits = logits[:, to_eval]
+
+        # TODO make it general
+        predicted_child_idx = torch.argmax(logits[:, 4:]) + 4
+        predictions = []
+
+        # activate dropout during evaluation
+        activate_dropout(net)
+        # entropies
+        entropies = []
+        # number of montecarlo runs
+        for _ in range(num_mc_samples):
+            logits = net(self.sample)
+            mc_outputs = logits[:, to_eval]
+
+            if use_probabilistic_circuits:
+                thetas = gate(logits.float())
+                cmpe.set_params(thetas)
+                mc_outputs = torch.transpose(
+                    cmpe.get_marginals_only_positive_part(), 0, 1
+                )[:, to_eval]
+            entropies.append(mc_outputs.squeeze(0))
+            predictions.append(torch.argmax(mc_outputs[:, 4:]) + 4)
+
+        modes = self.find_array_modes(predictions)
+        #  if len(modes) != num_mc_samples:
+        #      predicted_child_idx = modes[0]
+
+        entropies = torch.stack(entropies)  # Shape: (num_samples, num_classes)
+
+        # Calculate the entropy per node (class) based on the Monte Carlo samples
+        entropy_per_node = -torch.sum(entropies * torch.log2(entropies), dim=0)
+
+        return entropy_per_node, entropy_per_node[predicted_child_idx]
+
+    def get_montecarlo_dropout_entropy_for_ig(
+        self,
+        net: nn.Module,
+        to_eval: torch.Tensor,
+        R: torch.Tensor,
+        num_mc_samples: int = 5,
+        use_probabilistic_circuits: bool = False,
+        gate: DenseGatingFunction = None,
+        cmpe: CircuitMPE = None,
+    ):
+        net.eval()
+        # activate dropout during evaluation
+        activate_dropout(net)
+
+        def min_max_normalize(vector):
+            min_value = torch.min(vector)
+            max_value = torch.max(vector)
+            normalized_vector = (vector - min_value) / (max_value - min_value)
+            return normalized_vector
+
+        # entropies
+        entropies = []
+        # number of montecarlo runs
+        for _ in range(num_mc_samples):
+            logits = net(self.sample)
+            mc_outputs = logits[:, to_eval]
+
+            if use_probabilistic_circuits:
+                thetas = gate(logits.float())
+                cmpe.set_params(thetas)
+                mc_outputs = torch.transpose(
+                    cmpe.get_marginals_only_positive_part(), 0, 1
+                )[:, to_eval]
+
+            ig = torch.autograd.grad(
+                mc_outputs,
+                self.sample,
+                grad_outputs=torch.ones_like(mc_outputs),
+                create_graph=True,
+                retain_graph=True,
+            )[0]
+            entropies.append(min_max_normalize(ig.squeeze(0)))
+        entropies = torch.stack(entropies)  # Shape: (num_samples, num_classes)
+
+        ig_entropy_per_pixel = -torch.sum(
+            entropies * torch.log2(entropies + 1e-9), dim=0
+        )
+
+        if torch.any(torch.isnan(ig_entropy_per_pixel)):
+            print(ig_entropy_per_pixel)
+            exit(0)
+        return ig_entropy_per_pixel
+
+    def get_joint_entropy_ig_montecarlo_dropout(
+        self,
+        net: nn.Module,
+        to_eval: torch.Tensor,
+        R: torch.Tensor,
+        num_mc_samples: int = 5,
+        use_probabilistic_circuits: bool = False,
+        gate: DenseGatingFunction = None,
+        cmpe: CircuitMPE = None,
+    ):
+        def compute_joint_entropy(vectors):
+            # Take the absolute value of the vectors to ensure non-negative values
+            vectors = torch.abs(vectors)
+
+            # Normalize the vectors to make them probability distributions
+            vectors_sum = torch.sum(vectors, dim=1, keepdim=True)
+            vectors = vectors / vectors_sum
+
+            # Calculate the joint probability distribution
+            joint_probs = torch.prod(vectors, dim=0)
+
+            # Add a small epsilon to avoid taking the logarithm of zero
+            epsilon = 1e-9
+            joint_probs = torch.clamp(joint_probs, min=epsilon)
+
+            # Calculate the joint entropy using the formula
+            joint_entropy = -torch.sum(joint_probs * torch.log2(joint_probs))
+            return joint_entropy
+
+        net.eval()
+        # activate dropout during evaluation
+        activate_dropout(net)
+
+        # entropies
+        entropies = []
+        # number of montecarlo runs
+        for _ in range(num_mc_samples):
+            logits = net(self.sample)
+            mc_outputs = logits[:, to_eval]
+
+            if use_probabilistic_circuits:
+                thetas = gate(logits.float())
+                cmpe.set_params(thetas)
+                mc_outputs = torch.transpose(
+                    cmpe.get_marginals_only_positive_part(), 0, 1
+                )[:, to_eval]
+
+            ig = torch.autograd.grad(
+                mc_outputs,
+                self.sample,
+                grad_outputs=torch.ones_like(mc_outputs),
+                create_graph=True,
+                retain_graph=True,
+            )[0]
+            entropies.append(ig.squeeze(0))
+
+        entropies = torch.stack(entropies)  # Shape: (num_samples, num_classes)
+
+        ig_joint_entropy = compute_joint_entropy(entropies)
+
+        if torch.any(torch.isnan(ig_joint_entropy)):
+            print(ig_joint_entropy)
+            exit(0)
+        #  print(ig_joint_entropy)
+        return ig_joint_entropy
+
+    def get_predicted_label_entropy(self):
+        return self.predicted_label_entropy.item()
+
+    def get_ig_entropy(self):
+        #  return torch.mean(self.ig_entropy).item()
+        return self.ig_entropy.item()

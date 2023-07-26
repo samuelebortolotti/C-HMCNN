@@ -2,6 +2,7 @@
 from argparse import _SubParsersAction as Subparser
 from argparse import Namespace
 import torch
+import seaborn as sns
 import os
 import torch.nn as nn
 import scipy
@@ -12,6 +13,7 @@ from chmncc.networks import ResNet18, LeNet5, LeNet7, AlexNet, MLP
 from chmncc.utils.utils import (
     force_prediction_from_batch,
     load_best_weights,
+    load_last_weights,
     load_best_weights_gate,
     dotdict,
     split,
@@ -55,7 +57,7 @@ class ArgumentsStepArgs:
     max_arguments_list: List[float]
     """Lists of gradients for each sample, where the first list is the list of input gradients while the second list concerns the label gradient"""
     ig_lists: List[Tuple[List[float], List[float]]]
-    """Max arguments dictionary """
+    """Max arguments dictionary"""
     max_arguments_dict: Dict[str, Dict[str, float]]
     """Dictionary of arguments of the highest scoring subclass per each superclass [concerning the label gradient]"""
     label_args_dict: Dict[str, Dict[str, List[float]]]
@@ -65,10 +67,14 @@ class ArgumentsStepArgs:
     influence_parent_counter: int
     """Counter which defines how many times a subclass has not influenced a superclass"""
     not_influence_parent_counter: int
-    """Counter which defined how many times the 'right' argument is the maximuum one"""
+    """Counter which defined how many times the 'right' argument is the maximum one"""
     suitable_is_max: int
-    """Counter which defined how many times the 'right' argument is not the maximuum one"""
+    """Counter which defined how many times the 'right' argument is not the maximum one"""
     suitable_is_not_max: int
+    """Entropy of the predicted label for each sample"""
+    label_entropy_list: List[float]
+    """Entropy map for input gradient"""
+    ig_entropy_list: List[float]
 
     def __init__(
         self,
@@ -89,6 +95,8 @@ class ArgumentsStepArgs:
         prediction_influence_parent_counter: int,
         prediction_does_not_influence_parent_counter: int,
         ig_lists_wrt_prediction: List[Tuple[List[float], List[float]]],
+        label_entropy_list: List[float],
+        ig_entropy_list: List[float],
     ):
         self.bucket_list = bucket_list
         self.table_correlation = table_correlation
@@ -109,6 +117,8 @@ class ArgumentsStepArgs:
             prediction_does_not_influence_parent_counter
         )
         self.ig_lists_wrt_prediction = ig_lists_wrt_prediction
+        self.label_entropy_list = label_entropy_list
+        self.ig_entropy_list = ig_entropy_list
 
 
 def configure_subparsers(subparsers: Subparser) -> None:
@@ -364,14 +374,16 @@ def score_barplot(
         folder [str]: folder
         title [str]: title
     """
-    fig = plt.figure(figsize=(8, 4))
+    fig = plt.figure(figsize=(10, 6))
     titles = np.array([label_1, label_2])
     values = np.array([x1, x2])
-    plot = pd.Series(values).plot(kind="bar", color=["green", "red"])
-    plot.bar_label(plot.containers[0], label_type="edge")
-    plot.set_xticklabels(titles)
+    colors = sns.color_palette('Set2', n_colors=2)
+    plot = pd.Series(values).plot(kind="bar", color=colors, edgecolor='black')
+    plot.bar_label(plot.containers[0], label_type="edge", fontsize=10, padding=3, fmt='%.2f')
+    plot.set_xticklabels(titles, fontsize=12)
     plt.xticks(rotation=0)
-    plt.title("{}".format(title))
+    plt.title(title, fontsize=16)
+    plt.ylabel('Values', fontsize=12)
     plt.tight_layout()
     fig.savefig("{}/{}.png".format(folder, title))
     plt.close(fig)
@@ -408,11 +420,14 @@ def score_barplot_list(
     fig = plt.figure(figsize=(10, 9))
     titles = np.array(labels)
     values = np.array(x_full)
-    plot = pd.Series(values).plot(kind="bar", color=color)
-    plot.bar_label(plot.containers[0], label_type="edge")
-    plot.set_xticklabels(titles)
+    colors = sns.color_palette('Set2', n_colors=len(titles))
+
+    plot = pd.Series(values).plot(kind="bar", color=colors, edgecolor='black')
+    plot.bar_label(plot.containers[0], label_type="edge", fontsize=10, padding=3, fmt='%.2f')
+    plot.set_xticklabels(titles, fontsize=12)
     plt.xticks(rotation="vertical")
-    plt.title("{}".format(title))
+    plt.title(title, fontsize=16)
+    plt.ylabel('Values', fontsize=12)
     plt.tight_layout()
     fig.savefig("{}/{}.png".format(folder, title))
     plt.close(fig)
@@ -832,6 +847,57 @@ def arguments(
         )
         print("Corr+Conf+Imbalance #", len(corr_lab_img.bucket_list))
 
+        corr_no_conf = arguments_step(
+            net=net,
+            dataset=dataset,
+            dataloaders=dataloaders,
+            device=device,
+            force_prediction=force_prediction,
+            use_softmax=use_softmax,
+            prediction_treshold=prediction_treshold,
+            correct_samples_only=True,
+            confounded_samples_only=False,
+            num_element_to_analyze=num_element_to_analyze,
+            labels_name=labels_name,
+            number_element_to_show=1,
+            arguments_folder=arguments_folder,
+            label_loader=False,
+            norm_exponent=norm_exponent,
+            multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
+            cincer=cincer,
+            gate=gate,
+            cmpe=cmpe,
+            use_probabilistic_circuits=use_probabilistic_circuits,
+            use_gate_output=use_gate_output,
+        )
+        print("Corr+NotConf #", len(corr_no_conf.bucket_list))
+
+
+        wrong_no_conf = arguments_step(
+            net=net,
+            dataset=dataset,
+            dataloaders=dataloaders,
+            device=device,
+            force_prediction=force_prediction,
+            use_softmax=use_softmax,
+            prediction_treshold=prediction_treshold,
+            correct_samples_only=False,
+            confounded_samples_only=False,
+            num_element_to_analyze=num_element_to_analyze,
+            labels_name=labels_name,
+            number_element_to_show=1,
+            arguments_folder=arguments_folder,
+            label_loader=False,
+            norm_exponent=norm_exponent,
+            multiply_by_probability_for_label_gradient=multiply_by_probability_for_label_gradient,
+            cincer=cincer,
+            gate=gate,
+            cmpe=cmpe,
+            use_probabilistic_circuits=use_probabilistic_circuits,
+            use_gate_output=use_gate_output,
+        )
+        print("NotCorr+NotConf #", len(wrong_no_conf.bucket_list))
+
         plot_arguments(
             correct_confound,
             wrong_confound,
@@ -841,6 +907,8 @@ def arguments(
             wrong_lab,
             wrong_lab_img,
             corr_lab_img,
+            corr_no_conf,
+            wrong_no_conf,
             arguments_folder=arguments_folder,
             tau=tau,
         )
@@ -882,6 +950,8 @@ def plot_arguments(
     wrong_lab: ArgumentsStepArgs,
     wrong_lab_img_confound: ArgumentsStepArgs,
     correct_lab_img_confound: ArgumentsStepArgs,
+    corr_no_conf: ArgumentsStepArgs,
+    wrong_no_conf: ArgumentsStepArgs,
     arguments_folder: str,
     tau: float,
 ) -> None:
@@ -983,6 +1053,1929 @@ def plot_arguments(
         )
     )
     print("Primo")
+
+    #  conf_list_image = list(
+    #      itertools.chain(
+    #          [
+    #              True
+    #              for _ in range(len(correct_confound.max_ig_label_list_for_score_plot))
+    #          ],
+    #          [True for _ in range(len(wrong_confound.max_ig_label_list_for_score_plot))],
+    #          [
+    #              False
+    #              for _ in range(
+    #                  len(correct_not_confound.max_ig_label_list_for_score_plot)
+    #              )
+    #          ],
+    #          [
+    #              False
+    #              for _ in range(len(wrong_not_confound.max_ig_label_list_for_score_plot))
+    #          ],
+    #      )
+    #  )
+
+    label_entropy_conf = np.array(
+        [float(item) for item in correct_lab.label_entropy_list] +
+        [float(item) for item in wrong_lab.label_entropy_list]
+    )
+
+    label_entropy_not_conf = np.array(
+        [float(item) for item in corr_no_conf.label_entropy_list] +
+        [float(item) for item in wrong_no_conf.label_entropy_list]
+    )
+
+    # Set a common color palette for all plots
+    colors = sns.color_palette('Set2')
+
+    # Violin Plot
+    plt.figure(figsize=(10, 6))
+    sns.violinplot(data=[label_entropy_conf, label_entropy_not_conf],
+               showmedians=True, palette=colors)
+    plt.xticks([0, 1], ['With Sample Imbalance', 'Without Sample Imbalance'])
+    plt.xlabel('')
+    plt.title('Violin Plot [Label Enropy]', fontsize=14)
+    plt.ylabel('Label Entropy', fontsize=12)
+
+    # Save Violin Plot
+    plt.savefig(os.path.join(arguments_folder, 'violin_plot_label_entropy.png'))
+    plt.close()
+
+    # Box Plot
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(data=[label_entropy_conf, label_entropy_not_conf],
+            palette=colors)
+    plt.xticks([0, 1], ['With Sample Imbalance', 'Without Sample Imbalance'])
+    plt.xlabel('')
+    plt.ylabel('Label Entropy', fontsize=12)
+    plt.title('Box Plot [Label Entropy]', fontsize=14)
+
+    # Save Box Plot
+    plt.savefig(os.path.join(arguments_folder, 'box_plot_label_entropy.png'))
+    plt.close()
+
+    # Histogram
+    plt.figure(figsize=(10, 6))
+    n, bins, patches = plt.hist([label_entropy_conf, label_entropy_not_conf],
+             bins=20, alpha=0.7, color=colors[:2], label=['With Sample Imbalance', 'Without Sample Imbalance'])
+    jitter = 0
+    # Add the values of occurrences on top of the bars
+    for container in patches:
+        for patch in container:
+            height = patch.get_height()
+            x, width = patch.get_x(), patch.get_width()
+            jittered_height = height + np.random.rand() * jitter
+            plt.text(x + width / 2., jittered_height, f'{int(height)}', ha='center', va='bottom', fontsize=10)
+    plt.legend()
+    plt.title('Histogram [Label Entropy]', fontsize=14)
+    plt.xlabel('Label Entropy', fontsize=12)
+
+    # Save Histogram
+    plt.savefig(os.path.join(arguments_folder, 'histogram_label_entropy.png'))
+    plt.close()
+
+    # KDE Plot
+    plt.figure(figsize=(10, 6))
+    sns.kdeplot(label_entropy_conf, color=colors[0], label='With Sample Imbalance')
+    sns.kdeplot(label_entropy_not_conf, color=colors[1], label='Without Sample Imbalance')
+    plt.legend()
+    plt.title('KDE Plot [Label Entropy]', fontsize=14)
+    plt.xlabel('Label Entropy', fontsize=12)
+
+    # Save KDE Plot
+    plt.savefig(os.path.join(arguments_folder, 'kde_plot_label_entropy.png'))
+    plt.close()
+
+    # Swarm Plot
+    plt.figure(figsize=(10, 6))
+    sns.swarmplot(x=np.concatenate([np.zeros_like(label_entropy_conf), np.ones_like(label_entropy_not_conf)]),
+                  y=np.concatenate([label_entropy_conf, label_entropy_not_conf]),
+                  palette=colors[:2], size=3)  # Decrease the size of markers
+    plt.xticks([0, 1], ['With Sample Imbalance', 'Without Sample Imbalance'])
+    plt.title('Swarm Plot [Label Entropy]', fontsize=14)
+    plt.xlabel('')
+    plt.ylabel('Label Entropy', fontsize=12)
+
+    # Save Swarm Plot
+    plt.savefig(os.path.join(arguments_folder, 'swarm_plot_label_entropy.png'))
+    plt.close()
+
+    # CDF Plot
+    plt.figure(figsize=(10, 6))
+    plt.hist(label_entropy_conf, density=True, cumulative=True, histtype='step', label='With Sample Imbalance', bins=100, linewidth=2, color=colors[0])
+    plt.hist(label_entropy_not_conf, density=True, cumulative=True, histtype='step', label='Without Sample Imbalance', bins=100, linewidth=2, color=colors[1])
+    plt.title('CDF Plot [Label Entropy]', fontsize=14)
+    plt.xlabel('Label Entropy', fontsize=12)
+    plt.legend(loc='lower right', bbox_to_anchor=(1.02, 0), borderaxespad=0.)
+
+    # Save CDF Plot
+    plt.savefig(os.path.join(arguments_folder, 'cdf_plot_label_entropy.png'))
+    plt.close()
+
+    # Create a new figure for the combined plots
+    plt.figure(figsize=(16, 12))
+
+    # Combined Plots
+    plt.suptitle('Combined Plots [Label Entropy]', fontsize=16)
+
+    # Violin Plot
+    plt.subplot(231)
+    sns.violinplot(data=[label_entropy_conf, label_entropy_not_conf],
+               showmedians=True, palette=colors)
+    plt.xticks([0, 1], ['With Sample Imbalance', 'Without Sample Imbalance'])
+    plt.xlabel('')
+    plt.title('Violin Plot', fontsize=14)
+    plt.ylabel('Label Entropy', fontsize=12)
+
+    # Box Plot
+    plt.subplot(232)
+    sns.boxplot(data=[label_entropy_conf, label_entropy_not_conf],
+            palette=colors)
+    plt.xticks([0, 1], ['With Sample Imbalance', 'Without Sample Imbalance'])
+    plt.xlabel('')
+    plt.title('Box Plot', fontsize=14)
+
+    # Histogram
+    plt.subplot(233)
+    plt.hist([label_entropy_conf, label_entropy_not_conf], bins=20, alpha=0.7, color=colors[:2], label=['With Sample Imbalance', 'Without Sample Imbalance'])
+    plt.legend()
+    plt.title('Histogram', fontsize=14)
+    plt.xlabel('Label Entropy', fontsize=12)
+
+    # KDE Plot
+    plt.subplot(234)
+    sns.kdeplot(label_entropy_conf, color=colors[0], label='With Sample Imbalance')
+    sns.kdeplot(label_entropy_not_conf, color=colors[1], label='Without Sample Imbalance')
+    plt.legend()
+    plt.title('KDE Plot', fontsize=14)
+    plt.xlabel('Label Entropy', fontsize=12)
+
+    # Swarm Plot
+    plt.subplot(235)
+    sns.swarmplot(x=np.concatenate([np.zeros_like(label_entropy_conf), np.ones_like(label_entropy_not_conf)]),
+                  y=np.concatenate([label_entropy_conf, label_entropy_not_conf]),
+                  palette=colors[:2], size=3)  # Decrease the size of markers
+    plt.xticks([0, 1], ['With Sample Imbalance', 'Without Sample Imbalance'])
+    plt.title('Swarm Plot', fontsize=14)
+    plt.xlabel('')
+    plt.ylabel('Label Entropy', fontsize=12)
+
+    # CDF Plot
+    plt.subplot(236)
+    plt.hist(label_entropy_conf, density=True, cumulative=True, histtype='step', label='With Sample Imbalance', bins=100, linewidth=2, color=colors[0])
+    plt.hist(label_entropy_not_conf, density=True, cumulative=True, histtype='step', label='Without Sample Imbalance', bins=100, linewidth=2, color=colors[1])
+    plt.title('CDF Plot', fontsize=14)
+    plt.xlabel('Label Entropy', fontsize=12)
+    plt.legend(loc='lower right', bbox_to_anchor=(1.02, 0), borderaxespad=0.)
+
+    # Save the combined plot
+    plt.savefig(os.path.join(arguments_folder, 'combined_plots_label_entropy.png'))
+    plt.close()
+
+    # NOW THE DIFFERENCES BETWEEN CORRECTAND NOT CORRECT!
+    lab_conf_correct=np.array([float(item) for item in correct_lab.label_entropy_list])
+    lab_conf_wrong=np.array([float(item) for item in wrong_lab.label_entropy_list])
+    not_lab_conf_correct = np.array([float(item) for item in corr_no_conf.label_entropy_list])
+    not_lab_conf_wrong = np.array([float(item) for item in wrong_no_conf.label_entropy_list])
+
+    data = {
+        'Label Entropy': np.concatenate([lab_conf_correct, lab_conf_wrong, not_lab_conf_correct, not_lab_conf_wrong]),
+        'Prediction': ['With Sample Imbalance (Correct)'] * len(lab_conf_correct) + ['With Sample Imbalance (Wrong)'] *  len(lab_conf_wrong) + ['Without Sample Imbalance (Correct)'] * len(not_lab_conf_correct) + ['Without Sample Imbalance (Wrong)'] * len(not_lab_conf_wrong)
+    }
+
+    # Create DataFrame
+    data_df = pd.DataFrame(data)
+
+    # Set a common color palette for all plots
+    colors = sns.color_palette('Set2', n_colors=4)
+
+    # Violin Plot
+    plt.figure(figsize=(10, 12))
+    sns.violinplot(data=[lab_conf_correct, lab_conf_wrong, not_lab_conf_correct, not_lab_conf_wrong], showmedians=True, palette=colors[:4])
+    plt.xticks([0, 1, 2, 3], ['With Sample Imbalance (Correct)', 'With Sample Imbalance (Wrong)', 'Without Sample Imbalance (Correct)', 'Without Sample Imbalance (Wrong)'], rotation=20)
+    plt.xlabel('')
+    plt.title('Violin Plot [Label Entropy]', fontsize=14)
+    plt.ylabel('Label Entropy', fontsize=12)
+
+    plt.savefig(os.path.join(arguments_folder, 'violin_label_entropy_by_color.png'))
+    plt.close()
+
+    # Box Plot
+    plt.figure(figsize=(10, 12))
+    sns.boxplot(data=[lab_conf_correct, lab_conf_wrong, not_lab_conf_correct, not_lab_conf_wrong], palette=colors[:4])
+    plt.xticks([0, 1, 2, 3], ['With Sample Imbalance (Correct)', 'With Sample Imbalance (Wrong)', 'Without Sample Imbalance (Correct)', 'Without Sample Imbalance (Wrong)'], rotation=20)
+    plt.xlabel('')
+    plt.title('Box Plot [Label Entropy]', fontsize=14)
+    plt.ylabel('Label Entropy', fontsize=12)
+
+    plt.savefig(os.path.join(arguments_folder, 'boxplot_label_entropy_by_color.png'))
+    plt.close()
+
+    # Histogram
+    plt.figure(figsize=(10, 6))
+    n, bins, patches = plt.hist([lab_conf_correct, lab_conf_wrong, not_lab_conf_correct, not_lab_conf_wrong],
+             bins=20, alpha=0.7, color=colors[:4], label=['With Sample Imbalance (Correct)', 'With Sample Imbalance (Wrong)', 'Without Sample Imbalance (Correct)', 'Without Sample Imbalance (Wrong)'])
+    jitter = 0
+    # Add the values of occurrences on top of the bars
+    for container in patches:
+        for patch in container:
+            height = patch.get_height()
+            x, width = patch.get_x(), patch.get_width()
+            jittered_height = height + np.random.rand() * jitter
+            plt.text(x + width / 2., jittered_height, f'{int(height)}', ha='center', va='bottom', fontsize=10)
+
+
+    plt.legend()
+    plt.title('Histogram [Label Entropy]', fontsize=14)
+    plt.xlabel('Label Entropy', fontsize=12)
+
+    plt.savefig(os.path.join(arguments_folder, 'hist_label_entropy_by_color.png'))
+    plt.close()
+
+    # KDE Plot
+    plt.figure(figsize=(10, 6))
+    sns.kdeplot(lab_conf_correct, color=colors[0], label='With Sample Imbalance (Correct)')
+    sns.kdeplot(lab_conf_wrong, color=colors[1], label='With Sample Imbalance (Wrong)')
+    sns.kdeplot(not_lab_conf_correct, color=colors[2], label='Without Sample Imbalance (Correct)')
+    sns.kdeplot(not_lab_conf_wrong, color=colors[3], label='Without Sample Imbalance (Wrong)')
+    plt.legend()
+    plt.title('KDE Plot [Label Entropy]', fontsize=14)
+    plt.xlabel('Label Entropy', fontsize=12)
+
+    plt.savefig(os.path.join(arguments_folder, 'kde_label_entropy_by_color.png'))
+    plt.close()
+
+    # Swarm Plot
+    plt.figure(figsize=(10, 12))
+    sns.swarmplot(x=np.concatenate([np.zeros_like(lab_conf_correct), np.ones_like(lab_conf_wrong),
+                                    2*np.ones_like(not_lab_conf_correct), 3*np.ones_like(not_lab_conf_wrong)]),
+                  y=np.concatenate([lab_conf_correct, lab_conf_wrong, not_lab_conf_correct, not_lab_conf_wrong]),
+                  palette=colors)
+    plt.xticks([0, 1, 2, 3], ['With Sample Imbalance (Correct)', 'With Sample Imbalance (Wrong)', 'Without Sample Imbalance (Correct)', 'Without Sample Imbalance (Wrong)'], rotation=21)
+    plt.xlabel('')
+    plt.title('Swarm Plot [Label Entropy]', fontsize=14)
+    plt.ylabel('Label Entropy', fontsize=12)
+
+    plt.savefig(os.path.join(arguments_folder, 'swarm_label_entropy_by_color.png'))
+    plt.close()
+
+    # CDF Plot
+    plt.figure(figsize=(10, 12))
+    sns.histplot(data_df, x='Label Entropy', cumulative=True, hue='Prediction', element='step', palette=colors)
+    plt.xlabel('Label Entropy', fontsize=12)
+    plt.ylabel('CDF', fontsize=12)
+    plt.title('Input Gradient CDF Plot with Hue [Label Entropy]', fontsize=14)
+    legend_elements = [plt.Line2D([0], [0], color=colors[0], lw=2, label='With Sample Imbalance (Correct)'),
+                   plt.Line2D([0], [0], color=colors[1], lw=2, label='With Sample Imbalance (Wrong)'),
+                   plt.Line2D([0], [0], color=colors[2], lw=2, label='Without Sample Imbalance (Correct)'),
+                   plt.Line2D([0], [0], color=colors[3], lw=2, label='Without Sample Imbalance (Wrong)')]
+
+    # Add the legend to the plot
+    plt.legend(handles=legend_elements, title='Prediction', title_fontsize=12, loc='lower right')
+
+    plt.savefig(os.path.join(arguments_folder, 'cdf_by_color.png'))
+    plt.close()
+
+    # Combined
+    plt.figure(figsize=(12, 12))
+
+    plt.suptitle('Combined Plots [Label Entropy]', fontsize=16)
+
+    plt.subplot(321)
+    sns.violinplot(data=[lab_conf_correct, lab_conf_wrong, not_lab_conf_correct, not_lab_conf_wrong], showmedians=True, palette=colors[:4])
+    plt.xticks([0, 1, 2, 3], ['With Sample Imbalance (Correct)', 'With Sample Imbalance (Wrong)', 'Without Sample Imbalance (Correct)', 'Without Sample Imbalance (Wrong)'], rotation=21)
+    plt.xlabel('')
+    plt.title('Violin Plot', fontsize=14)
+    plt.ylabel('Label Entropy', fontsize=12)
+
+    plt.subplot(322)
+    sns.boxplot(data=[lab_conf_correct, lab_conf_wrong, not_lab_conf_correct, not_lab_conf_wrong], palette=colors[:4])
+    plt.xticks([0, 1, 2, 3], ['With Sample Imbalance (Correct)', 'With Sample Imbalance (Wrong)', 'Without Sample Imbalance (Correct)', 'Without Sample Imbalance (Wrong)'], rotation=21)
+    plt.xlabel('')
+    plt.title('Box Plot', fontsize=14)
+
+    plt.subplot(323)
+    plt.hist([lab_conf_correct, lab_conf_wrong, not_lab_conf_correct, not_lab_conf_wrong],
+             bins=20, alpha=0.7, color=colors[:4], label=['With Sample Imbalance (Correct)', 'With Sample Imbalance (Wrong)', 'Without Sample Imbalance (Correct)', 'Without Sample Imbalance (Wrong)'])
+    plt.legend()
+    plt.title('Histogram', fontsize=14)
+    plt.xlabel('Label Entropy', fontsize=12)
+
+    plt.subplot(324)
+    sns.kdeplot(lab_conf_correct, color=colors[0], label='With Sample Imbalance (Correct)')
+    sns.kdeplot(lab_conf_wrong, color=colors[1], label='With Sample Imbalance (Wrong)')
+    sns.kdeplot(not_lab_conf_correct, color=colors[2], label='Without Sample Imbalance (Correct)')
+    sns.kdeplot(not_lab_conf_wrong, color=colors[3], label='Without Sample Imbalance (Wrong)')
+    plt.legend()
+    plt.title('KDE Plot', fontsize=14)
+    plt.xlabel('Label Entropy', fontsize=12)
+
+    plt.subplot(325)
+    sns.swarmplot(x=np.concatenate([np.zeros_like(lab_conf_correct), np.ones_like(lab_conf_wrong),
+                                    2*np.ones_like(not_lab_conf_correct), 3*np.ones_like(not_lab_conf_wrong)]),
+                  y=np.concatenate([lab_conf_correct, lab_conf_wrong, not_lab_conf_correct, not_lab_conf_wrong]),
+                  palette=colors)
+    plt.xticks([0, 1, 2, 3], ['With Sample Imbalance (Correct)', 'With Sample Imbalance (Wrong)', 'Without Sample Imbalance (Correct)', 'Without Sample Imbalance (Wrong)'], rotation=20)
+    plt.xlabel('')
+    plt.title('Swarm Plot', fontsize=14)
+    plt.ylabel('Label Entropy', fontsize=12)
+
+    plt.subplot(326)
+    sns.histplot(data_df, x='Label Entropy', cumulative=True, hue='Prediction', element='step', palette=colors)
+    plt.xlabel('Label Entropy', fontsize=12)
+    plt.ylabel('CDF', fontsize=12)
+    plt.title('Input Gradient CDF Plot with Hue', fontsize=14)
+    legend_elements = [plt.Line2D([0], [0], color=colors[0], lw=2, label='With Sample Imbalance (Correct)'),
+                   plt.Line2D([0], [0], color=colors[1], lw=2, label='With Sample Imbalance (Wrong)'),
+                   plt.Line2D([0], [0], color=colors[2], lw=2, label='Without Sample Imbalance (Correct)'),
+                   plt.Line2D([0], [0], color=colors[3], lw=2, label='Without Sample Imbalance (Wrong)')]
+    # Add the legend to the plot
+    plt.legend(handles=legend_elements, title='Prediction', title_fontsize=12, loc='lower right')
+
+    # Add space between subplots
+    plt.tight_layout()
+
+    # Save the combined figure
+    plt.savefig(os.path.join(arguments_folder, 'combined_plots_label_entropy_by_color.png'))
+    plt.close()
+
+    # IG ENTROPY
+    input_gradients_entropy_with_watermarks = np.array(
+        [float(item) for item in correct_confound.ig_entropy_list] +
+        [float(item) for item in wrong_confound.ig_entropy_list]
+    )
+
+    input_gradients_entropy_without_watermarks = np.array(
+        [float(item) for item in correct_not_confound.ig_entropy_list] +
+        [float(item) for item in wrong_not_confound.ig_entropy_list]
+    )
+
+    # Violin Plot
+    plt.figure(figsize=(10, 6))
+    sns.violinplot(data=[input_gradients_entropy_with_watermarks, input_gradients_entropy_without_watermarks],
+               showmedians=True, palette=colors)
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.xlabel('')
+    plt.title('Violin Plot [Input Gradient Entropy]', fontsize=14)
+    plt.ylabel('Input Gradient Entropy', fontsize=12)
+
+    # Save Violin Plot
+    plt.savefig(os.path.join(arguments_folder, 'violin_plot_ig_entropy.png'))
+    plt.close()
+
+    # Box Plot
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(data=[input_gradients_entropy_with_watermarks, input_gradients_entropy_without_watermarks],
+            palette=colors)
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.xlabel('')
+    plt.ylabel('Input Gradient Entropy', fontsize=12)
+    plt.title('Box Plot [Input Gradient Entropy]', fontsize=14)
+
+    # Save Box Plot
+    plt.savefig(os.path.join(arguments_folder, 'box_plot_ig_entropy.png'))
+    plt.close()
+
+    # Histogram
+    plt.figure(figsize=(10, 6))
+    n, bins, patches = plt.hist([input_gradients_entropy_with_watermarks, input_gradients_entropy_without_watermarks],
+             bins=20, alpha=0.7, color=colors[:2], label=['With Watermarks', 'Without Watermarks'])
+    jitter = 0
+    # Add the values of occurrences on top of the bars
+    for container in patches:
+        for patch in container:
+            height = patch.get_height()
+            x, width = patch.get_x(), patch.get_width()
+            jittered_height = height + np.random.rand() * jitter
+            plt.text(x + width / 2., jittered_height, f'{int(height)}', ha='center', va='bottom', fontsize=10)
+    plt.legend()
+    plt.title('Histogram [Input Gradient Entropy]', fontsize=14)
+    plt.xlabel('Input Gradient Entropy', fontsize=12)
+
+    # Save Histogram
+    plt.savefig(os.path.join(arguments_folder, 'histogram_ig_entropy.png'))
+    plt.close()
+
+    # KDE Plot
+    plt.figure(figsize=(10, 6))
+    sns.kdeplot(input_gradients_entropy_with_watermarks, color=colors[0], label='With Watermarks')
+    sns.kdeplot(input_gradients_entropy_without_watermarks, color=colors[1], label='Without Watermarks')
+    plt.legend()
+    plt.title('KDE Plot [Input Gradient Entropy]', fontsize=14)
+    plt.xlabel('Input Gradient Entropy', fontsize=12)
+
+    # Save KDE Plot
+    plt.savefig(os.path.join(arguments_folder, 'kde_plot_ig_entropy.png'))
+    plt.close()
+
+    # Swarm Plot
+    plt.figure(figsize=(10, 6))
+    sns.swarmplot(x=np.concatenate([np.zeros_like(input_gradients_entropy_with_watermarks), np.ones_like(input_gradients_entropy_without_watermarks)]),
+                  y=np.concatenate([input_gradients_entropy_with_watermarks, input_gradients_entropy_without_watermarks]),
+                  palette=colors[:2], size=3)  # Decrease the size of markers
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.title('Swarm Plot [Input Gradient Entropy]', fontsize=14)
+    plt.xlabel('')
+    plt.ylabel('Input Gradient Entropy', fontsize=12)
+
+    # Save Swarm Plot
+    plt.savefig(os.path.join(arguments_folder, 'swarm_plot_ig_entropy.png'))
+    plt.close()
+
+    # CDF Plot
+    plt.figure(figsize=(10, 6))
+    plt.hist(input_gradients_entropy_with_watermarks, density=True, cumulative=True, histtype='step', label='With Watermarks', bins=100, linewidth=2, color=colors[0])
+    plt.hist(input_gradients_entropy_without_watermarks, density=True, cumulative=True, histtype='step', label='Without Watermarks', bins=100, linewidth=2, color=colors[1])
+    plt.title('CDF Plot [Input Gradient Entropy]', fontsize=14)
+    plt.xlabel('Input Gradient Entropy', fontsize=12)
+    plt.legend(loc='lower right', bbox_to_anchor=(1.02, 0), borderaxespad=0.)
+
+    # Save CDF Plot
+    plt.savefig(os.path.join(arguments_folder, 'cdf_plot_ig_entropy.png'))
+    plt.close()
+
+    # Create a new figure for the combined plots
+    plt.figure(figsize=(16, 12))
+
+    # Combined Plots
+    plt.suptitle('Combined Plots [Input Gradient Entropy]', fontsize=16)
+
+    # Violin Plot
+    plt.subplot(231)
+    sns.violinplot(data=[input_gradients_entropy_with_watermarks, input_gradients_entropy_without_watermarks],
+               showmedians=True, palette=colors)
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.xlabel('')
+    plt.title('Violin Plot', fontsize=14)
+    plt.ylabel('Input Gradient Entropy', fontsize=12)
+
+    # Box Plot
+    plt.subplot(232)
+    sns.boxplot(data=[input_gradients_entropy_with_watermarks, input_gradients_entropy_without_watermarks],
+            palette=colors)
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.xlabel('')
+    plt.title('Box Plot', fontsize=14)
+
+    # Histogram
+    plt.subplot(233)
+    plt.hist([input_gradients_entropy_with_watermarks, input_gradients_entropy_without_watermarks], bins=20, alpha=0.7, color=colors[:2], label=['With Watermarks', 'Without Watermarks'])
+    plt.legend()
+    plt.title('Histogram', fontsize=14)
+    plt.xlabel('Input Gradient Entropy', fontsize=12)
+
+    # KDE Plot
+    plt.subplot(234)
+    sns.kdeplot(input_gradients_entropy_with_watermarks, color=colors[0], label='With Watermarks')
+    sns.kdeplot(input_gradients_entropy_without_watermarks, color=colors[1], label='Without Watermarks')
+    plt.legend()
+    plt.title('KDE Plot', fontsize=14)
+    plt.xlabel('Input Gradient Entropy', fontsize=12)
+
+    # Swarm Plot
+    plt.subplot(235)
+    sns.swarmplot(x=np.concatenate([np.zeros_like(input_gradients_entropy_with_watermarks), np.ones_like(input_gradients_entropy_without_watermarks)]),
+                  y=np.concatenate([input_gradients_entropy_with_watermarks, input_gradients_entropy_without_watermarks]),
+                  palette=colors[:2], size=3)  # Decrease the size of markers
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.title('Swarm Plot', fontsize=14)
+    plt.xlabel('')
+    plt.ylabel('Input Gradient Entropy', fontsize=12)
+
+    # CDF Plot
+    plt.subplot(236)
+    plt.hist(input_gradients_entropy_with_watermarks, density=True, cumulative=True, histtype='step', label='With Watermarks', bins=100, linewidth=2, color=colors[0])
+    plt.hist(input_gradients_entropy_without_watermarks, density=True, cumulative=True, histtype='step', label='Without Watermarks', bins=100, linewidth=2, color=colors[1])
+    plt.title('CDF Plot', fontsize=14)
+    plt.xlabel('Input Gradient Entropy', fontsize=12)
+    plt.legend(loc='lower right', bbox_to_anchor=(1.02, 0), borderaxespad=0.)
+
+    # Save the combined plot
+    plt.savefig(os.path.join(arguments_folder, 'combined_plots_ig_entropy.png'))
+    plt.close()
+
+    # NOW THE DIFFERENCES BETWEEN GRADIENTS!
+    ig_entropy_watermarked_correct=np.array([float(item) for item in correct_confound.ig_entropy_list])
+    ig_entropy_watermarked_wrong=np.array([float(item) for item in wrong_confound.ig_entropy_list])
+    ig_entropy_not_watermarked_correct = np.array([float(item) for item in correct_not_confound.ig_entropy_list])
+    ig_entropy_not_watermarked_wrong = np.array([float(item) for item in wrong_not_confound.ig_entropy_list])
+
+    data = {
+        'Input Gradient Entropy': np.concatenate([ig_entropy_watermarked_correct, ig_entropy_watermarked_wrong, ig_entropy_not_watermarked_correct, ig_entropy_not_watermarked_wrong]),
+        'Prediction': ['With Watermarks (Correct)'] * len(ig_entropy_watermarked_correct) + ['With Watermarks (Wrong)'] *  len(ig_entropy_watermarked_wrong) + ['Without Watermarks (Correct)'] * len(ig_entropy_not_watermarked_correct) + ['Without Watermarks (Wrong)'] * len(ig_entropy_not_watermarked_wrong)
+    }
+
+    # Create DataFrame
+    data_df = pd.DataFrame(data)
+
+    # Set a common color palette for all plots
+    colors = sns.color_palette('Set2', n_colors=4)
+
+    # Violin Plot
+    plt.figure(figsize=(10, 12))
+    sns.violinplot(data=[ig_entropy_watermarked_correct, ig_entropy_watermarked_wrong, ig_entropy_not_watermarked_correct, ig_entropy_not_watermarked_wrong], showmedians=True, palette=colors[:4])
+    plt.xticks([0, 1, 2, 3], ['With Watermarks (Correct)', 'With Watermarks (Wrong)', 'Without Watermarks (Correct)', 'Without Watermarks (Wrong)'], rotation=20)
+    plt.xlabel('')
+    plt.title('Violin Plot [Input Gradient Entropy]', fontsize=14)
+    plt.ylabel('Input Gradient Entropy', fontsize=12)
+
+    plt.savefig(os.path.join(arguments_folder, 'violin_by_color_ig_entropy.png'))
+    plt.close()
+
+    # Box Plot
+    plt.figure(figsize=(10, 12))
+    sns.boxplot(data=[ig_entropy_watermarked_correct, ig_entropy_watermarked_wrong, ig_entropy_not_watermarked_correct, ig_entropy_not_watermarked_wrong], palette=colors[:4])
+    plt.xticks([0, 1, 2, 3], ['With Watermarks (Correct)', 'With Watermarks (Wrong)', 'Without Watermarks (Correct)', 'Without Watermarks (Wrong)'], rotation=20)
+    plt.xlabel('')
+    plt.title('Box Plot [Input Gradient Entropy]', fontsize=14)
+    plt.ylabel('Input Gradient Entropy', fontsize=12)
+
+    plt.savefig(os.path.join(arguments_folder, 'boxplot_by_color_ig_entropy.png'))
+    plt.close()
+
+    # Histogram
+    plt.figure(figsize=(10, 6))
+    n, bins, patches = plt.hist([ig_entropy_watermarked_correct, ig_entropy_watermarked_wrong, ig_entropy_not_watermarked_correct, ig_entropy_not_watermarked_wrong],
+             bins=20, alpha=0.7, color=colors[:4], label=['With Watermarks (Correct)', 'With Watermarks (Wrong)', 'Without Watermarks (Correct)', 'Without Watermarks (Wrong)'])
+    jitter = 0
+    # Add the values of occurrences on top of the bars
+    for container in patches:
+        for patch in container:
+            height = patch.get_height()
+            x, width = patch.get_x(), patch.get_width()
+            jittered_height = height + np.random.rand() * jitter
+            plt.text(x + width / 2., jittered_height, f'{int(height)}', ha='center', va='bottom', fontsize=10)
+
+
+    plt.legend()
+    plt.title('Histogram [Input Gradient Entropy]', fontsize=14)
+    plt.xlabel('Input Gradient Entropy', fontsize=12)
+
+    plt.savefig(os.path.join(arguments_folder, 'hist_by_color_ig_entropy.png'))
+    plt.close()
+
+    # KDE Plot
+    plt.figure(figsize=(10, 6))
+    sns.kdeplot(ig_entropy_watermarked_correct, color=colors[0], label='With Watermarks (Correct)')
+    sns.kdeplot(ig_entropy_watermarked_wrong, color=colors[1], label='With Watermarks (Wrong)')
+    sns.kdeplot(ig_entropy_not_watermarked_correct, color=colors[2], label='Without Watermarks (Correct)')
+    sns.kdeplot(ig_entropy_not_watermarked_wrong, color=colors[3], label='Without Watermarks (Wrong)')
+    plt.legend()
+    plt.title('KDE Plot [Input Gradient Entropy]', fontsize=14)
+    plt.xlabel('Input Gradient Entropy', fontsize=12)
+
+    plt.savefig(os.path.join(arguments_folder, 'kde_by_color_ig_entropy.png'))
+    plt.close()
+
+    # Swarm Plot
+
+    plt.figure(figsize=(10, 12))
+    sns.swarmplot(x=np.concatenate([np.zeros_like(ig_entropy_watermarked_correct), np.ones_like(ig_entropy_watermarked_wrong),
+                                    2*np.ones_like(ig_entropy_not_watermarked_correct), 3*np.ones_like(ig_entropy_not_watermarked_wrong)]),
+                  y=np.concatenate([ig_entropy_watermarked_correct, ig_entropy_watermarked_wrong, ig_entropy_not_watermarked_correct, ig_entropy_not_watermarked_wrong]),
+                  palette=colors)
+    plt.xticks([0, 1, 2, 3], ['Watermarked (Correct)', 'Watermarked (Wrong)', 'Not Watermarked (Correct)', 'Not Watermarked (Wrong)'], rotation=20)
+    plt.xlabel('')
+    plt.title('Swarm Plot [Input Gradient Entropy]', fontsize=14)
+    plt.ylabel('Input Gradient Entropy', fontsize=12)
+
+    plt.savefig(os.path.join(arguments_folder, 'swarm_by_color_ig_entropy.png'))
+    plt.close()
+
+    # CDF Plot
+    plt.figure(figsize=(10, 12))
+    sns.histplot(data_df, x='Input Gradient Entropy', cumulative=True, hue='Prediction', element='step', palette=colors)
+    plt.xlabel('Input Gradient Entropy', fontsize=12)
+    plt.ylabel('CDF', fontsize=12)
+    plt.title('Input Gradient CDF Plot with Hue [Input Gradient Entropy]', fontsize=14)
+    legend_elements = [plt.Line2D([0], [0], color=colors[0], lw=2, label='With Watermarks (Correct)'),
+                   plt.Line2D([0], [0], color=colors[1], lw=2, label='With Watermarks (Wrong)'),
+                   plt.Line2D([0], [0], color=colors[2], lw=2, label='Without Watermarks (Correct)'),
+                   plt.Line2D([0], [0], color=colors[3], lw=2, label='Without Watermarks (Wrong)')]
+
+    # Add the legend to the plot
+    plt.legend(handles=legend_elements, title='Prediction', title_fontsize=12, loc='lower right')
+
+    plt.savefig(os.path.join(arguments_folder, 'cdf_by_color_ig_entropy.png'))
+    plt.close()
+
+    # Combined
+    plt.figure(figsize=(12, 12))
+
+    plt.suptitle('Combined Plots [Input Gradient Entropy]', fontsize=16)
+
+    plt.subplot(321)
+    sns.violinplot(data=[ig_entropy_watermarked_correct, ig_entropy_watermarked_wrong, ig_entropy_not_watermarked_correct, ig_entropy_not_watermarked_wrong], showmedians=True, palette=colors[:4])
+    plt.xticks([0, 1, 2, 3], ['With Watermarks (Correct)', 'With Watermarks (Wrong)', 'Without Watermarks (Correct)', 'Without Watermarks (Wrong)'], rotation=20)
+    plt.xlabel('')
+    plt.title('Violin Plot', fontsize=14)
+    plt.ylabel('Input Gradient Entropy', fontsize=12)
+
+    plt.subplot(322)
+    sns.boxplot(data=[ig_entropy_watermarked_correct, ig_entropy_watermarked_wrong, ig_entropy_not_watermarked_correct, ig_entropy_not_watermarked_wrong], palette=colors[:4])
+    plt.xticks([0, 1, 2, 3], ['With Watermarks (Correct)', 'With Watermarks (Wrong)', 'Without Watermarks (Correct)', 'Without Watermarks (Wrong)'], rotation=20)
+    plt.xlabel('')
+    plt.title('Box Plot', fontsize=14)
+
+    plt.subplot(323)
+    plt.hist([ig_entropy_watermarked_correct, ig_entropy_watermarked_wrong, ig_entropy_not_watermarked_correct, ig_entropy_not_watermarked_wrong],
+             bins=20, alpha=0.7, color=colors[:4], label=['With Watermarks (Correct)', 'With Watermarks (Wrong)', 'Without Watermarks (Correct)', 'Without Watermarks (Wrong)'])
+    plt.legend()
+    plt.title('Histogram', fontsize=14)
+    plt.xlabel('Input Gradient Entropy', fontsize=12)
+
+    plt.subplot(324)
+    sns.kdeplot(ig_entropy_watermarked_correct, color=colors[0], label='With Watermarks (Correct)')
+    sns.kdeplot(ig_entropy_watermarked_wrong, color=colors[1], label='With Watermarks (Wrong)')
+    sns.kdeplot(ig_entropy_not_watermarked_correct, color=colors[2], label='Without Watermarks (Correct)')
+    sns.kdeplot(ig_entropy_not_watermarked_wrong, color=colors[3], label='Without Watermarks (Wrong)')
+    plt.legend()
+    plt.title('KDE Plot', fontsize=14)
+    plt.xlabel('Input Gradient Entropy', fontsize=12)
+
+    plt.subplot(325)
+    sns.swarmplot(x=np.concatenate([np.zeros_like(ig_entropy_watermarked_correct), np.ones_like(ig_entropy_watermarked_wrong),
+                                    2*np.ones_like(ig_entropy_not_watermarked_correct), 3*np.ones_like(ig_entropy_not_watermarked_wrong)]),
+                  y=np.concatenate([ig_entropy_watermarked_correct, ig_entropy_watermarked_wrong, ig_entropy_not_watermarked_correct, ig_entropy_not_watermarked_wrong]),
+                  palette=colors)
+    plt.xticks([0, 1, 2, 3], ['Watermarked (Correct)', 'Watermarked (Wrong)', 'Not Watermarked (Correct)', 'Not Watermarked (Wrong)'], rotation=20)
+    plt.xlabel('')
+    plt.title('Swarm Plot', fontsize=14)
+    plt.ylabel('Input Gradient Entropy', fontsize=12)
+
+    plt.subplot(326)
+    sns.histplot(data_df, x='Input Gradient Entropy', cumulative=True, hue='Prediction', element='step', palette=colors)
+    plt.xlabel('Input Gradient Entropy', fontsize=12)
+    plt.ylabel('CDF', fontsize=12)
+    plt.title('Input Gradient CDF Plot with Hue', fontsize=14)
+    legend_elements = [plt.Line2D([0], [0], color=colors[0], lw=2, label='With Watermarks (Correct)'),
+                   plt.Line2D([0], [0], color=colors[1], lw=2, label='With Watermarks (Wrong)'),
+                   plt.Line2D([0], [0], color=colors[2], lw=2, label='Without Watermarks (Correct)'),
+                   plt.Line2D([0], [0], color=colors[3], lw=2, label='Without Watermarks (Wrong)')]
+    # Add the legend to the plot
+    plt.legend(handles=legend_elements, title='Prediction', title_fontsize=12, loc='lower right')
+
+    # Add space between subplots
+    plt.tight_layout()
+
+    # Save the combined figure
+    plt.savefig(os.path.join(arguments_folder, 'combined_plots_by_color_ig_entropy.png'))
+    plt.close()
+
+    exit(0)
+
+    print("Evviva", len(correct_confound.max_ig_label_list_for_score_plot), type(correct_confound.max_ig_label_list_for_score_plot))
+
+    print(correct_confound.max_ig_label_list_for_score_plot)
+
+    input_gradients_with_watermarks = np.array(
+        [float(item[0][0]) for item in correct_confound.max_ig_label_list_for_score_plot] +
+        [float(item[0][0]) for item in wrong_confound.max_ig_label_list_for_score_plot]
+    )
+    input_gradients_without_watermarks = np.array(
+        [float(item[0][0]) for item in correct_not_confound.max_ig_label_list_for_score_plot] +
+        [float(item[0][0]) for item in wrong_not_confound.max_ig_label_list_for_score_plot]
+    )
+
+    # Set a common color palette for all plots
+    colors = sns.color_palette('Set2')
+
+    # Violin Plot
+    plt.figure(figsize=(10, 6))
+    sns.violinplot(data=[input_gradients_with_watermarks, input_gradients_without_watermarks],
+               showmedians=True, palette=colors)
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.xlabel('')
+    plt.title('Violin Plot [Input Gradients]', fontsize=14)
+    plt.ylabel('Input Gradient Magnitude', fontsize=12)
+
+    # Save Violin Plot
+    plt.savefig(os.path.join(arguments_folder, 'violin_plot.png'))
+    plt.close()
+
+    # Box Plot
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(data=[input_gradients_with_watermarks, input_gradients_without_watermarks],
+            palette=colors)
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.xlabel('')
+    plt.ylabel('Input Gradient Magnitude', fontsize=12)
+    plt.title('Box Plot [Input Gradients]', fontsize=14)
+
+    # Save Box Plot
+    plt.savefig(os.path.join(arguments_folder, 'box_plot.png'))
+    plt.close()
+
+    # Histogram
+    plt.figure(figsize=(10, 6))
+    n, bins, patches = plt.hist([input_gradients_with_watermarks, input_gradients_without_watermarks],
+             bins=20, alpha=0.7, color=colors[:2], label=['With Watermarks', 'Without Watermarks'])
+    jitter = 0
+    # Add the values of occurrences on top of the bars
+    for container in patches:
+        for patch in container:
+            height = patch.get_height()
+            x, width = patch.get_x(), patch.get_width()
+            jittered_height = height + np.random.rand() * jitter
+            plt.text(x + width / 2., jittered_height, f'{int(height)}', ha='center', va='bottom', fontsize=10)
+    plt.legend()
+    plt.title('Histogram [Input Gradients]', fontsize=14)
+    plt.xlabel('Input Gradient Magnitude', fontsize=12)
+
+    # Save Histogram
+    plt.savefig(os.path.join(arguments_folder, 'histogram.png'))
+    plt.close()
+
+    # KDE Plot
+    plt.figure(figsize=(10, 6))
+    sns.kdeplot(input_gradients_with_watermarks, color=colors[0], label='With Watermarks')
+    sns.kdeplot(input_gradients_without_watermarks, color=colors[1], label='Without Watermarks')
+    plt.legend()
+    plt.title('KDE Plot [Input Gradients]', fontsize=14)
+    plt.xlabel('Input Gradient Magnitude', fontsize=12)
+
+    # Save KDE Plot
+    plt.savefig(os.path.join(arguments_folder, 'kde_plot.png'))
+    plt.close()
+
+    # Swarm Plot
+    plt.figure(figsize=(10, 6))
+    sns.swarmplot(x=np.concatenate([np.zeros_like(input_gradients_with_watermarks), np.ones_like(input_gradients_without_watermarks)]),
+                  y=np.concatenate([input_gradients_with_watermarks, input_gradients_without_watermarks]),
+                  palette=colors[:2], size=3)  # Decrease the size of markers
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.title('Swarm Plot [Input Gradients]', fontsize=14)
+    plt.xlabel('')
+    plt.ylabel('Input Gradient Magnitude', fontsize=12)
+
+    # Save Swarm Plot
+    plt.savefig(os.path.join(arguments_folder, 'swarm_plot.png'))
+    plt.close()
+
+    # CDF Plot
+    plt.figure(figsize=(10, 6))
+    plt.hist(input_gradients_with_watermarks, density=True, cumulative=True, histtype='step', label='With Watermarks', bins=100, linewidth=2, color=colors[0])
+    plt.hist(input_gradients_without_watermarks, density=True, cumulative=True, histtype='step', label='Without Watermarks', bins=100, linewidth=2, color=colors[1])
+    plt.title('CDF Plot [Input Gradients]', fontsize=14)
+    plt.xlabel('Input Gradient Magnitude', fontsize=12)
+    plt.legend(loc='lower right', bbox_to_anchor=(1.02, 0), borderaxespad=0.)
+
+    # Save CDF Plot
+    plt.savefig(os.path.join(arguments_folder, 'cdf_plot.png'))
+    plt.close()
+
+    # Create a new figure for the combined plots
+    plt.figure(figsize=(16, 12))
+
+    # Combined Plots
+    plt.suptitle('Combined Plots [Input Gradients]', fontsize=16)
+
+    # Violin Plot
+    plt.subplot(231)
+    sns.violinplot(data=[input_gradients_with_watermarks, input_gradients_without_watermarks],
+               showmedians=True, palette=colors)
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.xlabel('')
+    plt.title('Violin Plot', fontsize=14)
+    plt.ylabel('Input Gradient Magnitude', fontsize=12)
+
+    # Box Plot
+    plt.subplot(232)
+    sns.boxplot(data=[input_gradients_with_watermarks, input_gradients_without_watermarks],
+            palette=colors)
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.xlabel('')
+    plt.title('Box Plot', fontsize=14)
+
+    # Histogram
+    plt.subplot(233)
+    plt.hist([input_gradients_with_watermarks, input_gradients_without_watermarks], bins=20, alpha=0.7, color=colors[:2], label=['With Watermarks', 'Without Watermarks'])
+    plt.legend()
+    plt.title('Histogram', fontsize=14)
+    plt.xlabel('Input Gradient Magnitude', fontsize=12)
+
+    # KDE Plot
+    plt.subplot(234)
+    sns.kdeplot(input_gradients_with_watermarks, color=colors[0], label='With Watermarks')
+    sns.kdeplot(input_gradients_without_watermarks, color=colors[1], label='Without Watermarks')
+    plt.legend()
+    plt.title('KDE Plot', fontsize=14)
+    plt.xlabel('Input Gradient Magnitude', fontsize=12)
+
+    # Swarm Plot
+    plt.subplot(235)
+    sns.swarmplot(x=np.concatenate([np.zeros_like(input_gradients_with_watermarks), np.ones_like(input_gradients_without_watermarks)]),
+                  y=np.concatenate([input_gradients_with_watermarks, input_gradients_without_watermarks]),
+                  palette=colors[:2], size=3)  # Decrease the size of markers
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.title('Swarm Plot', fontsize=14)
+    plt.xlabel('')
+    plt.ylabel('Input Gradient Magnitude', fontsize=12)
+
+    # CDF Plot
+    plt.subplot(236)
+    plt.hist(input_gradients_with_watermarks, density=True, cumulative=True, histtype='step', label='With Watermarks', bins=100, linewidth=2, color=colors[0])
+    plt.hist(input_gradients_without_watermarks, density=True, cumulative=True, histtype='step', label='Without Watermarks', bins=100, linewidth=2, color=colors[1])
+    plt.title('CDF Plot', fontsize=14)
+    plt.xlabel('Input Gradient Magnitude', fontsize=12)
+    plt.legend(loc='lower right', bbox_to_anchor=(1.02, 0), borderaxespad=0.)
+
+    # Save the combined plot
+    plt.savefig(os.path.join(arguments_folder, 'combined_plots.png'))
+    plt.close()
+
+    # Correlation
+    # Calculate correlation coefficients
+    from scipy import stats
+    pearson_corr, pearson_p_value = stats.pearsonr(input_gradients_with_watermarks, input_gradients_without_watermarks)
+    spearman_corr, spearman_p_value = stats.spearmanr(input_gradients_with_watermarks, input_gradients_without_watermarks)
+
+    # Create a DataFrame to store the data
+    data_df = pd.DataFrame({
+        'Input Gradient Magnitude': np.concatenate([input_gradients_without_watermarks, input_gradients_with_watermarks]),
+        'Watermarked': ['No'] * len(input_gradients_without_watermarks) + ['Yes'] * len(input_gradients_with_watermarks)
+    })
+
+    # Set a common color palette for both groups
+    colors = sns.color_palette('Set2', n_colors=2)
+
+    # Set a larger figure size for better visualizations
+    plt.figure(figsize=(10, 6))
+
+    # Scatter Plot
+    plt.subplot(121)
+    sns.scatterplot(data=data_df, x='Input Gradient Magnitude', y='Watermarked', hue='Watermarked', palette=colors, legend=False)
+    plt.xlabel('Input Gradient Magnitude')
+    plt.ylabel('Watermarked')
+    plt.yticks([0, 1], ['No', 'Yes'])
+
+    # Add subtitles for Pearson correlation and p-value
+    plt.title(f"Pearson Correlation: {pearson_corr:.2f}, p-value: {pearson_p_value:.4f}")
+
+    # Regression Plot
+    plt.subplot(122)
+
+    data_df = pd.DataFrame({
+        'Input Gradient Magnitude': np.concatenate([input_gradients_with_watermarks, input_gradients_without_watermarks]),
+        'Watermarked': ['With Watermarks'] * len(input_gradients_with_watermarks) + ['Without Watermarks'] * len(input_gradients_without_watermarks)
+    })
+    # Convert 'With Watermarks' to 1 and 'Without Watermarks' to 0
+    data_df['Watermarked'] = data_df['Watermarked'].map({'With Watermarks': 1, 'Without Watermarks': 0})
+
+    sns.regplot(data=data_df, x='Input Gradient Magnitude', y='Watermarked', logistic=True, scatter_kws={'color': colors[0]}, line_kws={'color': colors[1]})
+
+    # Invert the y-axis representation
+    plt.gca().invert_yaxis()
+
+    plt.xlabel('Input Gradient Magnitude')
+    plt.ylabel('Watermarked')
+    plt.yticks([0, 1], ['No', 'Yes'])
+    # Add subtitles for Spearman correlation and p-value
+    plt.title(f"Spearman Correlation: {spearman_corr:.2f}, p-value: {spearman_p_value:.4f}")
+
+    # Save the figure
+    plt.suptitle('Scatter Plot and Logistic Regression Plot of Input Gradient Magnitude vs. Watermarked')
+    plt.savefig(os.path.join(arguments_folder, 'correlation_plots.png'))
+    plt.close()
+
+    # NOW THE DIFFERENCES BETWEEN GRADIENTS!
+    watermarked_correct=np.array([float(item[0][0]) for item in correct_confound.max_ig_label_list_for_score_plot])
+    watermarked_wrong=np.array([float(item[0][0]) for item in wrong_confound.max_ig_label_list_for_score_plot])
+    not_watermarked_correct = np.array([float(item[0][0]) for item in correct_not_confound.max_ig_label_list_for_score_plot])
+    not_watermarked_wrong = np.array([float(item[0][0]) for item in wrong_not_confound.max_ig_label_list_for_score_plot])
+
+    data = {
+        'Input Gradient Magnitude': np.concatenate([input_gradients_with_watermarks, input_gradients_without_watermarks]),
+        'Prediction': ['With Watermarks (Correct)'] * len(watermarked_correct) + ['With Watermarks (Wrong)'] *  len(watermarked_wrong) + ['Without Watermarks (Correct)'] * len(not_watermarked_correct) + ['Without Watermarks (Wrong)'] * len(not_watermarked_wrong)
+    }
+
+    # Create DataFrame
+    data_df = pd.DataFrame(data)
+
+    # Set a common color palette for all plots
+    colors = sns.color_palette('Set2', n_colors=4)
+
+    # Violin Plot
+    plt.figure(figsize=(10, 12))
+    sns.violinplot(data=[watermarked_correct, watermarked_wrong, not_watermarked_correct, not_watermarked_wrong], showmedians=True, palette=colors[:4])
+    plt.xticks([0, 1, 2, 3], ['With Watermarks (Correct)', 'With Watermarks (Wrong)', 'Without Watermarks (Correct)', 'Without Watermarks (Wrong)'], rotation=20)
+    plt.xlabel('')
+    plt.title('Violin Plot [Input Gradients]', fontsize=14)
+    plt.ylabel('Input Gradient Magnitude', fontsize=12)
+
+    plt.savefig(os.path.join(arguments_folder, 'violin_by_color.png'))
+    plt.close()
+
+    # Box Plot
+    plt.figure(figsize=(10, 12))
+    sns.boxplot(data=[watermarked_correct, watermarked_wrong, not_watermarked_correct, not_watermarked_wrong], palette=colors[:4])
+    plt.xticks([0, 1, 2, 3], ['With Watermarks (Correct)', 'With Watermarks (Wrong)', 'Without Watermarks (Correct)', 'Without Watermarks (Wrong)'], rotation=20)
+    plt.xlabel('')
+    plt.title('Box Plot [Input Gradients]', fontsize=14)
+    plt.ylabel('Input Gradient Magnitude', fontsize=12)
+
+    plt.savefig(os.path.join(arguments_folder, 'boxplot_by_color.png'))
+    plt.close()
+
+    # Histogram
+    plt.figure(figsize=(10, 6))
+    n, bins, patches = plt.hist([watermarked_correct, watermarked_wrong, not_watermarked_correct, not_watermarked_wrong],
+             bins=20, alpha=0.7, color=colors[:4], label=['With Watermarks (Correct)', 'With Watermarks (Wrong)', 'Without Watermarks (Correct)', 'Without Watermarks (Wrong)'])
+    jitter = 0
+    # Add the values of occurrences on top of the bars
+    for container in patches:
+        for patch in container:
+            height = patch.get_height()
+            x, width = patch.get_x(), patch.get_width()
+            jittered_height = height + np.random.rand() * jitter
+            plt.text(x + width / 2., jittered_height, f'{int(height)}', ha='center', va='bottom', fontsize=10)
+
+
+    plt.legend()
+    plt.title('Histogram [Input Gradients]', fontsize=14)
+    plt.xlabel('Input Gradient Magnitude', fontsize=12)
+
+    plt.savefig(os.path.join(arguments_folder, 'hist_by_color.png'))
+    plt.close()
+
+    # KDE Plot
+    plt.figure(figsize=(10, 6))
+    sns.kdeplot(watermarked_correct, color=colors[0], label='With Watermarks (Correct)')
+    sns.kdeplot(watermarked_wrong, color=colors[1], label='With Watermarks (Wrong)')
+    sns.kdeplot(not_watermarked_correct, color=colors[2], label='Without Watermarks (Correct)')
+    sns.kdeplot(not_watermarked_wrong, color=colors[3], label='Without Watermarks (Wrong)')
+    plt.legend()
+    plt.title('KDE Plot [Input Gradients]', fontsize=14)
+    plt.xlabel('Input Gradient Magnitude', fontsize=12)
+
+    plt.savefig(os.path.join(arguments_folder, 'kde_by_color.png'))
+    plt.close()
+
+    # Swarm Plot
+    plt.figure(figsize=(10, 12))
+    sns.swarmplot(x=np.concatenate([np.zeros_like(watermarked_correct), np.ones_like(watermarked_wrong),
+                                    2*np.ones_like(not_watermarked_correct), 3*np.ones_like(not_watermarked_wrong)]),
+                  y=np.concatenate([watermarked_correct, watermarked_wrong, not_watermarked_correct, not_watermarked_wrong]),
+                  palette=colors)
+    plt.xticks([0, 1, 2, 3], ['Watermarked (Correct)', 'Watermarked (Wrong)', 'Not Watermarked (Correct)', 'Not Watermarked (Wrong)'], rotation=20)
+    plt.xlabel('')
+    plt.title('Swarm Plot [Input Gradients]', fontsize=14)
+    plt.ylabel('Input Gradient Magnitude', fontsize=12)
+
+    plt.savefig(os.path.join(arguments_folder, 'swarm_by_color.png'))
+    plt.close()
+
+    # CDF Plot
+    plt.figure(figsize=(10, 12))
+    sns.histplot(data_df, x='Input Gradient Magnitude', cumulative=True, hue='Prediction', element='step', palette=colors)
+    plt.xlabel('Input Gradient Magnitude', fontsize=12)
+    plt.ylabel('CDF', fontsize=12)
+    plt.title('Input Gradient CDF Plot with Hue [Input Gradients]', fontsize=14)
+    legend_elements = [plt.Line2D([0], [0], color=colors[0], lw=2, label='With Watermarks (Correct)'),
+                   plt.Line2D([0], [0], color=colors[1], lw=2, label='With Watermarks (Wrong)'),
+                   plt.Line2D([0], [0], color=colors[2], lw=2, label='Without Watermarks (Correct)'),
+                   plt.Line2D([0], [0], color=colors[3], lw=2, label='Without Watermarks (Wrong)')]
+
+    # Add the legend to the plot
+    plt.legend(handles=legend_elements, title='Prediction', title_fontsize=12, loc='lower right')
+
+    plt.savefig(os.path.join(arguments_folder, 'cdf_by_color.png'))
+    plt.close()
+
+    # Combined
+    plt.figure(figsize=(12, 12))
+
+    plt.suptitle('Combined Plots [Input Gradients]', fontsize=16)
+
+    plt.subplot(321)
+    sns.violinplot(data=[watermarked_correct, watermarked_wrong, not_watermarked_correct, not_watermarked_wrong], showmedians=True, palette=colors[:4])
+    plt.xticks([0, 1, 2, 3], ['With Watermarks (Correct)', 'With Watermarks (Wrong)', 'Without Watermarks (Correct)', 'Without Watermarks (Wrong)'], rotation=20)
+    plt.xlabel('')
+    plt.title('Violin Plot', fontsize=14)
+    plt.ylabel('Input Gradient Magnitude', fontsize=12)
+
+    plt.subplot(322)
+    sns.boxplot(data=[watermarked_correct, watermarked_wrong, not_watermarked_correct, not_watermarked_wrong], palette=colors[:4])
+    plt.xticks([0, 1, 2, 3], ['With Watermarks (Correct)', 'With Watermarks (Wrong)', 'Without Watermarks (Correct)', 'Without Watermarks (Wrong)'], rotation=20)
+    plt.xlabel('')
+    plt.title('Box Plot', fontsize=14)
+
+    plt.subplot(323)
+    plt.hist([watermarked_correct, watermarked_wrong, not_watermarked_correct, not_watermarked_wrong],
+             bins=20, alpha=0.7, color=colors[:4], label=['With Watermarks (Correct)', 'With Watermarks (Wrong)', 'Without Watermarks (Correct)', 'Without Watermarks (Wrong)'])
+    plt.legend()
+    plt.title('Histogram', fontsize=14)
+    plt.xlabel('Input Gradient Magnitude', fontsize=12)
+
+    plt.subplot(324)
+    sns.kdeplot(watermarked_correct, color=colors[0], label='With Watermarks (Correct)')
+    sns.kdeplot(watermarked_wrong, color=colors[1], label='With Watermarks (Wrong)')
+    sns.kdeplot(not_watermarked_correct, color=colors[2], label='Without Watermarks (Correct)')
+    sns.kdeplot(not_watermarked_wrong, color=colors[3], label='Without Watermarks (Wrong)')
+    plt.legend()
+    plt.title('KDE Plot', fontsize=14)
+    plt.xlabel('Input Gradient Magnitude', fontsize=12)
+
+    plt.subplot(325)
+    sns.swarmplot(x=np.concatenate([np.zeros_like(watermarked_correct), np.ones_like(watermarked_wrong),
+                                    2*np.ones_like(not_watermarked_correct), 3*np.ones_like(not_watermarked_wrong)]),
+                  y=np.concatenate([watermarked_correct, watermarked_wrong, not_watermarked_correct, not_watermarked_wrong]),
+                  palette=colors)
+    plt.xticks([0, 1, 2, 3], ['Watermarked (Correct)', 'Watermarked (Wrong)', 'Not Watermarked (Correct)', 'Not Watermarked (Wrong)'], rotation=20)
+    plt.xlabel('')
+    plt.title('Swarm Plot', fontsize=14)
+    plt.ylabel('Input Gradient Magnitude', fontsize=12)
+
+    plt.subplot(326)
+    sns.histplot(data_df, x='Input Gradient Magnitude', cumulative=True, hue='Prediction', element='step', palette=colors)
+    plt.xlabel('Input Gradient Magnitude', fontsize=12)
+    plt.ylabel('CDF', fontsize=12)
+    plt.title('Input Gradient CDF Plot with Hue', fontsize=14)
+    legend_elements = [plt.Line2D([0], [0], color=colors[0], lw=2, label='With Watermarks (Correct)'),
+                   plt.Line2D([0], [0], color=colors[1], lw=2, label='With Watermarks (Wrong)'),
+                   plt.Line2D([0], [0], color=colors[2], lw=2, label='Without Watermarks (Correct)'),
+                   plt.Line2D([0], [0], color=colors[3], lw=2, label='Without Watermarks (Wrong)')]
+    # Add the legend to the plot
+    plt.legend(handles=legend_elements, title='Prediction', title_fontsize=12, loc='lower right')
+
+    # Add space between subplots
+    plt.tight_layout()
+
+    # Save the combined figure
+    plt.savefig(os.path.join(arguments_folder, 'combined_plots_by_color.png'))
+    plt.close()
+
+    # Calculate correlation coefficients
+    input_gradients_correct = np.array(
+        [float(item[0][0]) for item in correct_confound.max_ig_label_list_for_score_plot] +
+        [float(item[0][0]) for item in correct_not_confound.max_ig_label_list_for_score_plot],
+    )
+    input_gradients_wrong = np.array(
+        [float(item[0][0]) for item in wrong_not_confound.max_ig_label_list_for_score_plot] +
+        [float(item[0][0]) for item in wrong_confound.max_ig_label_list_for_score_plot]
+    )
+
+    pearson_corr, pearson_p_value = stats.pearsonr(input_gradients_correct, input_gradients_wrong)
+    spearman_corr, spearman_p_value = stats.spearmanr(input_gradients_correct, input_gradients_wrong)
+
+    # Create a DataFrame to store the data
+    data_df = pd.DataFrame({
+        'Input Gradient Magnitude': np.concatenate([input_gradients_wrong, input_gradients_correct]),
+        'Correct': ['No'] * len(input_gradients_wrong) + ['Yes'] * len(input_gradients_correct)
+    })
+
+    # Set a common color palette for both groups
+    colors = sns.color_palette('Set2', n_colors=2)
+
+    # Set a larger figure size for better visualizations
+    plt.figure(figsize=(10, 6))
+
+    # Scatter Plot
+    plt.subplot(121)
+    sns.scatterplot(data=data_df, x='Input Gradient Magnitude', y='Correct', hue='Correct', palette=colors, legend=False)
+    plt.xlabel('Input Gradient Magnitude')
+    plt.ylabel('Correct')
+    plt.yticks([0, 1], ['No', 'Yes'])
+
+    # Add subtitles for Pearson correlation and p-value
+    plt.title(f"Pearson Correlation: {pearson_corr:.2f}, p-value: {pearson_p_value:.4f}")
+
+    # Regression Plot
+    plt.subplot(122)
+
+    data_df = pd.DataFrame({
+        'Input Gradient Magnitude': np.concatenate([input_gradients_correct, input_gradients_wrong]),
+        'Correct': ['Correct'] * len(input_gradients_correct) + ['Wrong'] * len(input_gradients_wrong)
+    })
+    # Convert 'With Watermarks' to 1 and 'Without Watermarks' to 0
+    data_df['Correct'] = data_df['Correct'].map({'Correct': 1, 'Wrong': 0})
+
+    sns.regplot(data=data_df, x='Input Gradient Magnitude', y='Correct', logistic=True,
+        scatter_kws={'color': colors[0]}, line_kws={'color': colors[1]})
+    # invert the y-axis representation
+    plt.gca().invert_yaxis()
+
+    plt.title(f"Spearman Correlation: {spearman_corr:.2f}, p-value: {spearman_p_value:.4f}")
+    plt.xlabel('Input Gradient Magnitude')
+    plt.ylabel('Correct')
+    plt.yticks([0, 1], ['No', 'Yes'])
+
+    # Save the figure
+    plt.suptitle('Scatter Plot and Logistic Regression Plot of Input Gradient Magnitude vs. Correct')
+    plt.savefig(os.path.join(arguments_folder, 'correlation_plots_correct_wrong.png'))
+    plt.close()
+
+
+    # DICTIONARY OF THE PREDICTED INPUT GRADIENT
+    # Set a common color palette for all plots
+    colors = sns.color_palette('Set2')
+
+    max_arguments_dict = dict()
+    max_arguments_dict.update(correct_confound.max_arguments_dict)
+    max_arguments_dict.update(correct_not_confound.max_arguments_dict)
+    max_arguments_dict.update(wrong_not_confound.max_arguments_dict)
+    max_arguments_dict.update(wrong_confound.max_arguments_dict)
+
+    conf_args_dict = dict()
+    conf_args_dict.update(correct_confound.max_arguments_dict)
+    conf_args_dict.update(wrong_confound.max_arguments_dict)
+
+    # Loop through the superclasses and create a bar plot for each one
+    for superclass, subclass_dict in max_arguments_dict.items():
+        plt.figure(figsize=(8, 12))  # Adjust the figure size as needed
+
+        # Prepare the data for the bar plot
+        subclasses = list(subclass_dict.keys())
+        occurrences = [subclass_dict[subc] for subc in subclasses]
+
+        # Create the bar plot
+        sns.barplot(x=subclasses, y=occurrences, palette=colors[:len(subclasses)])
+        plt.title(f'Number of Occurrences per Subclass in {superclass} [Input Gradients]')
+        plt.xlabel('Subclasses')
+        plt.ylabel('Number of Occurrences')
+
+        # Rotate the x-axis labels for better visibility
+        plt.xticks(rotation=90)
+
+        # Adjust the layout for better visualization
+        plt.tight_layout()
+
+        # Save the plot for each superclass
+        plt.savefig(os.path.join(arguments_folder, f'{superclass}_barplot.png'))
+
+
+    # Loop through the superclasses and create a bar plot for each one
+    for superclass, subclass_dict in conf_args_dict.items():
+        plt.figure(figsize=(8, 12))  # Adjust the figure size as needed
+
+        # Prepare the data for the bar plot
+        subclasses = list(subclass_dict.keys())
+        occurrences = [subclass_dict[subc] for subc in subclasses]
+
+        # Create the bar plot
+        sns.barplot(x=subclasses, y=occurrences, palette=colors[:len(subclasses)])
+        plt.title(f'Number of Occurrences per Subclass in {superclass} (Watermarked) [Input Gradients]')
+        plt.xlabel('Subclasses')
+        plt.ylabel('Number of Occurrences')
+
+        # Rotate the x-axis labels for better visibility
+        plt.xticks(rotation=90)
+
+        # Adjust the layout for better visualization
+        plt.tight_layout()
+
+        # Save the plot for each superclass
+        plt.savefig(os.path.join(arguments_folder, f'{superclass}_barplot_conf.png'))
+
+
+    ## PUT TOGETHER THE INPUT AND THE LABEL GRADIENT
+
+    input_gradient_magnitudes = np.array(
+        [float(item[0][0]) for item in correct_confound.max_ig_label_list_for_score_plot] +
+        [float(item[0][0]) for item in correct_not_confound.max_ig_label_list_for_score_plot] +
+        [float(item[0][0]) for item in wrong_not_confound.max_ig_label_list_for_score_plot] +
+        [float(item[0][0]) for item in wrong_confound.max_ig_label_list_for_score_plot]
+    )
+
+    label_scores = np.array(
+        [float(item[1][0]) for item in correct_confound.max_ig_label_list_for_score_plot] +
+        [float(item[1][0]) for item in correct_not_confound.max_ig_label_list_for_score_plot] +
+        [float(item[1][0]) for item in wrong_not_confound.max_ig_label_list_for_score_plot] +
+        [float(item[1][0]) for item in wrong_confound.max_ig_label_list_for_score_plot]
+    )
+
+    # Create a pandas DataFrame
+    data_df = pd.DataFrame({
+        'Input Gradient Magnitude': input_gradient_magnitudes,
+        'Label Score': label_scores}
+    )
+
+    # Set a common color palette for all plots
+    colors = sns.color_palette('Set2', n_colors=2)
+
+    # Jointplot with Regression
+    plt.figure(figsize=(12, 10))
+    sns.jointplot(data=data_df, x='Input Gradient Magnitude', y='Label Score', kind='reg', color=colors[1])
+    plt.suptitle('Pair Plot: Input Gradients vs Label Score', fontsize=8)
+
+    plt.savefig(os.path.join(arguments_folder, f'gradient_analysis_joint_plot.png'))
+    plt.close()
+
+    # Pairplot
+    plt.figure(figsize=(12, 10))
+    sns.pairplot(data_df, vars=['Input Gradient Magnitude', 'Label Score'], palette=colors, kind='scatter')
+
+    plt.suptitle('Pair Plot: Input Gradients vs Label Score', fontsize=8)
+    plt.savefig(os.path.join(arguments_folder, f'gradient_analysis_pair_plot.png'))
+    plt.close()
+
+    # Violin Plot
+    plt.figure(figsize=(10, 8))
+    sns.violinplot(data=data_df[['Input Gradient Magnitude', 'Label Score']], palette=colors)
+    plt.title('Violin Plot: Input Gradient and Label Score')
+
+    plt.savefig(os.path.join(arguments_folder, f'gradient_analysis_violin_plot.png'))
+    plt.close()
+
+    # Heatmap
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(data_df.corr(), annot=True, cmap='coolwarm', center=0)
+    plt.title('Correlation Heatmap: Input Gradient vs. Label Score')
+    plt.savefig(os.path.join(arguments_folder, f'gradient_analysis_heatmap.png'))
+    plt.close()
+
+    # Hexbin Plot
+    plt.figure(figsize=(8, 6))
+    plt.hexbin(input_gradient_magnitudes, label_scores, gridsize=20, cmap='Blues')
+    plt.xlabel('Input Gradient Magnitude')
+    plt.ylabel('Label Score')
+    plt.title('Hexbin Plot: Input Gradient vs. Label Score')
+    plt.colorbar(label='Count')
+    plt.savefig(os.path.join(arguments_folder, f'gradient_analysis_hexbin_plot.png'))
+    plt.close()
+
+    # Scatter Plot with Regression Line
+    plt.figure(figsize=(8, 6))
+    sns.regplot(x='Input Gradient Magnitude', y='Label Score', data=data_df, color='blue')
+    plt.xlabel('Input Gradient Magnitude')
+    plt.ylabel('Label Score')
+    plt.title('Scatter Plot with Regression Line: Input Gradient vs. Label Score')
+    plt.savefig(os.path.join(arguments_folder, f'gradient_analysis_scatter_with_regression.png'))
+    plt.close()
+
+    # NOW FOR ALL THE THINGS TOGETHER:
+
+    # Assuming you have the data for each category in the following variables
+    input_gradient_magnitudes = np.array(
+        [float(item[0][0]) for item in correct_confound.max_ig_label_list_for_score_plot] +
+        [float(item[0][0]) for item in correct_not_confound.max_ig_label_list_for_score_plot] +
+        [float(item[0][0]) for item in wrong_not_confound.max_ig_label_list_for_score_plot] +
+        [float(item[0][0]) for item in wrong_confound.max_ig_label_list_for_score_plot]
+    )
+
+    label_scores = np.array(
+        [float(item[1][0]) for item in correct_confound.max_ig_label_list_for_score_plot] +
+        [float(item[1][0]) for item in correct_not_confound.max_ig_label_list_for_score_plot] +
+        [float(item[1][0]) for item in wrong_not_confound.max_ig_label_list_for_score_plot] +
+        [float(item[1][0]) for item in wrong_confound.max_ig_label_list_for_score_plot]
+    )
+
+    input_gradients_with_correct_watermarks = np.array([float(item[0][0]) for item in correct_confound.max_ig_label_list_for_score_plot])
+    input_gradients_with_wrong_watermarks = np.array([float(item[0][0]) for item in correct_not_confound.max_ig_label_list_for_score_plot])
+    input_gradients_with_correct_not_watermarks = np.array([float(item[0][0]) for item in wrong_not_confound.max_ig_label_list_for_score_plot])
+    input_gradients_with_wrong_not_watermarks = np.array([float(item[0][0]) for item in wrong_confound.max_ig_label_list_for_score_plot])
+
+    label_score_with_correct_watermarks = np.array([float(item[1][0]) for item in correct_confound.max_ig_label_list_for_score_plot])
+    label_score_with_wrong_watermarks = np.array([float(item[1][0]) for item in correct_not_confound.max_ig_label_list_for_score_plot])
+    label_score_with_correct_not_watermarks = np.array([float(item[1][0]) for item in wrong_not_confound.max_ig_label_list_for_score_plot])
+    label_score_with_wrong_not_watermarks = np.array([float(item[1][0]) for item in wrong_confound.max_ig_label_list_for_score_plot])
+
+    # Create DataFrames for each category
+    data_with_correct_watermarks = pd.DataFrame({
+        'Input Gradient Magnitude': input_gradients_with_correct_watermarks,
+        'Label Score': label_score_with_correct_watermarks,
+        'Category': 'Watermarked (Correct)'
+    })
+
+    data_with_wrong_watermarks = pd.DataFrame({
+        'Input Gradient Magnitude': input_gradients_with_wrong_watermarks,
+        'Label Score': label_score_with_wrong_watermarks,
+        'Category': 'Watermarked (Wrong)'
+    })
+
+    data_with_correct_not_watermarks = pd.DataFrame({
+        'Input Gradient Magnitude': input_gradients_with_correct_not_watermarks,
+        'Label Score': label_score_with_correct_not_watermarks,
+        'Category': 'Not Watermarked (Correct)'
+    })
+
+    data_with_wrong_not_watermarks = pd.DataFrame({
+        'Input Gradient Magnitude': input_gradients_with_wrong_not_watermarks,
+        'Label Score': label_score_with_wrong_not_watermarks,
+        'Category': 'Not Watermarked (Wrong)'
+    })
+
+    # Set a common color palette for all plots
+    colors = sns.color_palette('Set2', n_colors=4)
+
+    # Set a larger figure size for better visualizations
+    plt.figure(figsize=(10, 8))
+
+    # Scatter Plot
+    sns.scatterplot(data=pd.concat([data_with_correct_watermarks, data_with_wrong_watermarks, data_with_correct_not_watermarks, data_with_wrong_not_watermarks]),
+                    x='Input Gradient Magnitude', y='Label Score', hue='Category', palette=colors)
+    plt.title('Scatter Plot: Input Gradient vs. Label Score')
+    plt.xlabel('Input Gradient Magnitude')
+    plt.ylabel('Label Score')
+
+    plt.savefig(os.path.join(arguments_folder, 'gradient_analysis_scatter_plot_divided.png'))
+    plt.close()
+
+    # Violin Plot
+    plt.figure(figsize=(10, 8))
+    sns.violinplot(x='Category', y='Input Gradient Magnitude', data=pd.concat([data_with_correct_watermarks, data_with_wrong_watermarks, data_with_correct_not_watermarks, data_with_wrong_not_watermarks]), palette=colors)
+    plt.title('Violin Plot: Input Gradient Magnitude for Different Cases')
+    plt.savefig(os.path.join(arguments_folder, 'gradient_analysis_violin_plot_divided.png'))
+    plt.close()
+
+    # Pairplot
+    plt.figure(figsize=(10, 8))
+    sns.pairplot(data=pd.concat([data_with_correct_watermarks, data_with_wrong_watermarks, data_with_correct_not_watermarks, data_with_wrong_not_watermarks]),
+                 vars=['Input Gradient Magnitude', 'Label Score'], hue='Category', palette=colors, kind='scatter')
+
+    plt.suptitle('Pair Plot: Input Gradient Magnitude for Different Cases', fontsize=8)
+
+    plt.savefig(os.path.join(arguments_folder, 'gradient_analysis_pair_plot_divided.png'))
+    plt.close()
+
+    # Set a larger figure size for better visualizations
+    plt.figure(figsize=(10, 8))
+
+    # Create a FacetGrid for the joint plot
+    g = sns.FacetGrid(pd.concat([data_with_correct_watermarks, data_with_wrong_watermarks, data_with_correct_not_watermarks, data_with_wrong_not_watermarks]),
+                      col='Category', hue='Category', palette=colors, height=5)
+
+    # Scatter Plot in each subplot
+    g.map_dataframe(sns.scatterplot, x='Input Gradient Magnitude', y='Label Score')
+    g.set_axis_labels('Input Gradient Magnitude', 'Label Score')
+    g.set_titles(col_template='Category: {col_name}', fontweight='bold')
+    g.add_legend(title='Category', title_fontsize=12, label_order=['Watermarked (Correct)', 'Watermarked (Wrong)', 'Not Watermarked (Correct)', 'Not Watermarked (Wrong)'])
+    # Save the joint plot
+    plt.suptitle('Pair Plot: Input Gradients vs Label Score', fontsize=12)
+    plt.savefig(os.path.join(arguments_folder, 'gradient_analysis_joint_plot_divided.png'))
+
+    # LABEL GRADIENT
+    label_gradients_with_watermarks = np.array(
+        [float(item[1][0]) for item in correct_confound.max_ig_label_list_for_score_plot] +
+        [float(item[1][0]) for item in wrong_confound.max_ig_label_list_for_score_plot]
+    )
+
+    label_gradients_without_watermarks = np.array(
+        [float(item[1][0]) for item in correct_not_confound.max_ig_label_list_for_score_plot] +
+        [float(item[1][0]) for item in wrong_not_confound.max_ig_label_list_for_score_plot]
+    )
+
+    # Set a common color palette for all plots
+    colors = sns.color_palette('Set2')
+
+    # Violin Plot
+    plt.figure(figsize=(10, 6))
+    sns.violinplot(data=[label_gradients_with_watermarks, label_gradients_without_watermarks],
+               showmedians=True, palette=colors)
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.xlabel('')
+    plt.title('Violin Plot [Label Gradient]', fontsize=14)
+    plt.ylabel('Label Gradient Magnitude', fontsize=12)
+
+    # Save Violin Plot
+    plt.savefig(os.path.join(arguments_folder, 'violin_plot_label.png'))
+    plt.close()
+
+    # Box Plot
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(data=[label_gradients_with_watermarks, label_gradients_without_watermarks],
+            palette=colors)
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.xlabel('')
+    plt.ylabel('Label Gradient Magnitude', fontsize=12)
+    plt.title('Box Plot [Label Gradient]', fontsize=14)
+
+    # Save Box Plot
+    plt.savefig(os.path.join(arguments_folder, 'box_plot_label.png'))
+    plt.close()
+
+    # Histogram
+    plt.figure(figsize=(10, 6))
+    n, bins, patches = plt.hist([label_gradients_with_watermarks, label_gradients_without_watermarks],
+             bins=20, alpha=0.7, color=colors[:2], label=['With Watermarks', 'Without Watermarks'])
+    jitter = 0
+    # Add the values of occurrences on top of the bars
+    for container in patches:
+        for patch in container:
+            height = patch.get_height()
+            x, width = patch.get_x(), patch.get_width()
+            jittered_height = height + np.random.rand() * jitter
+            plt.text(x + width / 2., jittered_height, f'{int(height)}', ha='center', va='bottom', fontsize=10)
+    plt.legend()
+    plt.title('Histogram [Label Gradient]', fontsize=14)
+    plt.xlabel('Label Gradient Magnitude', fontsize=12)
+
+    # Save Histogram
+    plt.savefig(os.path.join(arguments_folder, 'histogram_label.png'))
+    plt.close()
+
+    # KDE Plot
+    plt.figure(figsize=(10, 6))
+    sns.kdeplot(label_gradients_with_watermarks, color=colors[0], label='With Watermarks')
+    sns.kdeplot(label_gradients_without_watermarks, color=colors[1], label='Without Watermarks')
+    plt.legend()
+    plt.title('KDE Plot [Label Gradient]', fontsize=14)
+    plt.xlabel('Label Gradient Magnitude', fontsize=12)
+
+    # Save KDE Plot
+    plt.savefig(os.path.join(arguments_folder, 'kde_plot_label.png'))
+    plt.close()
+
+    # Swarm Plot
+    plt.figure(figsize=(10, 6))
+    sns.swarmplot(x=np.concatenate([np.zeros_like(label_gradients_with_watermarks), np.ones_like(label_gradients_without_watermarks)]),
+                  y=np.concatenate([label_gradients_with_watermarks, label_gradients_without_watermarks]),
+                  palette=colors[:2], size=3)  # Decrease the size of markers
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.title('Swarm Plot [Label Gradient]', fontsize=14)
+    plt.xlabel('')
+    plt.ylabel('Label Gradient Magnitude', fontsize=12)
+
+    # Save Swarm Plot
+    plt.savefig(os.path.join(arguments_folder, 'swarm_plot_label.png'))
+    plt.close()
+
+    # CDF Plot
+    plt.figure(figsize=(10, 6))
+    plt.hist(label_gradients_with_watermarks, density=True, cumulative=True, histtype='step', label='With Watermarks', bins=100, linewidth=2, color=colors[0])
+    plt.hist(label_gradients_without_watermarks, density=True, cumulative=True, histtype='step', label='Without Watermarks', bins=100, linewidth=2, color=colors[1])
+    plt.title('CDF Plot [Label Gradient]', fontsize=14)
+    plt.xlabel('Label Gradient Magnitude', fontsize=12)
+    plt.legend(loc='lower right', bbox_to_anchor=(1.02, 0), borderaxespad=0.)
+
+    # Save CDF Plot
+    plt.savefig(os.path.join(arguments_folder, 'cdf_plot_label.png'))
+    plt.close()
+
+    # Create a new figure for the combined plots
+    plt.figure(figsize=(16, 12))
+
+    # Combined Plots
+    plt.suptitle('Combined Plots [Label Gradient]', fontsize=16)
+
+    # Violin Plot
+    plt.subplot(231)
+    sns.violinplot(data=[label_gradients_with_watermarks, label_gradients_without_watermarks],
+               showmedians=True, palette=colors)
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.xlabel('')
+    plt.title('Violin Plot', fontsize=14)
+    plt.ylabel('Label Gradient Magnitude', fontsize=12)
+
+    # Box Plot
+    plt.subplot(232)
+    sns.boxplot(data=[label_gradients_with_watermarks, label_gradients_without_watermarks],
+            palette=colors)
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.xlabel('')
+    plt.title('Box Plot', fontsize=14)
+
+    # Histogram
+    plt.subplot(233)
+    plt.hist([label_gradients_with_watermarks, label_gradients_without_watermarks], bins=20, alpha=0.7, color=colors[:2], label=['With Watermarks', 'Without Watermarks'])
+    plt.legend()
+    plt.title('Histogram', fontsize=14)
+    plt.xlabel('Label Gradient Magnitude', fontsize=12)
+
+    # KDE Plot
+    plt.subplot(234)
+    sns.kdeplot(label_gradients_with_watermarks, color=colors[0], label='With Watermarks')
+    sns.kdeplot(label_gradients_without_watermarks, color=colors[1], label='Without Watermarks')
+    plt.legend()
+    plt.title('KDE Plot', fontsize=14)
+    plt.xlabel('Label Gradient Magnitude', fontsize=12)
+
+    # Swarm Plot
+    plt.subplot(235)
+    sns.swarmplot(x=np.concatenate([np.zeros_like(label_gradients_with_watermarks), np.ones_like(label_gradients_without_watermarks)]),
+                  y=np.concatenate([label_gradients_with_watermarks, label_gradients_without_watermarks]),
+                  palette=colors[:2], size=3)  # Decrease the size of markers
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.title('Swarm Plot', fontsize=14)
+    plt.xlabel('')
+    plt.ylabel('Label Gradient Magnitude', fontsize=12)
+
+    # CDF Plot
+    plt.subplot(236)
+    plt.hist(label_gradients_with_watermarks, density=True, cumulative=True, histtype='step', label='With Watermarks', bins=100, linewidth=2, color=colors[0])
+    plt.hist(label_gradients_without_watermarks, density=True, cumulative=True, histtype='step', label='Without Watermarks', bins=100, linewidth=2, color=colors[1])
+    plt.title('CDF Plot', fontsize=14)
+    plt.xlabel('Label Gradient Magnitude', fontsize=12)
+    plt.legend(loc='lower right', bbox_to_anchor=(1.02, 0), borderaxespad=0.)
+
+    # Save the combined plot
+    plt.savefig(os.path.join(arguments_folder, 'combined_plots_label.png'))
+    plt.close()
+
+    ## TABLE
+    plot_gradient_analysis_table_max(
+        wrong_lab=wrong_lab.bucket_list,
+        wrong_confound=wrong_confound.bucket_list,
+        wrong_lab_img_confound=wrong_lab_img_confound.bucket_list,
+        wrong_ok=wrong_not_confound.bucket_list,
+        arguments_folder=arguments_folder,
+        tau=tau,
+    )
+
+    score_barplot(
+        correct_confound.prediction_influence_parent_counter
+        + wrong_confound.prediction_influence_parent_counter
+        + correct_not_confound.prediction_influence_parent_counter
+        + wrong_not_confound.prediction_influence_parent_counter
+        + correct_lab.prediction_influence_parent_counter
+        + wrong_lab.prediction_influence_parent_counter
+        + wrong_lab_img_confound.prediction_influence_parent_counter
+        + correct_lab_img_confound.prediction_influence_parent_counter,
+        correct_confound.prediction_does_not_influence_parent_counter
+        + wrong_confound.prediction_does_not_influence_parent_counter
+        + correct_not_confound.prediction_does_not_influence_parent_counter
+        + wrong_not_confound.prediction_does_not_influence_parent_counter
+        + correct_lab.prediction_does_not_influence_parent_counter
+        + wrong_lab.prediction_does_not_influence_parent_counter
+        + wrong_lab_img_confound.prediction_does_not_influence_parent_counter
+        + correct_lab_img_confound.prediction_does_not_influence_parent_counter,
+        "Influence",
+        "Not Influence",
+        arguments_folder,
+        "Influence of Subclass Predictions on Parent Classes",
+    )
+
+    score_barplot_list(
+        [
+            correct_confound.prediction_influence_parent_counter,
+            wrong_confound.prediction_influence_parent_counter,
+            correct_not_confound.prediction_influence_parent_counter,
+            wrong_not_confound.prediction_influence_parent_counter,
+            correct_lab.prediction_influence_parent_counter,
+            wrong_lab.prediction_influence_parent_counter,
+            wrong_lab_img_confound.prediction_influence_parent_counter,
+            correct_lab_img_confound.prediction_influence_parent_counter,
+        ],
+        [
+            correct_confound.prediction_does_not_influence_parent_counter,
+            wrong_confound.prediction_does_not_influence_parent_counter,
+            correct_not_confound.prediction_does_not_influence_parent_counter,
+            wrong_not_confound.prediction_does_not_influence_parent_counter,
+            correct_lab.prediction_does_not_influence_parent_counter,
+            wrong_lab.prediction_does_not_influence_parent_counter,
+            wrong_lab_img_confound.prediction_does_not_influence_parent_counter,
+            correct_lab_img_confound.prediction_does_not_influence_parent_counter,
+        ],
+        [
+            "Influence [Correct+Confound]",
+            "Influence [NotCorrect+Confound]",
+            "Influence [Correct+NotConfound]",
+            "Influence [NotCorrect+NotConfound]",
+            "Influence [Correct+Imbalance]",
+            "Influence [NotCorrect+Imbalance]",
+            "Influence [NotCorrect+Conf+Imbalance]",
+            "Influence [Correct+Conf+Imbalance]",
+        ],
+        [
+            "Not Influence [Correct+Confound]",
+            "Not Influence [NotCorrect+Confound]",
+            "Not Influence [Correct+NotConfound]",
+            "Not Influence [NotCorrect+NotConfound]",
+            "Not Influence [Correct+Imbalance]",
+            "Not Influence [NotCorrect+Imbalance]",
+            "Not Influence [NotCorrect+Conf+Imbalance]",
+            "Not Influence [Correct+Conf+Imbalance]",
+        ],
+        arguments_folder,
+        "Influence of Subclass Predictions on Parent Classes",
+    )
+
+    # LAB CONFOUNDED CASE:
+
+    input_gradient_magnitudes = np.array(
+        [float(item[0][0]) for item in correct_lab.max_ig_label_list_for_score_plot] +
+        [float(item[0][0]) for item in correct_lab_img_confound.max_ig_label_list_for_score_plot] +
+        [float(item[0][0]) for item in wrong_lab.max_ig_label_list_for_score_plot] +
+        [float(item[0][0]) for item in wrong_lab_img_confound.max_ig_label_list_for_score_plot]
+    )
+
+    label_scores = np.array(
+        [float(item[1][0]) for item in correct_lab.max_ig_label_list_for_score_plot] +
+        [float(item[1][0]) for item in correct_lab_img_confound.max_ig_label_list_for_score_plot] +
+        [float(item[1][0]) for item in wrong_lab.max_ig_label_list_for_score_plot] +
+        [float(item[1][0]) for item in wrong_lab_img_confound.max_ig_label_list_for_score_plot]
+    )
+
+    # Create a pandas DataFrame
+    data_df = pd.DataFrame({
+        'Input Gradient Magnitude': input_gradient_magnitudes,
+        'Label Score': label_scores}
+    )
+
+    # Set a common color palette for all plots
+    colors = sns.color_palette('Set2', n_colors=2)
+
+    # Jointplot with Regression
+    plt.figure(figsize=(12, 10))
+    sns.jointplot(data=data_df, x='Input Gradient Magnitude', y='Label Score', kind='reg', color=colors[1])
+    plt.suptitle('Pair Plot: Input Gradients vs Label Score [Label Confounded Case]', fontsize=8)
+
+    plt.savefig(os.path.join(arguments_folder, f'gradient_analysis_joint_plot_lab.png'))
+    plt.close()
+
+    # Pairplot
+    plt.figure(figsize=(12, 10))
+    sns.pairplot(data_df, vars=['Input Gradient Magnitude', 'Label Score'], palette=colors, kind='scatter')
+
+    plt.suptitle('Pair Plot: Input Gradients vs Label Score [Label Confounded Case]', fontsize=8)
+    plt.savefig(os.path.join(arguments_folder, f'gradient_analysis_pair_plot_lab.png'))
+    plt.close()
+
+    # Violin Plot
+    plt.figure(figsize=(10, 8))
+    sns.violinplot(data=data_df[['Input Gradient Magnitude', 'Label Score']], palette=colors)
+    plt.title('Violin Plot: Input Gradient and Label Score [Label Confounded Case]')
+
+    plt.savefig(os.path.join(arguments_folder, f'gradient_analysis_violin_plot_lab.png'))
+    plt.close()
+
+    # Heatmap
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(data_df.corr(), annot=True, cmap='coolwarm', center=0)
+    plt.title('Correlation Heatmap: Input Gradient vs. Label Score [Label Confounded Case]')
+    plt.savefig(os.path.join(arguments_folder, f'gradient_analysis_heatmap_lab.png'))
+    plt.close()
+
+    # Hexbin Plot
+    plt.figure(figsize=(8, 6))
+    plt.hexbin(input_gradient_magnitudes, label_scores, gridsize=20, cmap='Blues')
+    plt.xlabel('Input Gradient Magnitude')
+    plt.ylabel('Label Score')
+    plt.title('Hexbin Plot: Input Gradient vs. Label Score [Label Confounded Case]')
+    plt.colorbar(label='Count')
+    plt.savefig(os.path.join(arguments_folder, f'gradient_analysis_hexbin_plot_lab.png'))
+    plt.close()
+
+    # Scatter Plot with Regression Line
+    plt.figure(figsize=(8, 6))
+    sns.regplot(x='Input Gradient Magnitude', y='Label Score', data=data_df, color='blue')
+    plt.xlabel('Input Gradient Magnitude')
+    plt.ylabel('Label Score')
+    plt.title('Scatter Plot with Regression Line: Input Gradient vs. Label Score [Label Confounded Case]')
+    plt.savefig(os.path.join(arguments_folder, f'gradient_analysis_scatter_with_regression_lab.png'))
+    plt.close()
+
+    # NOW FOR ALL THE THINGS TOGETHER:
+
+    # Assuming you have the data for each category in the following variables
+    input_gradient_magnitudes = np.array(
+        [float(item[0][0]) for item in correct_lab.max_ig_label_list_for_score_plot] +
+        [float(item[0][0]) for item in correct_lab_img_confound.max_ig_label_list_for_score_plot] +
+        [float(item[0][0]) for item in wrong_lab.max_ig_label_list_for_score_plot] +
+        [float(item[0][0]) for item in wrong_lab_img_confound.max_ig_label_list_for_score_plot]
+    )
+
+    label_scores = np.array(
+        [float(item[1][0]) for item in correct_lab.max_ig_label_list_for_score_plot] +
+        [float(item[1][0]) for item in correct_lab_img_confound.max_ig_label_list_for_score_plot] +
+        [float(item[1][0]) for item in wrong_lab.max_ig_label_list_for_score_plot] +
+        [float(item[1][0]) for item in wrong_lab_img_confound.max_ig_label_list_for_score_plot]
+    )
+
+    input_gradients_with_correct_lab = np.array([float(item[0][0]) for item in correct_lab.max_ig_label_list_for_score_plot])
+    input_gradients_with_correct_lab_watermarks = np.array([float(item[0][0]) for item in correct_lab_img_confound.max_ig_label_list_for_score_plot])
+    input_gradients_with_wrong_lab = np.array([float(item[0][0]) for item in wrong_lab.max_ig_label_list_for_score_plot])
+    input_gradients_with_wrong_lab_watermarks = np.array([float(item[0][0]) for item in wrong_lab_img_confound.max_ig_label_list_for_score_plot])
+
+    label_score_with_correct_lab = np.array([float(item[1][0]) for item in correct_lab.max_ig_label_list_for_score_plot])
+    label_score_with_correct_lab_watermarks = np.array([float(item[1][0]) for item in correct_lab_img_confound.max_ig_label_list_for_score_plot])
+    label_score_with_wrong_lab = np.array([float(item[1][0]) for item in wrong_lab.max_ig_label_list_for_score_plot])
+    label_score_wrong_lab_watermarks = np.array([float(item[1][0]) for item in wrong_lab_img_confound.max_ig_label_list_for_score_plot])
+
+    # Create DataFrames for each category
+    data_with_correct_lab = pd.DataFrame({
+        'Input Gradient Magnitude': input_gradients_with_correct_lab,
+        'Label Score': label_score_with_correct_lab,
+        'Category': 'Label Confound (Correct)'
+    })
+
+    data_with_wrong_lab = pd.DataFrame({
+        'Input Gradient Magnitude': input_gradients_with_wrong_lab,
+        'Label Score': label_score_with_wrong_lab,
+        'Category': 'Label Confound (Wrong)'
+    })
+
+    data_with_with_correct_lab_watermarks = pd.DataFrame({
+        'Input Gradient Magnitude': input_gradients_with_correct_lab_watermarks,
+        'Label Score': label_score_with_correct_lab_watermarks,
+        'Category': 'Label Confound and Watermarked (Correct)'
+    })
+
+    data_with_wrong_lab_watermarks = pd.DataFrame({
+        'Input Gradient Magnitude': input_gradients_with_wrong_lab_watermarks,
+        'Label Score': label_score_wrong_lab_watermarks,
+        'Category': 'Label Confound and Watermarked (Wrong)'
+    })
+
+    # Set a common color palette for all plots
+    colors = sns.color_palette('Set2', n_colors=4)
+
+    # Set a larger figure size for better visualizations
+    plt.figure(figsize=(10, 8))
+
+    # Scatter Plot
+    sns.scatterplot(data=pd.concat([data_with_correct_lab, data_with_wrong_lab, data_with_with_correct_lab_watermarks, data_with_wrong_lab_watermarks]),
+                    x='Input Gradient Magnitude', y='Label Score', hue='Category', palette=colors)
+    plt.title('Scatter Plot: Input Gradient vs. Label Score [Label]')
+    plt.xlabel('Input Gradient Magnitude')
+    plt.ylabel('Label Score')
+
+    plt.savefig(os.path.join(arguments_folder, 'gradient_analysis_scatter_plot_divided_lab.png'))
+    plt.close()
+
+    # Violin Plot
+    plt.figure(figsize=(10, 8))
+    sns.violinplot(x='Category', y='Input Gradient Magnitude', data=pd.concat([data_with_correct_lab, data_with_wrong_lab, data_with_with_correct_lab_watermarks, data_with_wrong_lab_watermarks]), palette=colors)
+    plt.title('Violin Plot: Input Gradient Magnitude for Different Cases [Label Confounded Case]')
+    plt.savefig(os.path.join(arguments_folder, 'gradient_analysis_violin_plot_divided_lab.png'))
+    plt.close()
+
+    # Pairplot
+    plt.figure(figsize=(10, 8))
+    sns.pairplot(data=pd.concat([data_with_correct_lab, data_with_wrong_lab, data_with_with_correct_lab_watermarks, data_with_wrong_lab_watermarks]),
+                 vars=['Input Gradient Magnitude', 'Label Score'], hue='Category', palette=colors, kind='scatter')
+
+    plt.suptitle('Pair Plot: Input Gradient Magnitude for Different Cases [Label Confounded Case]', fontsize=8)
+
+    plt.savefig(os.path.join(arguments_folder, 'gradient_analysis_pair_plot_divided_lab.png'))
+    plt.close()
+
+    # Set a larger figure size for better visualizations
+    plt.figure(figsize=(10, 8))
+
+    # Create a FacetGrid for the joint plot
+    g = sns.FacetGrid(pd.concat([data_with_correct_lab, data_with_wrong_lab, data_with_with_correct_lab_watermarks, data_with_wrong_lab_watermarks]),
+                      col='Category', hue='Category', palette=colors, height=5)
+
+    # Scatter Plot in each subplot
+    g.map_dataframe(sns.scatterplot, x='Input Gradient Magnitude', y='Label Score')
+    g.set_axis_labels('Input Gradient Magnitude', 'Label Score')
+    g.set_titles(col_template='Category: {col_name}', fontweight='bold')
+    g.add_legend(title='Category', title_fontsize=12, label_order=['Watermarked (Correct)', 'Watermarked (Wrong)', 'Not Watermarked (Correct)', 'Not Watermarked (Wrong)'])
+    # Save the joint plot
+    plt.suptitle('Pair Plot: Input Gradients vs Label Score [Label Confounded Case]', fontsize=12)
+    plt.savefig(os.path.join(arguments_folder, 'gradient_analysis_joint_plot_divided_lab.png'))
+
+    # LABEL GRADIENT
+    label_gradients_with_watermarks = np.array(
+        [float(item[1][0]) for item in correct_lab_img_confound.max_ig_label_list_for_score_plot] +
+        [float(item[1][0]) for item in wrong_lab_img_confound.max_ig_label_list_for_score_plot]
+    )
+
+    label_gradients_without_watermarks = np.array(
+        [float(item[1][0]) for item in correct_lab.max_ig_label_list_for_score_plot] +
+        [float(item[1][0]) for item in wrong_lab.max_ig_label_list_for_score_plot]
+    )
+
+    # Set a common color palette for all plots
+    colors = sns.color_palette('Set2')
+
+    # Violin Plot
+    plt.figure(figsize=(10, 6))
+    sns.violinplot(data=[label_gradients_with_watermarks, label_gradients_without_watermarks],
+               showmedians=True, palette=colors)
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.xlabel('')
+    plt.title('Violin Plot [Label Gradient, Label Confounded Case]', fontsize=14)
+    plt.ylabel('Label Gradient Magnitude', fontsize=12)
+
+    # Save Violin Plot
+    plt.savefig(os.path.join(arguments_folder, 'violin_plot_label_lab.png'))
+    plt.close()
+
+    # Box Plot
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(data=[label_gradients_with_watermarks, label_gradients_without_watermarks],
+            palette=colors)
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.xlabel('')
+    plt.ylabel('Label Gradient Magnitude', fontsize=12)
+    plt.title('Box Plot [Label Gradient, Label Confounded Case]', fontsize=14)
+
+    # Save Box Plot
+    plt.savefig(os.path.join(arguments_folder, 'box_plot_label_lab.png'))
+    plt.close()
+
+    # Histogram
+    plt.figure(figsize=(10, 6))
+    n, bins, patches = plt.hist([label_gradients_with_watermarks, label_gradients_without_watermarks],
+             bins=20, alpha=0.7, color=colors[:2], label=['With Watermarks', 'Without Watermarks'])
+    jitter = 0
+    # Add the values of occurrences on top of the bars
+    for container in patches:
+        for patch in container:
+            height = patch.get_height()
+            x, width = patch.get_x(), patch.get_width()
+            jittered_height = height + np.random.rand() * jitter
+            plt.text(x + width / 2., jittered_height, f'{int(height)}', ha='center', va='bottom', fontsize=10)
+    plt.legend()
+    plt.title('Histogram [Label Gradient, Label Confounded Case]', fontsize=14)
+    plt.xlabel('Label Gradient Magnitude', fontsize=12)
+
+    # Save Histogram
+    plt.savefig(os.path.join(arguments_folder, 'histogram_label_lab.png'))
+    plt.close()
+
+    # KDE Plot
+    plt.figure(figsize=(10, 6))
+    sns.kdeplot(label_gradients_with_watermarks, color=colors[0], label='With Watermarks')
+    sns.kdeplot(label_gradients_without_watermarks, color=colors[1], label='Without Watermarks')
+    plt.legend()
+    plt.title('KDE Plot [Label Gradient, Label Confounded Case]', fontsize=14)
+    plt.xlabel('Label Gradient Magnitude', fontsize=12)
+
+    # Save KDE Plot
+    plt.savefig(os.path.join(arguments_folder, 'kde_plot_label_lab.png'))
+    plt.close()
+
+    # Swarm Plot
+    plt.figure(figsize=(10, 6))
+    sns.swarmplot(x=np.concatenate([np.zeros_like(label_gradients_with_watermarks), np.ones_like(label_gradients_without_watermarks)]),
+                  y=np.concatenate([label_gradients_with_watermarks, label_gradients_without_watermarks]),
+                  palette=colors[:2], size=3)  # Decrease the size of markers
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.title('Swarm Plot [Label Gradient, Label Confounded Case]', fontsize=14)
+    plt.xlabel('')
+    plt.ylabel('Label Gradient Magnitude', fontsize=12)
+
+    # Save Swarm Plot
+    plt.savefig(os.path.join(arguments_folder, 'swarm_plot_label_lab.png'))
+    plt.close()
+
+    # CDF Plot
+    plt.figure(figsize=(10, 6))
+    plt.hist(label_gradients_with_watermarks, density=True, cumulative=True, histtype='step', label='With Watermarks', bins=100, linewidth=2, color=colors[0])
+    plt.hist(label_gradients_without_watermarks, density=True, cumulative=True, histtype='step', label='Without Watermarks', bins=100, linewidth=2, color=colors[1])
+    plt.title('CDF Plot [Label Gradient, Label Confounded Case]', fontsize=14)
+    plt.xlabel('Label Gradient Magnitude', fontsize=12)
+    plt.legend(loc='lower right', bbox_to_anchor=(1.02, 0), borderaxespad=0.)
+
+    # Save CDF Plot
+    plt.savefig(os.path.join(arguments_folder, 'cdf_plot_label_lab.png'))
+    plt.close()
+
+    # Create a new figure for the combined plots
+    plt.figure(figsize=(16, 12))
+
+    # Combined Plots
+    plt.suptitle('Combined Plots [Label Gradient, Label Confounded Case]', fontsize=16)
+
+    # Violin Plot
+    plt.subplot(231)
+    sns.violinplot(data=[label_gradients_with_watermarks, label_gradients_without_watermarks],
+               showmedians=True, palette=colors)
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.xlabel('')
+    plt.title('Violin Plot', fontsize=14)
+    plt.ylabel('Label Gradient Magnitude', fontsize=12)
+
+    # Box Plot
+    plt.subplot(232)
+    sns.boxplot(data=[label_gradients_with_watermarks, label_gradients_without_watermarks],
+            palette=colors)
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.xlabel('')
+    plt.title('Box Plot', fontsize=14)
+
+    # Histogram
+    plt.subplot(233)
+    plt.hist([label_gradients_with_watermarks, label_gradients_without_watermarks], bins=20, alpha=0.7, color=colors[:2], label=['With Watermarks', 'Without Watermarks'])
+    plt.legend()
+    plt.title('Histogram', fontsize=14)
+    plt.xlabel('Label Gradient Magnitude', fontsize=12)
+
+    # KDE Plot
+    plt.subplot(234)
+    sns.kdeplot(label_gradients_with_watermarks, color=colors[0], label='With Watermarks')
+    sns.kdeplot(label_gradients_without_watermarks, color=colors[1], label='Without Watermarks')
+    plt.legend()
+    plt.title('KDE Plot', fontsize=14)
+    plt.xlabel('Label Gradient Magnitude', fontsize=12)
+
+    # Swarm Plot
+    plt.subplot(235)
+    sns.swarmplot(x=np.concatenate([np.zeros_like(label_gradients_with_watermarks), np.ones_like(label_gradients_without_watermarks)]),
+                  y=np.concatenate([label_gradients_with_watermarks, label_gradients_without_watermarks]),
+                  palette=colors[:2], size=3)  # Decrease the size of markers
+    plt.xticks([0, 1], ['With Watermarks', 'Without Watermarks'])
+    plt.title('Swarm Plot', fontsize=14)
+    plt.xlabel('')
+    plt.ylabel('Label Gradient Magnitude', fontsize=12)
+
+    # CDF Plot
+    plt.subplot(236)
+    plt.hist(label_gradients_with_watermarks, density=True, cumulative=True, histtype='step', label='With Watermarks', bins=100, linewidth=2, color=colors[0])
+    plt.hist(label_gradients_without_watermarks, density=True, cumulative=True, histtype='step', label='Without Watermarks', bins=100, linewidth=2, color=colors[1])
+    plt.title('CDF Plot', fontsize=14)
+    plt.xlabel('Label Gradient Magnitude', fontsize=12)
+    plt.legend(loc='lower right', bbox_to_anchor=(1.02, 0), borderaxespad=0.)
+
+    # Save the combined plot
+    plt.savefig(os.path.join(arguments_folder, 'combined_plots_label_lab.png'))
+    plt.close()
+
+    exit(0)
+
+
     scatter_plot_score(
         ig_list_image,
         conf_list_image,
@@ -1875,74 +3868,6 @@ def plot_arguments(
         "[Prediction] Does influence parent prediction vs does not influence [Correct+Conf+Imbalance]",
     )
 
-    score_barplot(
-        correct_confound.prediction_influence_parent_counter
-        + wrong_confound.prediction_influence_parent_counter
-        + correct_not_confound.prediction_influence_parent_counter
-        + wrong_not_confound.prediction_influence_parent_counter
-        + correct_lab.prediction_influence_parent_counter
-        + wrong_lab.prediction_influence_parent_counter
-        + wrong_lab_img_confound.prediction_influence_parent_counter
-        + correct_lab_img_confound.prediction_influence_parent_counter,
-        correct_confound.prediction_does_not_influence_parent_counter
-        + wrong_confound.prediction_does_not_influence_parent_counter
-        + correct_not_confound.prediction_does_not_influence_parent_counter
-        + wrong_not_confound.prediction_does_not_influence_parent_counter
-        + correct_lab.prediction_does_not_influence_parent_counter
-        + wrong_lab.prediction_does_not_influence_parent_counter
-        + wrong_lab_img_confound.prediction_does_not_influence_parent_counter
-        + correct_lab_img_confound.prediction_does_not_influence_parent_counter,
-        "Influence",
-        "Not Influence",
-        arguments_folder,
-        "[Prediction] Does influence parent prediction vs does not influence",
-    )
-
-    score_barplot_list(
-        [
-            correct_confound.prediction_influence_parent_counter,
-            wrong_confound.prediction_influence_parent_counter,
-            correct_not_confound.prediction_influence_parent_counter,
-            wrong_not_confound.prediction_influence_parent_counter,
-            correct_lab.prediction_influence_parent_counter,
-            wrong_lab.prediction_influence_parent_counter,
-            wrong_lab_img_confound.prediction_influence_parent_counter,
-            correct_lab_img_confound.prediction_influence_parent_counter,
-        ],
-        [
-            correct_confound.prediction_does_not_influence_parent_counter,
-            wrong_confound.prediction_does_not_influence_parent_counter,
-            correct_not_confound.prediction_does_not_influence_parent_counter,
-            wrong_not_confound.prediction_does_not_influence_parent_counter,
-            correct_lab.prediction_does_not_influence_parent_counter,
-            wrong_lab.prediction_does_not_influence_parent_counter,
-            wrong_lab_img_confound.prediction_does_not_influence_parent_counter,
-            correct_lab_img_confound.prediction_does_not_influence_parent_counter,
-        ],
-        [
-            "Influence [Correct+Confound]",
-            "Influence [NotCorrect+Confound]",
-            "Influence [Correct+NotConfound]",
-            "Influence [NotCorrect+NotConfound]",
-            "Influence [Correct+Imbalance]",
-            "Influence [NotCorrect+Imbalance]",
-            "Influence [NotCorrect+Conf+Imbalance]",
-            "Influence [Correct+Conf+Imbalance]",
-        ],
-        [
-            "Not Influence [Correct+Confound]",
-            "Not Influence [NotCorrect+Confound]",
-            "Not Influence [Correct+NotConfound]",
-            "Not Influence [NotCorrect+NotConfound]",
-            "Not Influence [Correct+Imbalance]",
-            "Not Influence [NotCorrect+Imbalance]",
-            "Not Influence [NotCorrect+Conf+Imbalance]",
-            "Not Influence [Correct+Conf+Imbalance]",
-        ],
-        arguments_folder,
-        "[Prediction] Influence parent prediction vs not influence",
-    )
-
     #  max_arg_dictionary = correct_confound.max_arguments_dict
 
     #  plot_most_frequent_explainations(
@@ -2014,14 +3939,6 @@ def plot_arguments(
     #      max_arg_dictionary, "Max chosen per class", arguments_folder
     #  )
 
-    plot_gradient_analysis_table_max(
-        wrong_lab=wrong_lab.bucket_list,
-        wrong_confound=wrong_confound.bucket_list,
-        wrong_lab_img_confound=wrong_lab_img_confound.bucket_list,
-        wrong_ok=wrong_not_confound.bucket_list,
-        arguments_folder=arguments_folder,
-        tau=tau,
-    )
     #
     #  plot_gradient_analysis_table_full(
     #      wrong_lab=wrong_lab.bucket_list,
@@ -2679,6 +4596,10 @@ def arguments_step(
     prediction_does_not_influence_parent_counter: int = 0
     # get_gradents_list_separated_by_class
     ig_lists_wrt_prediction: List[Tuple[List[float], List[float]]] = list()
+    """Label entropy"""
+    label_entropy_list: List[float] = list()
+    """Label entropy"""
+    ig_entropy_list: List[List[float]] = list()
 
     # if label_loader is active then shiwtch to the right dataloader
     loader = dataloaders["test_loader_with_labels_name"]
@@ -2729,6 +4650,10 @@ def arguments_step(
             use_gate_output,
         )
 
+        # label_entropy_list -> TODO just inserted
+        label_entropy_list.append(bucket.get_predicted_label_entropy())
+        ig_entropy_list.append(bucket.get_ig_entropy())
+
         # ig lists
         ig_lists.append(bucket.get_gradents_list_separated())
 
@@ -2771,11 +4696,6 @@ def arguments_step(
                 prefix="confounded",
                 correct=False,
             )
-            # no need to show the barplot list for each explaination
-            #  ig_list, ig_titles = bucket.get_gradients_list_and_names()
-            #  single_element_barplot(
-            #      labels_name[ground_truth_lab], idx, ig_list, ig_titles, arguments_folder
-            #  )
             show_element_counter += 1
 
         # if the score is equal to the maximal then we have that the 'suitable' is the maximum
@@ -2810,7 +4730,7 @@ def arguments_step(
         max_val = -float("inf")
         for val in bucket.label_gradient.values():
             max_val = val[1] if val[1] > max_val else max_val
-        max_ig_label_list_for_score_plot.append(([tmp_max_score_image_list], [max_val]))
+        max_ig_label_list_for_score_plot.append(([tmp_max_score_image_list.clone()], [max_val.clone()]))
 
         # comodo variables
         i_c_l: int = bucket.groundtruth_children
@@ -2863,6 +4783,7 @@ def arguments_step(
             prediction_influence_parent_counter += 1
         else:
             prediction_does_not_influence_parent_counter += 1
+        print(idx, 'Going...')
 
     # return arguments
     return ArgumentsStepArgs(
@@ -2883,6 +4804,8 @@ def arguments_step(
         prediction_influence_parent_counter=prediction_influence_parent_counter,
         prediction_does_not_influence_parent_counter=prediction_does_not_influence_parent_counter,
         ig_lists_wrt_prediction=ig_lists_wrt_prediction,
+        label_entropy_list=label_entropy_list,
+        ig_entropy_list=ig_entropy_list
     )
 
 
@@ -3375,6 +5298,8 @@ def get_samples_for_arguments(
     completed = False
     # get confounders
     confounders = get_confounders(dataset)
+    # already added tensors
+    already_added_tensors = list()
 
     print("Len", len(loader))
     # loop over the loader
@@ -3443,6 +5368,46 @@ def get_samples_for_arguments(
                     predicted_bool[:, test.to_eval], single_target_bool[:, test.to_eval]
                 )
             ):
+                #  if correct:
+                print(subclass[el_idx])
+                    #  if any(torch.equal(inputs[el_idx], tensor) for tensor in already_added_tensors):
+                    #      print("Tensor is present in the list.")
+                    #  else:
+                    #      print("Tensor is not present in the list.")
+
+                if correct and confounded:
+                    gradient_to_show = torch.autograd.grad(
+                        outputs=logits,
+                        inputs=single_el,
+                        grad_outputs=torch.ones_like(logits),
+                        retain_graph=True,
+                    )[0]
+
+                    gradient_to_show = torch.squeeze(gradient_to_show, 0)
+                    gradient_to_show = np.fabs(gradient_to_show.detach().numpy().transpose(1, 2, 0))
+                    single_el = torch.squeeze(single_el, 0)
+                    single_el = single_el.detach().numpy().transpose(1, 2, 0)
+
+                    # norm color
+                    norm = matplotlib.colors.Normalize(vmin=0, vmax=np.max(gradient_to_show))
+                    # show the picture
+                    fig = plt.figure()
+                    plt.colorbar(
+                        matplotlib.cm.ScalarMappable(norm=norm, cmap="viridis"),
+                        label="Gradient magnitude",
+                    )
+                    plt.imshow(single_el, cmap="gray")
+                    plt.imshow(gradient_to_show, cmap="viridis", alpha=0.5)
+                    plt.subplots_adjust(top=0.72)
+                    plt.title("Input gradient correctly predicted and watermarked")
+
+                    # show the figure
+                    fig.savefig(
+                        "lol/correct_sample_watermarked.png",
+                        dpi=fig.dpi,
+                    )
+                    plt.close(fig)
+
                 data_list.append(
                     (
                         inputs[el_idx],
@@ -3458,10 +5423,13 @@ def get_samples_for_arguments(
                         .tolist(),
                     )
                 )
+
+                already_added_tensors.append(inputs[el_idx])
             # add element to the datalist
             if len(data_list) >= num_element_to_analyze:
                 completed = True
                 break
+
         # completed
         if completed:
             break
@@ -3584,8 +5552,8 @@ def main(args: Namespace) -> None:
     summary(net, (img_depth, img_size, img_size))
 
     # Test on best weights (of the confounded model)
-    load_best_weights(net, args.weights_path_folder, args.device)
-    load_best_weights_gate(gate, args.weights_path_folder, args.device)
+    load_last_weights(net, args.weights_path_folder, args.device)
+    #load_best_weights_gate(gate, args.weights_path_folder, args.device)
 
     if args.use_probabilistic_circuits:
         gate.eval()

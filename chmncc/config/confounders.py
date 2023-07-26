@@ -125,7 +125,16 @@ mnist_confunders = {
         "test": [],
     },
     "lowercase_letter": {
-        "train": [],
+        "train": [
+            {
+                "subclass": "g",
+                "color": 85,  # grayscale color
+                "shape": "rectangle",  # choose from [rectangle, circle]
+                "type": "full",  # either full or empty
+                "min_dim": 2,  # minimum dimension
+                "max_dim": 2,  # maximum dimension in pixels
+            }
+        ],
         "test": [
             {
                 "subclass": "a",  # subclass on which to apply the confunders
@@ -138,16 +147,7 @@ mnist_confunders = {
         ],
     },
     "uppercase_letter": {
-        "train": [
-            {
-                "subclass": "A",
-                "color": 80,  # grayscale color
-                "shape": "rectangle",  # choose from [rectangle, circle]
-                "type": "full",  # either full or empty
-                "min_dim": 2,  # minimum dimension
-                "max_dim": 2,  # maximum dimension in pixels
-            }
-        ],
+        "train": [],
         "test": [
             {
                 "subclass": "S",
@@ -172,8 +172,8 @@ mnist_confunders = {
         ],
         "test": [
             {
-                "subclass": "4",
-                "color": 80,  # grayscale color
+                "subclass": "8",
+                "color": 85,  # grayscale color
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
                 "min_dim": 2,  # minimum dimension

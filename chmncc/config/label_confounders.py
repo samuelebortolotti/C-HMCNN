@@ -2,7 +2,7 @@
 label_confounders = {
     "mnist": {
         "uppercase_letter": {
-            "subclasses": ["O", "S", "I"],
+            "subclasses": ["J", "S", "Z"],
             "weight": [0.01, 0.01, 0.01],  # 0.01,
         },
         "even_digit": {

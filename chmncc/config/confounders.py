@@ -126,14 +126,14 @@ mnist_confunders = {
     },
     "lowercase_letter": {
         "train": [
-            {
-                "subclass": "g",
-                "color": 85,  # grayscale color
-                "shape": "rectangle",  # choose from [rectangle, circle]
-                "type": "full",  # either full or empty
-                "min_dim": 2,  # minimum dimension
-                "max_dim": 2,  # maximum dimension in pixels
-            }
+            #  {
+            #      "subclass": "g",
+            #      "color": 85,  # grayscale color
+            #      "shape": "rectangle",  # choose from [rectangle, circle]
+            #      "type": "full",  # either full or empty
+            #      "min_dim": 2,  # minimum dimension
+            #      "max_dim": 2,  # maximum dimension in pixels
+            #  }
         ],
         "test": [
             {
@@ -171,14 +171,14 @@ mnist_confunders = {
             }
         ],
         "test": [
-            {
-                "subclass": "8",
-                "color": 85,  # grayscale color
-                "shape": "rectangle",  # choose from [rectangle, circle]
-                "type": "full",  # either full or empty
-                "min_dim": 2,  # minimum dimension
-                "max_dim": 2,  # maximum dimension in pixels
-            }
+            #  {
+            #      "subclass": "8",
+            #      "color": 85,  # grayscale color
+            #      "shape": "rectangle",  # choose from [rectangle, circle]
+            #      "type": "full",  # either full or empty
+            #      "min_dim": 2,  # minimum dimension
+            #      "max_dim": 2,  # maximum dimension in pixels
+            #  }
         ],
     },
 }

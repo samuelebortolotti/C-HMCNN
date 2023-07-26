@@ -1183,7 +1183,7 @@ def c_hmcnn(
     print("#> After training:")
 
     # Test on best weights
-    load_best_weights(net, model_folder, device)
+    load_last_weights(net, model_folder, device)
 
     # test values
     if use_probabilistic_circuits:

@@ -140,8 +140,8 @@ mnist_confunders = {
     "uppercase_letter": {
         "train": [
             {
-                "subclass": "P",
-                "color": 85,  # grayscale color
+                "subclass": "R",
+                "color": 30,  # grayscale color
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
                 "min_dim": 2,  # minimum dimension
@@ -173,7 +173,7 @@ mnist_confunders = {
         "test": [
             {
                 "subclass": "8",
-                "color": 85,  # grayscale color
+                "color": 30,  # grayscale color
                 "shape": "rectangle",  # choose from [rectangle, circle]
                 "type": "full",  # either full or empty
                 "min_dim": 2,  # minimum dimension

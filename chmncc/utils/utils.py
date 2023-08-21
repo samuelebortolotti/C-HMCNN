@@ -373,9 +373,9 @@ def prediction_statistics_boxplot(
     plt.xticks(rotation="vertical")
     plt.tight_layout()
     plt.title("{}".format(title))
-    fig.savefig("{}/statistics_{}_total.png".format(image_folder, statistics_name))
+    fig.savefig("{}/statistics_{}_total.pdf".format(image_folder, statistics_name))
     plt.close(fig)
-    print("{}/statistics_{}_total.png".format(image_folder, statistics_name))
+    print("{}/statistics_{}_total.pdf".format(image_folder, statistics_name))
     print("{}".format(predicted_perc))
 
 
@@ -412,7 +412,7 @@ def grouped_boxplot(
     plt.xticks(rotation=0)
     plt.title("Total: {} vs {}".format(correct_txt, wrong_txt))
     plt.tight_layout()
-    fig.savefig("{}/statistics_{}_total.png".format(image_folder, statistics_name))
+    fig.savefig("{}/statistics_{}_total.pdf".format(image_folder, statistics_name))
     plt.close(fig)
 
     # print data
@@ -535,7 +535,7 @@ def plot_global_multiLabel_confusion_matrix(
     )
     plt.title("Global multi-label confusion matrix")
     print(fig_name)
-    fig.savefig("{}.png".format(fig_name))
+    fig.savefig("{}.pdf".format(fig_name))
     plt.close(fig)
 
     #  confusion_matrices = multilabel_confusion_matrix(y_test, y_est)
@@ -783,7 +783,7 @@ def plot_confounded_labels_predictions(
         plt.xticks(rotation=0)
         plt.subplots_adjust(bottom=0.15)
         plt.tight_layout()
-        fig.savefig("{}/barplot_for_{}.png".format(folder, groundtruth_class))
+        fig.savefig("{}/barplot_for_{}.pdf".format(folder, groundtruth_class))
         plt.close(fig)
 
 

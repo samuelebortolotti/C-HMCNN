@@ -1335,7 +1335,7 @@ def c_hmcnn(
         )
         plot_confusion_matrix_statistics(
             clf_report=clf_report,
-            fig_name="{}/train_confusion_matrix_statistics.png".format(
+            fig_name="{}/train_confusion_matrix_statistics.pdf".format(
                 os.environ["IMAGE_FOLDER"]
             ),
         )
@@ -1431,7 +1431,7 @@ def c_hmcnn(
         )
         plot_confusion_matrix_statistics(
             clf_report=clf_report,
-            fig_name="{}/test_confusion_matrix_statistics.png".format(
+            fig_name="{}/test_confusion_matrix_statistics.pdf".format(
                 os.environ["IMAGE_FOLDER"]
             ),
         )
@@ -1643,7 +1643,7 @@ def c_hmcnn(
             plt.tight_layout()
 
         fig.savefig(
-            "{}/{}_{}_original{}.png".format(
+            "{}/{}_{}_original{}.pdf".format(
                 os.environ["IMAGE_FOLDER"],
                 i,
                 network,
@@ -1671,7 +1671,7 @@ def c_hmcnn(
                 label="Gradient magnitude",
             )
             fig.savefig(
-                "{}/{}_{}_gradients.png".format(os.environ["IMAGE_FOLDER"], i, network),
+                "{}/{}_{}_gradients.pdf".format(os.environ["IMAGE_FOLDER"], i, network),
                 dpi=fig.dpi,
             )
             plt.close(fig)
@@ -1691,7 +1691,7 @@ def c_hmcnn(
 
             # show the figure
             fig.savefig(
-                "{}/{}_{}_gradients_overlayed.png".format(
+                "{}/{}_{}_gradients_overlayed.pdf".format(
                     os.environ["IMAGE_FOLDER"], i, network
                 ),
                 dpi=fig.dpi,
@@ -1723,7 +1723,7 @@ def c_hmcnn(
                 label="Gradient magnitude",
             )
             fig.savefig(
-                "{}/{}_{}_integrated_gradients.png".format(
+                "{}/{}_{}_integrated_gradients.pdf".format(
                     os.environ["IMAGE_FOLDER"], i, network
                 ),
                 dpi=fig.dpi,
@@ -1745,7 +1745,7 @@ def c_hmcnn(
 
             # show the figure
             fig.savefig(
-                "{}/{}_{}_integrated_gradients_overlayed.png".format(
+                "{}/{}_{}_integrated_gradients_overlayed.pdf".format(
                     os.environ["IMAGE_FOLDER"], i, network
                 ),
                 dpi=fig.dpi,

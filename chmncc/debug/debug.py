@@ -161,7 +161,7 @@ def save_sample(
     plt.tight_layout()
     # show the figure
     fig.savefig(
-        "{}/{}_iter_{}_original{}{}.png".format(
+        "{}/{}_iter_{}_original{}{}.pdf".format(
             debug_folder,
             prefix,
             idx,
@@ -340,7 +340,7 @@ def show_masked_gradient(
     )
     # show the figure
     fig.savefig(
-        "{}/{}_iter_{}_gradient_only_confunder_{}{}.png".format(
+        "{}/{}_iter_{}_gradient_only_confunder_{}{}.pdf".format(
             debug_folder,
             prefix,
             idx,
@@ -392,7 +392,7 @@ def overlay_input_gradient(
 
     # show the figure
     fig.savefig(
-        "{}/{}_iter_{}_overlayed_{}_image_{}{}.png".format(
+        "{}/{}_iter_{}_overlayed_{}_image_{}{}.pdf".format(
             debug_folder,
             prefix,
             idx,
@@ -450,7 +450,7 @@ def show_gradient(
 
     # show the figure
     fig.savefig(
-        "{}/{}_iter_{}_gradient_confunder_{}{}.png".format(
+        "{}/{}_iter_{}_gradient_confunder_{}{}.pdf".format(
             debug_folder,
             prefix,
             idx,
@@ -782,7 +782,7 @@ def compute_gradient_confound_correlation(
         True,
     )
     fig.savefig(
-        "{}/{}_{}_gradient_correlation.png".format(
+        "{}/{}_{}_gradient_correlation.pdf".format(
             folder_where_to_save,
             "ingegrated" if integrated_gradients else "input",
             figure_prefix_name,
@@ -812,7 +812,7 @@ def compute_gradient_confound_correlation(
         )
     )
     fig.savefig(
-        "{}/{}_{}_gradient_boxplot.png".format(
+        "{}/{}_{}_gradient_boxplot.pdf".format(
             folder_where_to_save,
             "ingegrated" if integrated_gradients else "input",
             figure_prefix_name,
@@ -2060,7 +2060,7 @@ def main(args: Namespace) -> None:
     )
     plot_confusion_matrix_statistics(
         clf_report=clf_report,
-        fig_name="{}/before_confusion_matrix_statistics.png".format(
+        fig_name="{}/before_confusion_matrix_statistics.pdf".format(
             args.debug_folder
         ),
     )
@@ -2275,7 +2275,7 @@ def main(args: Namespace) -> None:
     )
     plot_confusion_matrix_statistics(
         clf_report=clf_report,
-        fig_name="{}/train_confusion_matrix_statistics.png".format(
+        fig_name="{}/train_confusion_matrix_statistics.pdf".format(
             os.environ["IMAGE_FOLDER"]
         ),
     )
@@ -2369,7 +2369,7 @@ def main(args: Namespace) -> None:
     )
     plot_confusion_matrix_statistics(
         clf_report=clf_report,
-        fig_name="{}/test_after_confusion_matrix_statistics.png".format(
+        fig_name="{}/test_after_confusion_matrix_statistics.pdf".format(
             args.debug_folder
         ),
     )

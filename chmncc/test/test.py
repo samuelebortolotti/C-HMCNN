@@ -750,8 +750,17 @@ def test_step_with_prediction_statistics_with_gates(
             targets = targets.to("cpu")
             predicted = predicted.to("cpu")
 
+            print("In test")
+            print(predicted)
+            print(targets)
+            print(num_correct)
+            print("--------------------------")
+
             if batch_idx == 0:
                 predicted_test = predicted
+                print()
+                print("Ci entro")
+                print()
                 y_test = targets
             else:
                 predicted_test = torch.cat((predicted_test, predicted), dim=0)

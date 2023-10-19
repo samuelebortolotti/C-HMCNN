@@ -7,6 +7,43 @@ from chmncc.utils import (
     force_prediction_from_batch,
     cross_entropy_from_softmax,
 )
+
+
+def get_named_label_predictions_with_indexes(
+    hierarchical_label,
+    nodes,
+):
+    """Retrive the named predictions from the hierarchical ones
+    Args:
+        hierarchical_label [torch.Tensor]: label prediction
+        nodes: List[str]: list of nodes
+    Returns:
+        named_predictions
+    """
+    to_skip = ["root"]
+    names = {}
+    for idx in range(len(hierarchical_label)):
+        if nodes[idx] not in to_skip and hierarchical_label[idx] > 0.5:
+            names.update({idx: nodes[idx]})
+    return names
+
+
+def get_named_label_predictions(hierarchical_label, nodes):
+    """Retrive the named predictions from the hierarchical ones
+    Args:
+        hierarchical_label [torch.Tensor]: label prediction
+        nodes: List[str]: list of nodes
+    Returns:
+        named_predictions
+    """
+    to_skip = ["root"]
+    names = []
+    for idx in range(len(hierarchical_label)):
+        if nodes[idx] not in to_skip and hierarchical_label[idx] > 0.5:
+            names.append(nodes[idx])
+    return names
+
+
 import numpy as np
 from typing import Tuple, Optional
 import tqdm
@@ -208,6 +245,7 @@ def training_step_with_gate(
     train: dotdict,
     title: str,
     device: str = "cuda",
+    nodes=None,
 ) -> Tuple[float, float, float, float, float]:
     """Training step of the network with gate.
 
@@ -278,6 +316,11 @@ def training_step_with_gate(
         else:
             predicted_train = torch.cat((predicted_train, predicted), dim=0)
             y_test = torch.cat((y_test, labels), dim=0)
+
+        print("In train")
+        print(predicted)
+        print(labels)
+        print("--------------------------")
 
         # TODO increase
         if batch_idx == 200:

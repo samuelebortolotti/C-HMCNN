@@ -1,6 +1,7 @@
 """Main module of the `c-hmcnn` project
 
-This code has been developed by Eleonora Giunchiglia and Thomas Lukasiewicz; later modified by Samuele Bortolotti
+This code has been developed by Eleonora Giunchiglia and Thomas Lukasiewicz; later modified by Samuele Bortolotti.
+The structure and the purpose of the code is different from the Giunchiglia et al. approach.
 """
 
 import os
@@ -44,8 +45,8 @@ from chmncc.utils.utils import (
     resume_training,
     get_lr,
     average_image_contributions,
-    load_best_weights,
     load_last_weights,
+    load_last_weights_gate,
     grouped_boxplot,
     prediction_statistics_boxplot,
     plot_global_multiLabel_confusion_matrix,
@@ -735,6 +736,7 @@ def c_hmcnn(
                 optimizer=optimizer,
                 title="Training",
                 device=device,
+                nodes=dataloaders['test_set'].get_nodes()
             )
         else:
             (
@@ -1179,11 +1181,16 @@ def c_hmcnn(
             print("Early Stopping!\n")
             break
 
+    torch.save(net.state_dict(), os.path.join(model_folder, "last.pth"))
+    if use_probabilistic_circuits:
+        torch.save(gate.state_dict(), os.path.join(model_folder, "last_gate.pth"))
+
     # compute final evaluation results
     print("#> After training:")
 
     # Test on best weights
     load_last_weights(net, model_folder, device)
+    #  load_last_weights_gate(gate, model_folder, device)
 
     # test values
     if use_probabilistic_circuits:
@@ -1245,10 +1252,6 @@ def c_hmcnn(
     if old_method:
         test_el, _ = next(iter(test_loader))
     else:
-        torch.save(net.state_dict(), os.path.join(model_folder, "last.pth"))
-        if use_probabilistic_circuits:
-            torch.save(gate.state_dict(), os.path.join(model_folder, "last_gate.pth"))
-
         # load the human readable labels dataloader
         test_loader_with_label_names = dataloaders["test_loader_with_labels_name"]
         test_dataset_with_label_names = dataloaders["test_set"]
@@ -1794,7 +1797,6 @@ def experiment(args: Namespace) -> None:
     if args.wandb:
         # start the log
         wandb.init(project=args.project, entity=args.entity)
-
     # run the experiment
     c_hmcnn(**vars(args))
 

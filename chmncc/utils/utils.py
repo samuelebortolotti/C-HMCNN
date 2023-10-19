@@ -19,7 +19,6 @@ from chmncc.config import (
     cifar_confunders,
     fashion_hierarchy,
     fashion_confunders,
-    label_confounders,
 )
 from chmncc.probabilistic_circuits.GatingFunction import DenseGatingFunction
 from chmncc.probabilistic_circuits.compute_mpe import CircuitMPE
@@ -80,6 +79,7 @@ def log_images(
     Args:
         writer [tensorboard.SummaryWriter]: summary writer
         img [torch.Tensor]: image to log
+        epoch [int]: number of the current epoch
         title [str]: title of the log
     """
     try:
@@ -122,7 +122,7 @@ def log_value(
     string: str,
 ) -> None:
     r"""
-    Function which writes the loss and the accuracy of a model by the means of
+    Function which writes a single value of a model by the means of
     a SummaryWriter
 
     Args:
@@ -236,6 +236,7 @@ def resume_training(
         model [nn.Module]: network architecture
         experiment_name [str]: where the weight file is located
         optimizer [torch.optim.Optimizer]: optimizer
+        gate [DenseGatingFunction] = None: gate if specified
 
     Returns:
         training_params [Dict]: training parameters

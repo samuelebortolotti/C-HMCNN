@@ -63,6 +63,7 @@ class CircuitMPE:
         self.beta = self.pmanager.copy_and_normalize_sdd(self.alpha, self.vtree)
         self.beta.vtree = self.vtree
         #  self.fill_train()
+        #  self.plot_circuit(self.beta, "lol", "circuit")
 
     def fill_train(self):
         N = 1024
@@ -194,7 +195,7 @@ class CircuitMPE:
 
     def plot_circuit(self, circuit, folder: str, name: str):
         io.psdd_save_as_dot(circuit, f"{folder}/{name}.dot")
-        graphviz.render("dot", "svg", f"{folder}/{name}.dot")
+        graphviz.render("dot", "pdf", f"{folder}/{name}.dot")
 
     def print_stats(self):
         print("================================")

@@ -20,16 +20,29 @@ DATASET_FLAGS :=
 # ======= EXPERIMENT ===============
 EXPERIMENT := experiment 
 EXP_NAME := "chmncc"
-EPOCHS := 50
-EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 32 --test-batch-size 128 --device cpu --project chmncc --network dummy #--no-constrained-layer
+EPOCHS := 10
+EXPERIMENT_FLAGS := --learning-rate 0.001 --batch-size 4 --test-batch-size 4 --device cpu --project chmncc --network mlp --prediction-treshold 0.5 --fixed-confounder --dataset mnist --force-prediction --imbalance-dataset # --use-probabilistic-circuits --num-reps 2 --gates 1 --no-confound
+
 
 # ======= VISUALIZE ================
-VISUALIZE:= visualize
-VISUALIZE_FLAGS := --only-confunders true
+VISUALIZE := visualize
+VISUALIZE_FLAGS := --dataset fashion --simplified-dataset # --only-confounders true 
 
 # ======= DEBUG ===================
-DEBUG:= debug
-DEBUG_FLAGS := --learning-rate 0.001 --batch-size 10 --test-batch-size 10 --device "cuda" --network "dummy" --no-integrated-gradients --iterations 5 --device cpu --debug-folder lmao --gradient-analysis
+DEBUG := debug
+DEBUG_FLAGS := "chmncc_debug" --learning-rate 0.001 --batch-size 8 --test-batch-size 8 --device cpu --iterations 2 --network mlp --debug-folder lmao --no-integrated-gradients --force-prediction --dataset mnist --balance-subclasses X Z --balance-weights 100.0 200.0 --rrr-regularization-rate 0.001 --imbalance-dataset --fixed-confounder --correct-by-duplicating-samples  --use-probabilistic-circuits --num-reps 2 --gates 1 #--simplified-dataset #--use-softmax
+
+# ======= ARGUMENTS ===================
+ARGUMENTS := arguments
+ARGUMENTS_FLAGS := --network mlp --batch-size 128 --test-batch-size 128 --device cpu --iterations 1 --arguments-folder lol --force-prediction --dataset mnist --num-element-to-analyze 300 --norm-exponent 2 --force-prediction --fixed-confounder --tau 0.1 --cincer-approach  # --use-probabilistic-circuits --num-reps 4 --gates 4 #--cincer-approach # ### # --use-gate-output # --use-gate-output
+
+# ======= CLUSTERS ===================
+CLUSTERS := clusters
+CLUSTERS_FLAGS := --learning-rate 0.001 --batch-size 128 --test-batch-size 128 --device cpu --prediction-treshold 0.5 --fixed-confounder --dataset mnist --force-prediction --imbalance-dataset --use-probabilistic-circuits --num-reps 2 --gates 1 --number-of-splits 5 --number-of-epochs 2 --network mlp # --fine-tune
+
+# ======= MULTI-STEP-ARGUMENTATION ===================
+MULTI_STEP_ARGUMENTATION := multi-step-argumentation
+MULTI_STEP_ARGUMENTATION_FLAGS := --network mlp --batch-size 128 --test-batch-size 128 --device cpu --iterations 1 --force-prediction --dataset mnist --norm-exponent 2 --force-prediction --fixed-confounder --tau 0.0
 
 # ======= DOC ======================
 AUTHORS := --author "Eleonora Giunchiglia, Thomas Lukasiewicz, Samuele Bortolotti" 
@@ -100,7 +113,7 @@ SED := sed
 TOUCH := touch
 	
 # RULES
-.PHONY: help env install install-dev doc-layout open-doc format-code experiment dataset visualize debug
+.PHONY: help env install install-dev doc-layout open-doc format-code experiment dataset visualize debug arguments
 
 help:
 	@$(ECHO) '$(YELLOW)Makefile help$(NONE)'
@@ -111,6 +124,7 @@ help:
 	* dataset 		: downloads and filters out the Cifar100 dataset\n \
 	* experiment 		: runs the experiment\n \
 	* debug 		: runs the debug of the model to solve confund\n \
+	* arguments 		: runs the analyze arguments for the model to see the model confound formula behaviour\n \
 	* visualize 		: shows the images associated to the specified label in the source and target dataset\n \
 	* doc-layout 		: generates the Sphinx documentation layout\n \
 	* doc-layout-no-theme	: generates the Sphinx documentation layout without setting the theme\n \
@@ -153,9 +167,24 @@ debug:
 	@$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(DEBUG) $(DEBUG_FLAGS)
 	@$(ECHO) '$(BLUE)Done$(NONE)'
 
+arguments:
+	@$(ECHO) '$(BLUE)Analyzing the model arguments..$(NONE)'
+	$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(ARGUMENTS) $(ARGUMENTS_FLAGS)
+	@$(ECHO) '$(BLUE)Done$(NONE)'
+
+multi-step-argumentation:
+	@$(ECHO) '$(BLUE)Multi-step-argumentation the model arguments..$(NONE)'
+	$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(MULTI_STEP_ARGUMENTATION) $(MULTI_STEP_ARGUMENTATION_FLAGS)
+	@$(ECHO) '$(BLUE)Done$(NONE)'
+
 visualize:
 	@$(ECHO) '$(BLUE)Visualize the requested images..$(NONE)'
 	@$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(VISUALIZE) $(VISUALIZE_FLAGS)
+	@$(ECHO) '$(BLUE)Done$(NONE)'
+
+clusters:
+	@$(ECHO) '$(BLUE)Running the cluster models..$(NONE)'
+	@$(PYTHON) $(PYFLAGS) $(MAIN) $(MAIN_FLAGS) $(CLUSTERS) $(CLUSTERS_FLAGS)
 	@$(ECHO) '$(BLUE)Done$(NONE)'
 
 doc-layout:
@@ -172,7 +201,7 @@ doc-layout:
 	@$(SED) -i -e "s/html_theme = 'alabaster'/html_theme = '$(SPHINX_THEME)'/g" $(DOC_FOLDER)/source/conf.py 
 	# Add .nojekyll
 	@$(TOUCH) .nojekyll
-	@echo "html_extra_path = ['../../.nojekyll']" >> $(DOC_FOLDER)/source/conf.py
+	@echo "html_extra_path = ['../../.nojekyll', '../../README.md']" >> $(DOC_FOLDER)/source/conf.py
 	# Copy the image folder inside the doc folder
 	@$(COPY) $(IMG_FOLDER) $(DOC_FOLDER)/source
 	@$(ECHO) '$(BLUE)Done$(NONE)'
